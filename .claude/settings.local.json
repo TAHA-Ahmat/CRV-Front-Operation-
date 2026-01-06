@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: Ajout audit final processus CRV\n\nDocument de référence pour Direction, Qualité et Auditeurs\ndécrivant le processus opérationnel complet du système CRV :\n- 7 étapes de saisie\n- 3 types de CRV \\(Arrivée, Départ, Turn Around\\)\n- 6 rôles et leurs permissions\n- User stories métier\n- Règles de validation et verrouillage\n- SLA et indicateurs de performance\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm run dev:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npm test)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(cat:*)",
+      "Bash(npm test:*)",
+      "Bash(node demo-agent.mjs)",
+      "Bash(curl:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NWNmNzFmOWZhN2UzYjdkZTg4NTAwYiIsIm5vbSI6IlRBSEEgSUJSQUhJTSIsImVtYWlsIjoiYWhtYXR0YWhhLnByb0B0aHMtYWVyby5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3Njc3MzM2ODYsImV4cCI6MTc2Nzc0NDQ4Nn0.xOjCGU4rT8FEYnkK2EVDraqucF9atp40Db8im4_8xUg\")",
+      "Bash(python:*)",
+      "Bash(node -e:*)"
+    ]
+  }
+}
