@@ -17,8 +17,14 @@
 
     <main class="crv-main">
       <div class="container">
+        <div class="crv-actions-bar">
+          <button @click="goToList" class="btn btn-secondary btn-large">
+            Voir les CRV existants
+          </button>
+        </div>
+
         <div class="crv-type-selector">
-          <h2>Sélectionnez le type de CRV</h2>
+          <h2>Créer un nouveau CRV</h2>
           <p class="subtitle">Choisissez le type d'opération à documenter</p>
 
           <div class="crv-types-grid">
@@ -75,6 +81,10 @@ const crvStore = useCRVStore()
 
 const goBack = () => {
   router.push('/services')
+}
+
+const goToList = () => {
+  router.push('/crv/liste')
 }
 
 const selectType = async (type) => {
@@ -161,6 +171,16 @@ const handleLogout = async () => {
 
 .crv-main {
   padding: 40px 20px;
+}
+
+.crv-actions-bar {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.btn-large {
+  padding: 15px 30px;
+  font-size: 16px;
 }
 
 .crv-type-selector {

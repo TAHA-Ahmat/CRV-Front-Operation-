@@ -90,6 +90,14 @@
               :disabled="crvStore.isLocked"
             />
             <div class="step-actions">
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape1"
+                class="btn btn-test"
+                type="button"
+              >
+                Générer données test
+              </button>
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
               </button>
@@ -105,6 +113,14 @@
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
+              </button>
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape2"
+                class="btn btn-test"
+                type="button"
+              >
+                Générer données test
               </button>
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
@@ -122,6 +138,14 @@
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
               </button>
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape3"
+                class="btn btn-test"
+                type="button"
+              >
+                Générer données test
+              </button>
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
               </button>
@@ -130,17 +154,68 @@
 
           <!-- Étape 4: Phases -->
           <div v-show="currentStep === 4">
+            <!-- Indicateur de progression des phases -->
+            <div class="phases-progress-indicator">
+              <div class="phases-progress-header">
+                <span class="phases-progress-label">Progression des phases</span>
+                <span class="phases-progress-count" :class="{
+                  'complete': toutesPhaseTraitees,
+                  'incomplete': !toutesPhaseTraitees
+                }">
+                  {{ crvStore.phases.length - phasesNonTraitees.length }} / {{ crvStore.phases.length }} traitées
+                </span>
+              </div>
+              <div class="phases-progress-bar">
+                <div
+                  class="phases-progress-fill"
+                  :class="{ 'complete': toutesPhaseTraitees }"
+                  :style="{ width: crvStore.phases.length > 0 ? ((crvStore.phases.length - phasesNonTraitees.length) / crvStore.phases.length * 100) + '%' : '0%' }"
+                ></div>
+              </div>
+              <div v-if="!toutesPhaseTraitees" class="phases-warning-message">
+                <span class="warning-icon">⚠️</span>
+                <span>{{ phasesNonTraitees.length }} phase(s) restante(s) à traiter avant de continuer</span>
+              </div>
+              <div v-else class="phases-success-message">
+                <span class="success-icon">✅</span>
+                <span>Toutes les phases sont traitées - Vous pouvez continuer</span>
+              </div>
+            </div>
+
             <CRVPhases
-              v-model="formData.phases"
+              :phases="crvStore.phases"
               crv-type="arrivee"
               :disabled="crvStore.isLocked"
+              @phase-update="handlePhaseUpdate"
             />
+
+            <!-- Message d'erreur si tentative de continuer sans traiter les phases -->
+            <div v-if="stepValidationError && currentStep === 4" class="step-validation-error">
+              <strong>⛔ Validation impossible</strong>
+              <pre>{{ stepValidationError }}</pre>
+            </div>
+
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape4"
+                class="btn btn-test"
+                type="button"
+                :disabled="generatingPhases"
+              >
+                {{ generatingPhases ? 'Génération...' : 'Générer toutes les phases' }}
+              </button>
+              <button
+                v-if="!crvStore.isLocked"
+                @click="nextStep"
+                class="btn btn-primary"
+                :class="{ 'btn-disabled': !toutesPhaseTraitees }"
+                type="button"
+              >
+                {{ toutesPhaseTraitees ? 'Continuer' : `Traiter ${phasesNonTraitees.length} phase(s)` }}
               </button>
             </div>
           </div>
@@ -148,12 +223,22 @@
           <!-- Étape 5: Charges -->
           <div v-show="currentStep === 5">
             <CRVCharges
-              v-model="formData.charges"
+              :charges="crvStore.charges"
+              :crv-id="crvStore.getCRVId"
               :disabled="crvStore.isLocked"
+              @charge-added="handleChargeAdded"
             />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
+              </button>
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape5"
+                class="btn btn-test"
+                type="button"
+              >
+                Générer données test
               </button>
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
@@ -164,12 +249,22 @@
           <!-- Étape 6: Événements -->
           <div v-show="currentStep === 6">
             <CRVEvenements
-              v-model="formData.evenements"
+              :evenements="crvStore.evenements"
+              :crv-id="crvStore.getCRVId"
               :disabled="crvStore.isLocked"
+              @evenement-added="handleEvenementAdded"
             />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
+              </button>
+              <button
+                v-if="!crvStore.isLocked"
+                @click="genererDonneesEtape6"
+                class="btn btn-test"
+                type="button"
+              >
+                Confirmer aucun événement
               </button>
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
@@ -202,10 +297,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useCRVStore } from '@/stores/crvStore'
+import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
 
 import CRVHeader from '@/components/crv/CRVHeader.vue'
 import CRVPersonnes from '@/components/crv/CRVPersonnes.vue'
@@ -217,37 +312,32 @@ import CRVValidation from '@/components/crv/CRVValidation.vue'
 import CRVLockedBanner from '@/components/CRV/CRVLockedBanner.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const crvStore = useCRVStore()
 
 const currentStep = ref(1)
 const isValidated = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
+const stepValidationError = ref('')
+const generatingPhases = ref(false)
 
+// Données locales pour l'affichage du header (infos vol)
 const formData = ref({
   header: {
     numeroVol: '',
-    date: new Date().toISOString().split('T')[0],
-    typeAppareil: '',
+    compagnieAerienne: '',
+    codeIATA: '',
+    aeroportOrigine: '',
+    aeroportDestination: '',
+    dateVol: new Date().toISOString().split('T')[0],
     immatriculation: '',
-    route: '',
+    typeAvion: '',
     poste: ''
   },
   personnes: [],
   engins: [],
-  phases: [
-    { nom: 'Calage avion', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Déchargement bagages', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Déchargement fret', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Livraison bagages', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Nettoyage cabine', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' }
-  ],
-  charges: {
-    passagers: { adultes: 0, enfants: 0, bebes: 0 },
-    bagages: { nombre: 0, poids: 0, speciaux: 0 },
-    fret: { nombre: 0, poids: 0, dangereux: false },
-    courrier: { nombre: 0, poids: 0 }
-  },
-  evenements: [],
   validation: {
     validateur: '',
     fonction: '',
@@ -257,22 +347,155 @@ const formData = ref({
   }
 })
 
+// Statut du CRV
+const crvStatut = computed(() => crvStore.crvStatus)
+const canEdit = computed(() => crvStore.isEditable)
+
+// Validation des phases - toutes les phases doivent être TERMINE ou NON_REALISE
+// Note: Le backend renvoie NON_COMMENCE (aligné sur le contrat backend v2)
+const phasesNonTraitees = computed(() => {
+  return crvStore.phases.filter(p => {
+    const statut = p.statut?.toUpperCase() || ''
+    // Phase traitée = TERMINE ou NON_REALISE (ou variantes)
+    const estTraitee = statut === 'TERMINE' ||
+                       statut === 'NON_REALISE' ||
+                       statut === 'NON_REALISEE'
+    return !estTraitee
+  })
+})
+
+const toutesPhaseTraitees = computed(() => {
+  if (crvStore.phases.length === 0) return true // Pas de phases = OK
+  return phasesNonTraitees.value.length === 0
+})
+
 onMounted(async () => {
-  // Créer le CRV s'il n'existe pas
-  if (!crvStore.currentCRV) {
-    try {
+  console.log('[CRVArrivee] onMounted - Initialisation...')
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    // Vérifier si un ID de CRV est passé en paramètre (édition d'un CRV existant)
+    const crvId = route.query.id
+
+    if (crvId) {
+      // Charger le CRV existant
+      console.log('[CRVArrivee] Chargement CRV existant:', crvId)
+      await crvStore.loadCRV(crvId)
+      console.log('[CRVArrivee] CRV chargé:', crvStore.currentCRV?.numeroCRV)
+    } else if (!crvStore.currentCRV) {
+      // Créer un nouveau CRV
+      console.log('[CRVArrivee] Création du CRV...')
       await crvStore.createCRV({
         type: 'arrivee',
         date: formData.value.header.date
       })
-    } catch (error) {
-      console.error('Erreur lors de la création du CRV:', error)
+      console.log('[CRVArrivee] CRV créé:', crvStore.currentCRV?.numeroCRV)
     }
+
+    // Démarrer automatiquement le CRV si en BROUILLON
+    if (crvStore.currentCRV?.statut === 'BROUILLON') {
+      console.log('[CRVArrivee] Démarrage du CRV (BROUILLON → EN_COURS)...')
+      try {
+        await crvStore.demarrerCRV()
+        console.log('[CRVArrivee] CRV démarré, nouveau statut:', crvStore.currentCRV?.statut)
+      } catch (e) {
+        console.warn('[CRVArrivee] Impossible de démarrer le CRV:', e.message)
+        // Continuer quand même - le backend n'a peut-être pas cette route
+      }
+    }
+
+    // Synchroniser les données du formulaire avec le CRV chargé
+    if (crvStore.currentCRV) {
+      // Synchroniser les infos du vol
+      if (crvStore.currentCRV.vol) {
+        const vol = crvStore.currentCRV.vol
+        formData.value.header = {
+          numeroVol: vol.numeroVol || '',
+          compagnieAerienne: vol.compagnieAerienne || '',
+          codeIATA: vol.codeIATA || '',
+          aeroportOrigine: vol.aeroportOrigine || '',
+          aeroportDestination: vol.aeroportDestination || '',
+          dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
+          immatriculation: vol.avion?.immatriculation || '',
+          typeAvion: vol.avion?.typeAvion || '',
+          poste: vol.poste || ''
+        }
+      }
+
+      // Synchroniser le personnel
+      if (crvStore.currentCRV.personnelAffecte?.length > 0) {
+        formData.value.personnes = [...crvStore.currentCRV.personnelAffecte]
+      }
+
+      // Synchroniser les engins
+      if (crvStore.engins?.length > 0) {
+        formData.value.engins = [...crvStore.engins]
+      }
+    }
+
+    console.log('[CRVArrivee] Initialisation terminée:', {
+      numeroCRV: crvStore.currentCRV?.numeroCRV,
+      statut: crvStore.currentCRV?.statut,
+      completude: crvStore.completude,
+      nbPhases: crvStore.phases.length,
+      nbCharges: crvStore.charges.length
+    })
+  } catch (error) {
+    console.error('[CRVArrivee] Erreur initialisation:', error)
+    errorMessage.value = error.message || 'Erreur lors du chargement du CRV'
+  } finally {
+    isLoading.value = false
   }
 })
 
-const nextStep = () => {
+// Surveiller les changements de complétude
+watch(() => crvStore.completude, (newVal, oldVal) => {
+  console.log(`[CRVArrivee] Complétude: ${oldVal}% → ${newVal}%`)
+})
+
+const nextStep = async () => {
   if (currentStep.value < 7) {
+    // Réinitialiser l'erreur de validation
+    stepValidationError.value = ''
+
+    // VALIDATION ÉTAPE 4 (Phases) : Toutes les phases doivent être traitées
+    if (currentStep.value === 4) {
+      if (!toutesPhaseTraitees.value) {
+        const nbNonTraitees = phasesNonTraitees.value.length
+        const phasesEnCours = crvStore.phases.filter(p => p.statut === 'EN_COURS')
+
+        let message = `Impossible de continuer : ${nbNonTraitees} phase(s) non traitée(s).\n\n`
+
+        if (phasesEnCours.length > 0) {
+          message += `Phase(s) en cours (à terminer) :\n`
+          phasesEnCours.forEach(p => {
+            message += `  - ${p.phase?.libelle || p.nomPhase || p.nom}\n`
+          })
+          message += '\n'
+        }
+
+        const phasesNonCommencees = crvStore.phases.filter(p => p.statut === 'NON_COMMENCE')
+        if (phasesNonCommencees.length > 0) {
+          message += `Phase(s) non démarrées :\n`
+          phasesNonCommencees.forEach(p => {
+            message += `  - ${p.phase?.libelle || p.nomPhase || p.nom}\n`
+          })
+        }
+
+        message += '\nPour chaque phase, vous devez :\n'
+        message += '• Soit la démarrer puis la terminer\n'
+        message += '• Soit la marquer comme "Non réalisée" avec un motif'
+
+        stepValidationError.value = message
+        alert(message)
+        console.warn('[CRVArrivee] Blocage étape 4 - Phases non traitées:', phasesNonTraitees.value)
+        return
+      }
+    }
+
+    // Sauvegarder les données de l'étape courante si nécessaire
+    await saveCurrentStepData()
     currentStep.value++
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -285,32 +508,352 @@ const prevStep = () => {
   }
 }
 
-const handleValidation = async (validationData) => {
+/**
+ * Sauvegarder les données de l'étape courante
+ */
+const saveCurrentStepData = async () => {
+  if (!canEdit.value) return
+
+  console.log(`[CRVArrivee] Sauvegarde étape ${currentStep.value}...`)
+
   try {
-    // Vérifier la complétude minimale
-    if (crvStore.completude < 80) {
-      alert(`La complétude du CRV est insuffisante (${crvStore.completude}%). Minimum requis : 80%`)
+    const crvId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+    if (!crvId) {
+      console.warn('[CRVArrivee] Pas de CRV actif pour sauvegarder')
       return
     }
 
-    // Sauvegarder toutes les données
-    if (crvStore.currentCRV) {
-      await crvStore.updatePersonnes(formData.value.personnes)
-      await crvStore.updateEngins(formData.value.engins)
-      await crvStore.updatePhases(formData.value.phases)
-      await crvStore.updateCharges(formData.value.charges)
-      await crvStore.updateEvenements(formData.value.evenements)
-      await crvStore.validateCRV()
+    // Sauvegarder selon l'étape
+    switch (currentStep.value) {
+      case 1:
+        // Étape 1: Sauvegarder les infos du vol
+        console.log('[CRVArrivee] Sauvegarde infos vol:', formData.value.header)
+        await crvStore.updateCRV({
+          vol: {
+            numeroVol: formData.value.header.numeroVol,
+            compagnieAerienne: formData.value.header.compagnieAerienne,
+            codeIATA: formData.value.header.codeIATA,
+            aeroportOrigine: formData.value.header.aeroportOrigine,
+            aeroportDestination: formData.value.header.aeroportDestination,
+            dateVol: formData.value.header.dateVol,
+            immatriculation: formData.value.header.immatriculation,
+            typeAvion: formData.value.header.typeAvion
+          }
+        })
+        console.log('[CRVArrivee] Infos vol sauvegardées')
+        break
+
+      case 2:
+        // Étape 2: Sauvegarder le personnel affecté
+        console.log('[CRVArrivee] Sauvegarde personnel:', formData.value.personnes)
+        if (formData.value.personnes.length > 0) {
+          await crvStore.updatePersonnel(formData.value.personnes)
+          console.log('[CRVArrivee] Personnel sauvegardé')
+        }
+        break
+
+      case 3:
+        // Étape 3: Engins - Sauvegarde vers backend
+        if (formData.value.engins.length > 0) {
+          console.log('[CRVArrivee] Sauvegarde engins:', formData.value.engins)
+          await crvStore.updateEngins(formData.value.engins)
+          console.log('[CRVArrivee] Engins sauvegardés')
+        } else {
+          console.log('[CRVArrivee] Aucun engin à sauvegarder')
+        }
+        break
+
+      // Étapes 4, 5, 6: gérées par leurs composants respectifs
+      default:
+        break
     }
-    isValidated.value = true
+
+    // Recharger le CRV pour avoir la complétude à jour
+    await crvStore.loadCRV(crvId)
+    console.log(`[CRVArrivee] CRV rechargé - Complétude: ${crvStore.completude}%`)
+
   } catch (error) {
-    console.error('Erreur lors de la validation:', error)
-    alert('Erreur lors de la validation du CRV')
+    console.error('[CRVArrivee] Erreur sauvegarde:', error)
+    // Ne pas bloquer la navigation en cas d'erreur
+  }
+}
+
+/**
+ * Handler pour les mises à jour de phases depuis CRVPhases
+ */
+const handlePhaseUpdate = async (phaseData) => {
+  console.log('[CRVArrivee] handlePhaseUpdate:', phaseData)
+  // Le composant CRVPhases appelle directement le store
+  // On recharge juste le CRV pour avoir la complétude à jour
+  if (crvStore.currentCRV) {
+    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    console.log(`[CRVArrivee] Après phase update - Complétude: ${crvStore.completude}%`)
+  }
+}
+
+/**
+ * Handler pour l'ajout de charges depuis CRVCharges
+ */
+const handleChargeAdded = async (chargeData) => {
+  console.log('[CRVArrivee] handleChargeAdded:', chargeData)
+  // Le composant CRVCharges appelle directement le store
+  if (crvStore.currentCRV) {
+    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    console.log(`[CRVArrivee] Après charge ajoutée - Complétude: ${crvStore.completude}%`)
+  }
+}
+
+/**
+ * Handler pour l'ajout d'événements depuis CRVEvenements
+ */
+const handleEvenementAdded = async (evenementData) => {
+  console.log('[CRVArrivee] handleEvenementAdded:', evenementData)
+  // Le composant CRVEvenements appelle directement le store
+  if (crvStore.currentCRV) {
+    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    console.log(`[CRVArrivee] Après événement ajouté - Complétude: ${crvStore.completude}%`)
+  }
+}
+
+/**
+ * Validation finale du CRV
+ */
+const handleValidation = async (validationData) => {
+  console.log('[CRVArrivee] handleValidation - Début validation...')
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const completude = crvStore.completude
+    const statut = crvStore.crvStatus
+
+    console.log('[CRVArrivee] État actuel:', { completude, statut })
+
+    // Étape 1: Si EN_COURS, essayer de terminer (seuil 50%)
+    if (statut === 'EN_COURS') {
+      if (completude < SEUILS_COMPLETUDE.TERMINER) {
+        errorMessage.value = `Complétude insuffisante pour terminer: ${completude}% (minimum ${SEUILS_COMPLETUDE.TERMINER}% requis)`
+        alert(errorMessage.value)
+        return
+      }
+
+      console.log('[CRVArrivee] Terminaison du CRV...')
+      try {
+        await crvStore.terminerCRV()
+        console.log('[CRVArrivee] CRV terminé')
+      } catch (e) {
+        console.error('[CRVArrivee] Erreur terminaison:', e)
+        if (crvStore.anomalies.length > 0) {
+          errorMessage.value = `Impossible de terminer:\n${crvStore.anomalies.join('\n')}`
+        } else {
+          errorMessage.value = e.message || 'Erreur lors de la terminaison'
+        }
+        alert(errorMessage.value)
+        return
+      }
+    }
+
+    // Recharger pour avoir le nouveau statut
+    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+
+    // Étape 2: Si TERMINE, essayer de valider (seuil 80%)
+    if (crvStore.crvStatus === 'TERMINE') {
+      const newCompletude = crvStore.completude
+
+      if (newCompletude < SEUILS_COMPLETUDE.VALIDER) {
+        errorMessage.value = `Complétude insuffisante pour valider: ${newCompletude}% (minimum ${SEUILS_COMPLETUDE.VALIDER}% requis)`
+        alert(errorMessage.value)
+        return
+      }
+
+      console.log('[CRVArrivee] Validation du CRV...')
+      try {
+        await crvStore.validateCRV(validationData?.commentaires)
+        console.log('[CRVArrivee] CRV validé')
+        isValidated.value = true
+      } catch (e) {
+        console.error('[CRVArrivee] Erreur validation:', e)
+        if (crvStore.anomalies.length > 0) {
+          errorMessage.value = `Impossible de valider:\n${crvStore.anomalies.join('\n')}`
+        } else {
+          errorMessage.value = e.message || 'Erreur lors de la validation'
+        }
+        alert(errorMessage.value)
+        return
+      }
+    }
+
+    // Succès
+    console.log('[CRVArrivee] Validation complète, statut final:', crvStore.crvStatus)
+
+  } catch (error) {
+    console.error('[CRVArrivee] Erreur validation:', error)
+    errorMessage.value = error.message || 'Erreur lors de la validation du CRV'
+    alert(errorMessage.value)
+  } finally {
+    isLoading.value = false
   }
 }
 
 const handleSubmit = () => {
   // Soumission gérée par la validation
+}
+
+// ============================================
+// FONCTIONS DE GÉNÉRATION DE DONNÉES DE TEST
+// ============================================
+
+/**
+ * Étape 1 : Générer données Header (infos vol)
+ * Champs attendus par le backend:
+ * - numeroVol, compagnieAerienne, codeIATA (obligatoires)
+ * - aeroportOrigine, aeroportDestination, dateVol, immatriculation, typeAvion (optionnels)
+ */
+const genererDonneesEtape1 = () => {
+  console.log('[CRVArrivee] Génération données étape 1 (Header)...')
+  // Mettre à jour chaque propriété individuellement pour que Vue détecte les changements
+  formData.value.header.numeroVol = 'THS001'
+  formData.value.header.compagnieAerienne = 'THS Airways'
+  formData.value.header.codeIATA = 'TH'
+  formData.value.header.aeroportOrigine = 'CDG'
+  formData.value.header.aeroportDestination = 'NDJ'
+  formData.value.header.dateVol = new Date().toISOString().split('T')[0]
+  formData.value.header.immatriculation = '5H-THS'
+  formData.value.header.typeAvion = 'B737-800'
+  formData.value.header.poste = 'P42'
+  console.log('[CRVArrivee] Données étape 1 générées:', formData.value.header)
+}
+
+/**
+ * Étape 2 : Générer données Personnel
+ * Structure backend: { nom, prenom, fonction, matricule?, telephone?, remarques? }
+ */
+const genererDonneesEtape2 = () => {
+  console.log('[CRVArrivee] Génération données étape 2 (Personnel)...')
+  // Vider et remplir le tableau pour que Vue détecte les changements
+  formData.value.personnes.length = 0
+  formData.value.personnes.push(
+    { nom: 'IBRAHIM', prenom: 'Ahmed', fonction: 'Chef d\'escale', matricule: 'CE-001' },
+    { nom: 'DIALLO', prenom: 'Mamadou', fonction: 'Agent de piste', matricule: 'AP-015' },
+    { nom: 'BARRY', prenom: 'Fatoumata', fonction: 'Responsable bagages', matricule: 'RB-023' }
+  )
+  console.log('[CRVArrivee] Données étape 2 générées:', formData.value.personnes)
+}
+
+/**
+ * Étape 3 : Générer données Engins
+ * Structure attendue: { type, immatriculation, heureDebut, heureFin, utilise }
+ * Types valides: tracteur, chariot_bagages, camion_fret, passerelle, gpu, asu, camion_avitaillement, autre
+ */
+const genererDonneesEtape3 = () => {
+  console.log('[CRVArrivee] Génération données étape 3 (Engins)...')
+  // Vider et remplir le tableau pour que Vue détecte les changements
+  formData.value.engins.length = 0
+  formData.value.engins.push(
+    { type: 'tracteur', immatriculation: 'TPB-001', heureDebut: '08:00', heureFin: '08:30', utilise: true },
+    { type: 'passerelle', immatriculation: 'ESP-012', heureDebut: '08:05', heureFin: '08:45', utilise: true },
+    { type: 'chariot_bagages', immatriculation: 'CVB-008', heureDebut: '08:10', heureFin: '08:40', utilise: true },
+    { type: 'gpu', immatriculation: 'GPU-003', heureDebut: '08:00', heureFin: '09:00', utilise: true }
+  )
+  console.log('[CRVArrivee] Données étape 3 générées:', formData.value.engins)
+}
+
+/**
+ * Étape 4 : Générer toutes les phases (démarrer + terminer)
+ */
+const genererDonneesEtape4 = async () => {
+  console.log('[CRVArrivee] Génération données étape 4 (Phases)...')
+  generatingPhases.value = true
+
+  try {
+    const phases = crvStore.phases
+    console.log(`[CRVArrivee] ${phases.length} phases à traiter`)
+
+    for (const phase of phases) {
+      const phaseId = phase.id || phase._id
+      const statut = phase.statut?.toUpperCase() || ''
+
+      // Obtenir le nom de la phase (structure backend imbriquée)
+      const phaseNom = phase.phase?.libelle || phase.nomPhase || phase.nom || 'Phase'
+
+      // Si la phase est déjà traitée, on passe
+      if (statut === 'TERMINE' || statut === 'NON_REALISE' || statut === 'NON_REALISEE') {
+        console.log(`[CRVArrivee] Phase ${phaseNom} déjà traitée (${statut})`)
+        continue
+      }
+
+      // Si NON_COMMENCE, on démarre puis termine
+      if (statut === 'NON_COMMENCE') {
+        console.log(`[CRVArrivee] Démarrage phase: ${phaseNom}`)
+        await crvStore.demarrerPhase(phaseId)
+        // Petit délai pour éviter les conflits
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
+
+      // Maintenant on termine la phase
+      console.log(`[CRVArrivee] Terminaison phase: ${phaseNom}`)
+      await crvStore.terminerPhase(phaseId)
+      // Petit délai entre chaque phase
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+
+    // Recharger le CRV pour avoir la complétude à jour
+    if (crvStore.currentCRV) {
+      await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    }
+
+    console.log('[CRVArrivee] Toutes les phases générées! Complétude:', crvStore.completude + '%')
+  } catch (error) {
+    console.error('[CRVArrivee] Erreur génération phases:', error)
+    alert('Erreur lors de la génération des phases: ' + error.message)
+  } finally {
+    generatingPhases.value = false
+  }
+}
+
+/**
+ * Étape 5 : Générer données Charges (confirmer aucune charge ou ajouter données)
+ */
+const genererDonneesEtape5 = async () => {
+  console.log('[CRVArrivee] Génération données étape 5 (Charges)...')
+
+  try {
+    // Option 1: Confirmer aucune charge
+    await crvStore.confirmerAbsence('charge')
+    console.log('[CRVArrivee] Confirmation "aucune charge" envoyée')
+
+    // Recharger le CRV
+    if (crvStore.currentCRV) {
+      await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    }
+
+    console.log('[CRVArrivee] Complétude après charges:', crvStore.completude + '%')
+  } catch (error) {
+    console.error('[CRVArrivee] Erreur génération charges:', error)
+    alert('Erreur: ' + error.message)
+  }
+}
+
+/**
+ * Étape 6 : Confirmer aucun événement
+ */
+const genererDonneesEtape6 = async () => {
+  console.log('[CRVArrivee] Génération données étape 6 (Événements)...')
+
+  try {
+    await crvStore.confirmerAbsence('evenement')
+    console.log('[CRVArrivee] Confirmation "aucun événement" envoyée')
+
+    // Recharger le CRV
+    if (crvStore.currentCRV) {
+      await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
+    }
+
+    console.log('[CRVArrivee] Complétude après événements:', crvStore.completude + '%')
+  } catch (error) {
+    console.error('[CRVArrivee] Erreur génération événements:', error)
+    alert('Erreur: ' + error.message)
+  }
 }
 
 const goBack = () => {
@@ -596,5 +1139,155 @@ const handleLogout = async () => {
   color: #065f46;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* Indicateur de progression des phases */
+.phases-progress-indicator {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e5e7eb;
+}
+
+.phases-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.phases-progress-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.phases-progress-count {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.phases-progress-count.complete {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.phases-progress-count.incomplete {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.phases-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.phases-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  transition: all 0.4s ease;
+  border-radius: 6px;
+}
+
+.phases-progress-fill.complete {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.phases-warning-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.phases-success-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #d1fae5;
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.warning-icon,
+.success-icon {
+  font-size: 18px;
+}
+
+/* Erreur de validation d'étape */
+.step-validation-error {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  color: #b91c1c;
+}
+
+.step-validation-error strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.step-validation-error pre {
+  font-family: inherit;
+  font-size: 14px;
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Bouton désactivé visuellement */
+.btn-disabled {
+  opacity: 0.7;
+  background: #9ca3af !important;
+  cursor: pointer;
+}
+
+.btn-disabled:hover {
+  background: #9ca3af !important;
+}
+
+/* Bouton de test/génération */
+.btn-test {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-test:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-test:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 </style>

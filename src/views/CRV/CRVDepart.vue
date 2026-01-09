@@ -124,17 +124,56 @@
 
           <!-- Étape 4: Phases -->
           <div v-show="currentStep === 4">
+            <!-- Indicateur de progression des phases -->
+            <div class="phases-progress-indicator">
+              <div class="phases-progress-header">
+                <span class="phases-progress-label">Progression des phases</span>
+                <span class="phases-progress-count" :class="{
+                  'complete': toutesPhaseTraitees,
+                  'incomplete': !toutesPhaseTraitees
+                }">
+                  {{ formData.phases.length - phasesNonTraitees.length }} / {{ formData.phases.length }} traitées
+                </span>
+              </div>
+              <div class="phases-progress-bar">
+                <div
+                  class="phases-progress-fill"
+                  :class="{ 'complete': toutesPhaseTraitees }"
+                  :style="{ width: formData.phases.length > 0 ? ((formData.phases.length - phasesNonTraitees.length) / formData.phases.length * 100) + '%' : '0%' }"
+                ></div>
+              </div>
+              <div v-if="!toutesPhaseTraitees" class="phases-warning-message">
+                {{ phasesNonTraitees.length }} phase(s) restante(s) à traiter avant de continuer
+              </div>
+              <div v-else class="phases-success-message">
+                Toutes les phases sont traitées - Vous pouvez continuer
+              </div>
+            </div>
+
             <CRVPhases
               v-model="formData.phases"
               crv-type="depart"
               :disabled="crvStore.isLocked"
             />
+
+            <!-- Message d'erreur si tentative de continuer sans traiter les phases -->
+            <div v-if="stepValidationError && currentStep === 4" class="step-validation-error">
+              <strong>Validation impossible</strong>
+              <pre>{{ stepValidationError }}</pre>
+            </div>
+
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button
+                v-if="!crvStore.isLocked"
+                @click="nextStep"
+                class="btn btn-primary"
+                :class="{ 'btn-disabled': !toutesPhaseTraitees }"
+                type="button"
+              >
+                {{ toutesPhaseTraitees ? 'Continuer' : `Traiter ${phasesNonTraitees.length} phase(s)` }}
               </button>
             </div>
           </div>
@@ -190,7 +229,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore } from '@/stores/crvStore'
@@ -210,6 +249,18 @@ const crvStore = useCRVStore()
 
 const currentStep = ref(1)
 const isValidated = ref(false)
+const stepValidationError = ref('')
+
+// Validation des phases - toutes les phases doivent être traitées
+const phasesNonTraitees = computed(() => {
+  // Pour les données locales, vérifier si realisee ou raisonNonRealisation
+  return formData.value.phases.filter(p => !p.realisee && !p.raisonNonRealisation)
+})
+
+const toutesPhaseTraitees = computed(() => {
+  if (formData.value.phases.length === 0) return true
+  return phasesNonTraitees.value.length === 0
+})
 
 const formData = ref({
   header: {
@@ -262,6 +313,30 @@ onMounted(async () => {
 
 const nextStep = () => {
   if (currentStep.value < 7) {
+    // Réinitialiser l'erreur de validation
+    stepValidationError.value = ''
+
+    // VALIDATION ÉTAPE 4 (Phases) : Toutes les phases doivent être traitées
+    if (currentStep.value === 4) {
+      if (!toutesPhaseTraitees.value) {
+        const nbNonTraitees = phasesNonTraitees.value.length
+
+        let message = `Impossible de continuer : ${nbNonTraitees} phase(s) non traitée(s).\n\n`
+        message += `Phase(s) non traitées :\n`
+        phasesNonTraitees.value.forEach(p => {
+          message += `  - ${p.nom}\n`
+        })
+        message += '\nPour chaque phase, vous devez :\n'
+        message += '• Soit la réaliser (remplir heures début/fin)\n'
+        message += '• Soit indiquer la raison de non-réalisation'
+
+        stepValidationError.value = message
+        alert(message)
+        console.warn('[CRVDepart] Blocage étape 4 - Phases non traitées:', phasesNonTraitees.value)
+        return
+      }
+    }
+
     currentStep.value++
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -585,5 +660,113 @@ const handleLogout = async () => {
   color: #065f46;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* Indicateur de progression des phases */
+.phases-progress-indicator {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e5e7eb;
+}
+
+.phases-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.phases-progress-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.phases-progress-count {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.phases-progress-count.complete {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.phases-progress-count.incomplete {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.phases-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.phases-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  transition: all 0.4s ease;
+  border-radius: 6px;
+}
+
+.phases-progress-fill.complete {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.phases-warning-message {
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.phases-success-message {
+  padding: 12px 16px;
+  background: #d1fae5;
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.step-validation-error {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  color: #b91c1c;
+}
+
+.step-validation-error strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.step-validation-error pre {
+  font-family: inherit;
+  font-size: 14px;
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-disabled {
+  opacity: 0.7;
+  background: #9ca3af !important;
 }
 </style>

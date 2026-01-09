@@ -29,6 +29,22 @@ const crvRoutes = [
     }
   },
   {
+    path: '/crv/liste',
+    name: 'CRVList',
+    component: () => import('@/views/CRV/CRVList.vue'),
+    meta: {
+      requiresAuth: true,
+      // Rôles avec accès CRV (lecture au minimum)
+      allowedRoles: [
+        ROLES.AGENT_ESCALE,
+        ROLES.CHEF_EQUIPE,
+        ROLES.SUPERVISEUR,
+        ROLES.MANAGER,
+        ROLES.QUALITE
+      ]
+    }
+  },
+  {
     path: '/crv/arrivee',
     name: 'CRVArrivee',
     component: () => import('@/views/CRV/CRVArrivee.vue'),

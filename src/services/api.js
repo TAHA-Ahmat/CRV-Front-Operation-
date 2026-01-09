@@ -12,7 +12,7 @@ import axios from 'axios'
 // ============================================
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   headers: {
     'Content-Type': 'application/json'
   },
@@ -174,67 +174,188 @@ export const personnesAPI = {
 }
 
 // ============================================
-// 5. CRV API (19 routes) - inclut Extension 6 Annulation
+// 5. CRV API (26 routes) - inclut Extension 6 Annulation + Workflow complet
 // ============================================
 
 export const crvAPI = {
   /**
    * Créer un CRV
    * POST /api/crv
-   * Body: { volId }
+   * Body: { volId?, type?, date?, responsableVolId? }
    * Middlewares: protect, excludeQualite, verifierPhasesAutoriseesCreationCRV, auditLog
    */
-  create: (data) => api.post('/crv', data),
+  create: (data) => {
+    console.log('[CRV API] create() - Création CRV avec:', data)
+    return api.post('/crv', data)
+  },
 
   /**
    * Lister les CRV
    * GET /api/crv
    * Query: { statut, compagnie, dateDebut, dateFin, page, limit, sort }
    */
-  getAll: (params) => api.get('/crv', { params }),
+  getAll: (params) => {
+    console.log('[CRV API] getAll() - Paramètres:', params)
+    return api.get('/crv', { params })
+  },
 
   /**
    * Obtenir un CRV complet
    * GET /api/crv/:id
    * Retourne: { crv, phases, charges, evenements, observations }
    */
-  getById: (id) => api.get(`/crv/${id}`),
+  getById: (id) => {
+    console.log('[CRV API] getById() - ID:', id)
+    return api.get(`/crv/${id}`)
+  },
 
   /**
    * Modifier un CRV
    * PATCH /api/crv/:id
-   * Body: { responsableVol?, statut?, ... }
+   * Body: { responsableVol?, vol?, confirmations?, ... }
    * Middlewares: protect, excludeQualite, verifierCRVNonVerrouille
+   * NOTE: Ne pas utiliser pour changer statut - utiliser demarrer/terminer
    */
-  update: (id, data) => api.patch(`/crv/${id}`, data),
+  update: (id, data) => {
+    console.log('[CRV API] update() - ID:', id, '- Data:', data)
+    return api.patch(`/crv/${id}`, data)
+  },
 
   /**
    * Supprimer un CRV
    * DELETE /api/crv/:id
    * Rôles: SUPERVISEUR, MANAGER
    */
-  delete: (id) => api.delete(`/crv/${id}`),
+  delete: (id) => {
+    console.log('[CRV API] delete() - ID:', id)
+    return api.delete(`/crv/${id}`)
+  },
+
+  // ============================================
+  // WORKFLOW CRV - Routes de transition d'état
+  // ============================================
+
+  /**
+   * 🆕 Démarrer un CRV (BROUILLON → EN_COURS)
+   * POST /api/crv/:id/demarrer
+   */
+  demarrer: (id) => {
+    console.log('[CRV API] demarrer() - Démarrage CRV ID:', id)
+    return api.post(`/crv/${id}/demarrer`)
+  },
+
+  /**
+   * 🆕 Terminer un CRV (EN_COURS → TERMINE)
+   * POST /api/crv/:id/terminer
+   * Prérequis: complétude >= 50%, phases obligatoires traitées
+   */
+  terminer: (id) => {
+    console.log('[CRV API] terminer() - Terminaison CRV ID:', id)
+    return api.post(`/crv/${id}/terminer`)
+  },
+
+  /**
+   * 🆕 Obtenir les transitions possibles
+   * GET /api/crv/:id/transitions
+   * Retourne: { statutActuel, transitionsPossibles: [...], completude }
+   */
+  getTransitions: (id) => {
+    console.log('[CRV API] getTransitions() - ID:', id)
+    return api.get(`/crv/${id}/transitions`)
+  },
+
+  /**
+   * 🆕 Confirmer absence (événement/observation/charge)
+   * POST /api/crv/:id/confirmer-absence
+   * Body: { type: 'evenement' | 'observation' | 'charge' }
+   * Impact complétude: événement +20%, observation +10%, charge +30%
+   */
+  confirmerAbsence: (id, type) => {
+    console.log('[CRV API] confirmerAbsence() - ID:', id, '- Type:', type)
+    return api.post(`/crv/${id}/confirmer-absence`, { type })
+  },
+
+  /**
+   * 🆕 Annuler confirmation absence
+   * DELETE /api/crv/:id/confirmer-absence
+   * Body: { type: 'evenement' | 'observation' | 'charge' }
+   */
+  annulerConfirmationAbsence: (id, type) => {
+    console.log('[CRV API] annulerConfirmationAbsence() - ID:', id, '- Type:', type)
+    return api.delete(`/crv/${id}/confirmer-absence`, { data: { type } })
+  },
+
+  /**
+   * 🆕 Mettre à jour les horaires du CRV
+   * PUT /api/crv/:id/horaire
+   * Body: { heureAtterrissageReelle?, heureArriveeAuParcReelle?,
+   *         heureDepartDuParcReelle?, heureDecollageReelle?, remarques? }
+   * Alias frontend acceptés: touchdownTime, onBlockTime, offBlockTime, takeoffTime
+   */
+  updateHoraire: (id, data) => {
+    console.log('[CRV API] updateHoraire() - ID:', id, '- Horaires:', data)
+    return api.put(`/crv/${id}/horaire`, data)
+  },
+
+  /**
+   * 🆕 Mettre à jour le personnel affecté (remplace tout)
+   * PUT /api/crv/:id/personnel
+   * Body: { personnelAffecte: [{ nom, prenom, fonction, matricule?, telephone?, remarques? }] }
+   */
+  updatePersonnel: (id, data) => {
+    console.log('[CRV API] updatePersonnel() - ID:', id, '- Personnel:', data)
+    return api.put(`/crv/${id}/personnel`, data)
+  },
+
+  /**
+   * 🆕 Ajouter une personne au personnel
+   * POST /api/crv/:id/personnel
+   * Body: { nom, prenom, fonction, matricule?, telephone?, remarques? }
+   */
+  addPersonne: (id, data) => {
+    console.log('[CRV API] addPersonne() - ID:', id, '- Personne:', data)
+    return api.post(`/crv/${id}/personnel`, data)
+  },
+
+  /**
+   * 🆕 Supprimer une personne du personnel
+   * DELETE /api/crv/:id/personnel/:personneId
+   */
+  removePersonne: (id, personneId) => {
+    console.log('[CRV API] removePersonne() - CRV ID:', id, '- Personne ID:', personneId)
+    return api.delete(`/crv/${id}/personnel/${personneId}`)
+  },
 
   /**
    * Ajouter une charge opérationnelle
    * POST /api/crv/:id/charges
    * Body: { typeCharge: 'PASSAGERS'|'BAGAGES'|'FRET', sensOperation: 'EMBARQUEMENT'|'DEBARQUEMENT', ... }
+   * Règles: PASSAGERS requiert passagersAdultes explicite, BAGAGES requiert poids si nombre>0
    */
-  addCharge: (id, data) => api.post(`/crv/${id}/charges`, data),
+  addCharge: (id, data) => {
+    console.log('[CRV API] addCharge() - CRV ID:', id, '- Charge:', data)
+    return api.post(`/crv/${id}/charges`, data)
+  },
 
   /**
    * Ajouter un événement
    * POST /api/crv/:id/evenements
-   * Body: { typeEvenement, gravite: 'MINEURE'|'MODEREE'|'MAJEURE'|'CRITIQUE', description }
+   * Body: { typeEvenement, gravite: 'MINEURE'|'MODEREE'|'MAJEURE'|'CRITIQUE', description, dateHeureDebut?, dateHeureFin? }
    */
-  addEvenement: (id, data) => api.post(`/crv/${id}/evenements`, data),
+  addEvenement: (id, data) => {
+    console.log('[CRV API] addEvenement() - CRV ID:', id, '- Événement:', data)
+    return api.post(`/crv/${id}/evenements`, data)
+  },
 
   /**
    * Ajouter une observation
    * POST /api/crv/:id/observations
-   * Body: { categorie: 'GENERALE'|'TECHNIQUE'|'OPERATIONNELLE'|'SECURITE'|'QUALITE'|'SLA', contenu }
+   * Body: { categorie: 'GENERALE'|'TECHNIQUE'|'OPERATIONNELLE'|'SECURITE'|'QUALITE'|'SLA', contenu, phaseConcernee? }
    */
-  addObservation: (id, data) => api.post(`/crv/${id}/observations`, data),
+  addObservation: (id, data) => {
+    console.log('[CRV API] addObservation() - CRV ID:', id, '- Observation:', data)
+    return api.post(`/crv/${id}/observations`, data)
+  },
 
   /**
    * Recherche full-text
@@ -366,7 +487,24 @@ export const phasesAPI = {
    * Lister les phases d'un CRV
    * GET /api/phases?crvId=xxx
    */
-  getByCRV: (crvId) => api.get('/phases', { params: { crvId } })
+  getByCRV: (crvId) => api.get('/phases', { params: { crvId } }),
+
+  /**
+   * Mise à jour manuelle d'une phase (heures saisies par l'utilisateur)
+   * PUT /api/crv/:crvId/phases/:phaseId
+   * Body: {
+   *   statut?: 'NON_COMMENCE' | 'EN_COURS' | 'TERMINE' | 'NON_REALISE',
+   *   heureDebutReelle?: 'HH:mm',
+   *   heureFinReelle?: 'HH:mm',
+   *   motifNonRealisation?: 'NON_NECESSAIRE' | 'EQUIPEMENT_INDISPONIBLE' | 'PERSONNEL_ABSENT' | 'CONDITIONS_METEO' | 'AUTRE',
+   *   detailMotif?: string,
+   *   remarques?: string
+   * }
+   */
+  updateManuel: (crvId, phaseId, data) => {
+    console.log('[PHASES API] updateManuel() - CRV:', crvId, '- Phase:', phaseId, '- Data:', data)
+    return api.put(`/crv/${crvId}/phases/${phaseId}`, data)
+  }
 }
 
 // ============================================
@@ -872,29 +1010,167 @@ export const slaAPI = {
 }
 
 // ============================================
-// 13. VALIDATION API (3 routes)
+// 13. VALIDATION API (4 routes)
 // ============================================
 
 export const validationAPI = {
   /**
    * Valider un CRV (SUPERVISEUR, MANAGER)
    * POST /api/validation/:id/valider
-   * Prérequis: completude >= 80%
+   * Body: { commentaires? }
+   * Prérequis: statut=TERMINE, completude >= 80%
+   * Résultat: statut passe à VALIDE puis potentiellement VERROUILLE
    */
-  valider: (id) => api.post(`/validation/${id}/valider`),
+  valider: (id, commentaires = null) => {
+    console.log('[VALIDATION API] valider() - CRV ID:', id, '- Commentaires:', commentaires)
+    const body = commentaires ? { commentaires } : {}
+    return api.post(`/validation/${id}/valider`, body)
+  },
+
+  /**
+   * 🆕 Verrouiller manuellement un CRV (après validation)
+   * POST /api/validation/:id/verrouiller
+   * Prérequis: statut=VALIDE
+   */
+  verrouiller: (id) => {
+    console.log('[VALIDATION API] verrouiller() - CRV ID:', id)
+    return api.post(`/validation/${id}/verrouiller`)
+  },
 
   /**
    * Déverrouiller un CRV (MANAGER uniquement)
    * POST /api/validation/:id/deverrouiller
    * Body: { raison }
+   * Résultat: CRV repasse en EN_COURS
    */
-  deverrouiller: (id, raison) => api.post(`/validation/${id}/deverrouiller`, { raison }),
+  deverrouiller: (id, raison) => {
+    console.log('[VALIDATION API] deverrouiller() - CRV ID:', id, '- Raison:', raison)
+    return api.post(`/validation/${id}/deverrouiller`, { raison })
+  },
 
   /**
    * Statut de validation d'un CRV
    * GET /api/validation/:id
    */
-  getStatus: (id) => api.get(`/validation/${id}`)
+  getStatus: (id) => {
+    console.log('[VALIDATION API] getStatus() - CRV ID:', id)
+    return api.get(`/validation/${id}`)
+  }
+}
+
+// ============================================
+// 14. ENGINS API (Référentiel + Affectation CRV)
+// ============================================
+
+export const enginsAPI = {
+  // --- Référentiel Engins (Parc matériel) ---
+
+  /**
+   * Lister tous les engins du parc
+   * GET /api/engins
+   * Query: ?typeEngin=TRACTEUR&statut=DISPONIBLE&page=1&limit=50
+   */
+  getAll: (params = {}) => {
+    console.log('[ENGINS API] getAll() - Params:', params)
+    return api.get('/engins', { params })
+  },
+
+  /**
+   * Obtenir les types d'engins disponibles
+   * GET /api/engins/types
+   */
+  getTypes: () => {
+    console.log('[ENGINS API] getTypes()')
+    return api.get('/engins/types')
+  },
+
+  /**
+   * Obtenir les engins disponibles (pour sélection)
+   * GET /api/engins/disponibles
+   * Query: ?typeEngin=GPU
+   */
+  getDisponibles: (typeEngin = null) => {
+    console.log('[ENGINS API] getDisponibles() - Type:', typeEngin)
+    const params = typeEngin ? { typeEngin } : {}
+    return api.get('/engins/disponibles', { params })
+  },
+
+  /**
+   * Créer un engin (MANAGER, ADMIN)
+   * POST /api/engins
+   * Body: { numeroEngin, typeEngin, marque?, modele? }
+   */
+  create: (data) => {
+    console.log('[ENGINS API] create() - Data:', data)
+    return api.post('/engins', data)
+  },
+
+  /**
+   * Obtenir un engin par ID
+   * GET /api/engins/:id
+   */
+  getById: (id) => {
+    console.log('[ENGINS API] getById() - ID:', id)
+    return api.get(`/engins/${id}`)
+  },
+
+  /**
+   * Modifier un engin
+   * PUT /api/engins/:id
+   */
+  update: (id, data) => {
+    console.log('[ENGINS API] update() - ID:', id, '- Data:', data)
+    return api.put(`/engins/${id}`, data)
+  },
+
+  /**
+   * Supprimer un engin
+   * DELETE /api/engins/:id
+   */
+  delete: (id) => {
+    console.log('[ENGINS API] delete() - ID:', id)
+    return api.delete(`/engins/${id}`)
+  },
+
+  // --- Engins affectés à un CRV ---
+
+  /**
+   * Obtenir les engins affectés à un CRV
+   * GET /api/crv/:crvId/engins
+   */
+  getByCRV: (crvId) => {
+    console.log('[ENGINS API] getByCRV() - CRV ID:', crvId)
+    return api.get(`/crv/${crvId}/engins`)
+  },
+
+  /**
+   * Mettre à jour (remplacer) tous les engins d'un CRV
+   * PUT /api/crv/:crvId/engins
+   * Body: { engins: [{ type, immatriculation, heureDebut, heureFin, utilise }] }
+   */
+  updateCRVEngins: (crvId, engins) => {
+    console.log('[ENGINS API] updateCRVEngins() - CRV ID:', crvId, '- Engins:', engins)
+    return api.put(`/crv/${crvId}/engins`, { engins })
+  },
+
+  /**
+   * Ajouter un engin à un CRV
+   * POST /api/crv/:crvId/engins
+   * Body: { enginId, heureDebut, heureFin?, usage, remarques? }
+   */
+  addToCRV: (crvId, data) => {
+    console.log('[ENGINS API] addToCRV() - CRV ID:', crvId, '- Data:', data)
+    return api.post(`/crv/${crvId}/engins`, data)
+  },
+
+  /**
+   * Retirer un engin d'un CRV
+   * DELETE /api/crv/:crvId/engins/:affectationId
+   */
+  removeFromCRV: (crvId, affectationId) => {
+    console.log('[ENGINS API] removeFromCRV() - CRV ID:', crvId, '- Affectation ID:', affectationId)
+    return api.delete(`/crv/${crvId}/engins/${affectationId}`)
+  }
 }
 
 // ============================================

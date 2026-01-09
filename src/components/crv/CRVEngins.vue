@@ -2,15 +2,32 @@
   <div class="crv-engins-component card">
     <h3 class="section-title">Engins utilisés</h3>
 
+    <!-- Aucun engin - DOCTRINE: pas de confirmation, juste informatif -->
+    <div v-if="localData.length === 0" class="empty-state">
+      <p>Aucun engin enregistré pour ce vol</p>
+    </div>
+
     <div class="engins-list">
       <div
         v-for="(engin, index) in localData"
         :key="index"
         class="engin-item"
       >
+        <div class="engin-header">
+          <span class="engin-number">#{{ index + 1 }}</span>
+          <button
+            v-if="!disabled"
+            @click="removeEngin(index)"
+            class="btn btn-danger btn-sm"
+            type="button"
+          >
+            Supprimer
+          </button>
+        </div>
         <div class="form-row">
+          <!-- CORRECTION AUDIT: 15 types d'engins conformes à la doctrine -->
           <div class="form-group">
-            <label class="form-label">Type d'engin</label>
+            <label class="form-label">Type d'engin <span class="required">*</span></label>
             <select
               v-model="engin.type"
               class="form-input"
@@ -18,14 +35,9 @@
               @change="emitUpdate"
             >
               <option value="">Sélectionner</option>
-              <option value="tracteur">Tracteur</option>
-              <option value="chariot_bagages">Chariot bagages</option>
-              <option value="camion_fret">Camion fret</option>
-              <option value="passerelle">Passerelle</option>
-              <option value="gpu">GPU (Groupe de parc)</option>
-              <option value="asu">ASU (Air Start Unit)</option>
-              <option value="camion_avitaillement">Camion avitaillement</option>
-              <option value="autre">Autre</option>
+              <option v-for="type in typesEngin" :key="type.value" :value="type.value">
+                {{ type.label }}
+              </option>
             </select>
           </div>
 
@@ -41,49 +53,55 @@
             />
           </div>
 
+          <!-- CORRECTION AUDIT: Champ usage avec enum conforme -->
           <div class="form-group">
-            <label class="form-label">Durée d'utilisation</label>
-            <div class="time-range">
-              <input
-                v-model="engin.heureDebut"
-                type="time"
-                class="form-input"
-                :disabled="disabled"
-                @input="emitUpdate"
-              />
-              <span>→</span>
-              <input
-                v-model="engin.heureFin"
-                type="time"
-                class="form-input"
-                :disabled="disabled"
-                @input="emitUpdate"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Utilisé</label>
+            <label class="form-label">Statut d'usage</label>
             <select
-              v-model="engin.utilise"
+              v-model="engin.usage"
               class="form-input"
               :disabled="disabled"
               @change="emitUpdate"
             >
-              <option :value="true">Oui</option>
-              <option :value="false">Non (prévu mais non utilisé)</option>
+              <option v-for="usage in usagesEngin" :key="usage.value" :value="usage.value">
+                {{ usage.label }}
+              </option>
             </select>
           </div>
+        </div>
 
-          <div class="form-actions">
-            <button
-              v-if="!disabled"
-              @click="removeEngin(index)"
-              class="btn btn-danger btn-sm"
-              type="button"
-            >
-              Supprimer
-            </button>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Heure de début</label>
+            <input
+              v-model="engin.heureDebut"
+              type="time"
+              class="form-input"
+              :disabled="disabled"
+              @input="emitUpdate"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Heure de fin</label>
+            <input
+              v-model="engin.heureFin"
+              type="time"
+              class="form-input"
+              :disabled="disabled"
+              @input="emitUpdate"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Remarques</label>
+            <input
+              v-model="engin.remarques"
+              type="text"
+              class="form-input"
+              placeholder="Observations..."
+              :disabled="disabled"
+              @input="emitUpdate"
+            />
           </div>
         </div>
       </div>
@@ -96,7 +114,22 @@
 </template>
 
 <script setup>
+/**
+ * CRVEngins.vue - CORRIGÉ AUDIT 2025-01
+ *
+ * CORRECTIONS APPLIQUÉES:
+ * - CORRIGÉ: 15 types d'engins conformes à la doctrine (TRACTEUR, CHARIOT_BAGAGES, etc.)
+ * - AJOUTÉ: Champ usage avec enum USAGE_ENGIN (EN_SERVICE, DISPONIBLE, etc.)
+ * - AJOUTÉ: Import des enums centralisés
+ * - AJOUTÉ: Console.log format [CRV][ENGIN_*]
+ * - AJOUTÉ: Champ remarques
+ */
 import { ref, watch } from 'vue'
+import {
+  TYPE_ENGIN,
+  USAGE_ENGIN,
+  getEnumOptions
+} from '@/config/crvEnums'
 
 const props = defineProps({
   modelValue: {
@@ -111,29 +144,45 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+// CORRECTION AUDIT: Utilisation des enums centralisés
+const typesEngin = getEnumOptions(TYPE_ENGIN)
+const usagesEngin = getEnumOptions(USAGE_ENGIN)
+
+console.log('[CRV][ENGIN_INIT] Enums chargés:', {
+  typesEngin: typesEngin.length,
+  usagesEngin: usagesEngin.length
+})
+
 const localData = ref([...props.modelValue])
 
 watch(() => props.modelValue, (newValue) => {
-  localData.value = [...newValue]
-}, { deep: true })
+  if (newValue && Array.isArray(newValue)) {
+    localData.value = newValue.map(item => ({ ...item }))
+    console.log('[CRV][ENGIN_WATCH] Données mises à jour:', localData.value.length, 'engins')
+  }
+}, { deep: true, immediate: true })
 
 const addEngin = () => {
+  console.log('[CRV][ENGIN_ADD] Ajout d\'un engin')
   localData.value.push({
     type: '',
     immatriculation: '',
     heureDebut: '',
     heureFin: '',
-    utilise: true
+    usage: USAGE_ENGIN.EN_SERVICE, // Valeur par défaut conforme
+    remarques: ''
   })
   emitUpdate()
 }
 
 const removeEngin = (index) => {
+  console.log('[CRV][ENGIN_REMOVE] Suppression engin index:', index)
   localData.value.splice(index, 1)
   emitUpdate()
 }
 
 const emitUpdate = () => {
+  console.log('[CRV][ENGIN_UPDATE] Émission mise à jour:', localData.value.length, 'engins')
   emit('update:modelValue', localData.value)
 }
 </script>
@@ -141,6 +190,23 @@ const emitUpdate = () => {
 <style scoped>
 .crv-engins-component {
   margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  margin-bottom: 15px;
 }
 
 .engins-list {
@@ -157,34 +223,99 @@ const emitUpdate = () => {
   border: 1px solid #e5e7eb;
 }
 
+.engin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.engin-number {
+  font-weight: 600;
+  color: #2563eb;
+}
+
 .form-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 2fr 1fr auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 15px;
-  align-items: end;
+  margin-bottom: 10px;
 }
 
-.time-range {
+.form-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.time-range input {
-  flex: 1;
+.form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
 }
 
-.time-range span {
+.form-input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input:disabled {
+  background: #f3f4f6;
   color: #6b7280;
 }
 
-.form-actions {
-  display: flex;
-  align-items: flex-end;
+.btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
 }
 
 .btn-sm {
-  padding: 8px 12px;
+  padding: 6px 12px;
   font-size: 13px;
+}
+
+.required {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>
