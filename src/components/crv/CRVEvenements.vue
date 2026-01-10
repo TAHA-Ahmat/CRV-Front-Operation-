@@ -59,14 +59,24 @@
       <h4 class="subsection-title">Signaler un événement</h4>
 
       <div class="form-row">
-        <!-- CORRECTION AUDIT: Types d'événement conformes à la doctrine -->
+        <!-- MVS-9: Types d'événement étendus avec groupes -->
         <div class="form-group">
           <label class="form-label">Type d'événement <span class="required">*</span></label>
           <select v-model="newEvenement.typeEvenement" class="form-input">
             <option value="">Sélectionner</option>
-            <option v-for="type in typesEvenement" :key="type.value" :value="type.value">
-              {{ type.label }}
-            </option>
+            <optgroup
+              v-for="(groupe, groupeKey) in typesEvenementGroupes"
+              :key="groupeKey"
+              :label="groupe.label"
+            >
+              <option
+                v-for="typeVal in groupe.types"
+                :key="typeVal"
+                :value="typeVal"
+              >
+                {{ getTypeLabel(typeVal) }}
+              </option>
+            </optgroup>
           </select>
         </div>
 
@@ -180,6 +190,8 @@ import { ref, computed } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
 import {
   TYPE_EVENEMENT,
+  TYPE_EVENEMENT_LABELS,
+  TYPE_EVENEMENT_GROUPES,
   GRAVITE_EVENEMENT,
   STATUT_EVENEMENT,
   getEnumOptions
@@ -257,19 +269,13 @@ const formatDate = (date) => {
   }
 }
 
-// CORRECTION AUDIT: Labels conformes à la doctrine
+// MVS-9: Labels conformes aux types étendus
 const getTypeLabel = (type) => {
-  const labels = {
-    [TYPE_EVENEMENT.PANNE_EQUIPEMENT]: 'Panne équipement',
-    [TYPE_EVENEMENT.ABSENCE_PERSONNEL]: 'Absence personnel',
-    [TYPE_EVENEMENT.RETARD]: 'Retard',
-    [TYPE_EVENEMENT.INCIDENT_SECURITE]: 'Incident sécurité',
-    [TYPE_EVENEMENT.PROBLEME_TECHNIQUE]: 'Problème technique',
-    [TYPE_EVENEMENT.METEO]: 'Météo',
-    [TYPE_EVENEMENT.AUTRE]: 'Autre'
-  }
-  return labels[type] || type
+  return TYPE_EVENEMENT_LABELS[type] || type
 }
+
+// MVS-9: Groupes pour affichage optgroup dans le select
+const typesEvenementGroupes = TYPE_EVENEMENT_GROUPES
 
 // CORRECTION AUDIT: Gravités conformes à la doctrine
 const getGraviteLabel = (gravite) => {

@@ -2,6 +2,14 @@
   <div class="crv-engins-component card">
     <h3 class="section-title">Engins utilisés</h3>
 
+    <!-- MVS-6 #1: Note comportement remplacement -->
+    <div v-if="!disabled" class="replacement-warning">
+      <p>
+        <strong>Attention :</strong> Cette liste remplacera complètement les engins existants.
+        Assurez-vous que tous les engins sont inclus avant d'enregistrer.
+      </p>
+    </div>
+
     <!-- Aucun engin - DOCTRINE: pas de confirmation, juste informatif -->
     <div v-if="localData.length === 0" class="empty-state">
       <p>Aucun engin enregistré pour ce vol</p>
@@ -41,12 +49,13 @@
             </select>
           </div>
 
+          <!-- MVS-6 #2: Uppercase automatique sur immatriculation -->
           <div class="form-group">
             <label class="form-label">Immatriculation</label>
             <input
               v-model="engin.immatriculation"
               type="text"
-              class="form-input"
+              class="form-input immatriculation-input"
               placeholder="ex: ENG123"
               :disabled="disabled"
               @input="emitUpdate"
@@ -154,11 +163,18 @@ console.log('[CRV][ENGIN_INIT] Enums chargés:', {
 })
 
 const localData = ref([...props.modelValue])
+let isUpdating = false // Flag pour éviter boucle infinie
 
 watch(() => props.modelValue, (newValue) => {
+  if (isUpdating) return // Éviter boucle infinie
   if (newValue && Array.isArray(newValue)) {
-    localData.value = newValue.map(item => ({ ...item }))
-    console.log('[CRV][ENGIN_WATCH] Données mises à jour:', localData.value.length, 'engins')
+    // Vérifier si les données ont réellement changé
+    const newJson = JSON.stringify(newValue)
+    const localJson = JSON.stringify(localData.value)
+    if (newJson !== localJson) {
+      localData.value = newValue.map(item => ({ ...item }))
+      console.log('[CRV][ENGIN_WATCH] Données mises à jour:', localData.value.length, 'engins')
+    }
   }
 }, { deep: true, immediate: true })
 
@@ -182,8 +198,10 @@ const removeEngin = (index) => {
 }
 
 const emitUpdate = () => {
+  isUpdating = true
   console.log('[CRV][ENGIN_UPDATE] Émission mise à jour:', localData.value.length, 'engins')
-  emit('update:modelValue', localData.value)
+  emit('update:modelValue', [...localData.value])
+  setTimeout(() => { isUpdating = false }, 0)
 }
 </script>
 
@@ -311,6 +329,31 @@ const emitUpdate = () => {
 .required {
   color: #dc2626;
   font-weight: 700;
+}
+
+/* MVS-6 #1: Style note remplacement */
+.replacement-warning {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+}
+
+.replacement-warning p {
+  margin: 0;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+/* MVS-6 #2: Uppercase sur immatriculation */
+.immatriculation-input {
+  text-transform: uppercase;
+}
+
+.immatriculation-input::placeholder {
+  text-transform: none;
 }
 
 @media (max-width: 768px) {

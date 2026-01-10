@@ -12,10 +12,25 @@
           :style="{ width: completude + '%' }"
           :class="scoreClass"
         ></div>
-        <div class="threshold-marker" style="left: 80%"></div>
+        <!-- MVS-2: Seuil 50% pour terminer -->
+        <div class="threshold-marker threshold-terminer" style="left: 50%" title="50% - Seuil pour terminer"></div>
+        <!-- Seuil 80% pour valider -->
+        <div class="threshold-marker threshold-valider" style="left: 80%" title="80% - Seuil pour valider"></div>
+      </div>
+      <!-- MVS-2 #4: Affichage explicite des seuils -->
+      <div class="threshold-labels">
+        <div class="threshold-info">
+          <span class="threshold-mark terminer" :class="{ 'reached': completude >= 50 }">50%</span>
+          <span class="threshold-text">Terminer</span>
+        </div>
+        <div class="threshold-info">
+          <span class="threshold-mark valider" :class="{ 'reached': completude >= 80 }">80%</span>
+          <span class="threshold-text">Valider</span>
+        </div>
       </div>
       <div class="threshold-label">
-        <span v-if="completude < 80" class="warning">Minimum 80% requis pour valider</span>
+        <span v-if="completude < 50" class="danger">Minimum 50% requis pour terminer le CRV</span>
+        <span v-else-if="completude < 80" class="warning">CRV pret a terminer. 80% requis pour validation</span>
         <span v-else class="success">Pret pour validation</span>
       </div>
     </div>
@@ -190,17 +205,94 @@ const scoreClass = computed(() => {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #374151;
+}
+
+.threshold-marker.threshold-terminer {
+  background: #f59e0b;
+}
+
+.threshold-marker.threshold-valider {
+  background: #10b981;
+}
+
+/* MVS-2 #4: Labels des seuils */
+.threshold-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 10%;
+}
+
+.threshold-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.threshold-mark {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.threshold-mark.terminer {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.threshold-mark.terminer.reached {
+  background: #fbbf24;
+  color: white;
+}
+
+.threshold-mark.valider {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.threshold-mark.valider.reached {
+  background: #10b981;
+  color: white;
+}
+
+.threshold-text {
+  font-size: 10px;
+  color: #6b7280;
 }
 
 .threshold-label {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 12px;
-  text-align: right;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
-.threshold-label .warning { color: #f59e0b; }
-.threshold-label .success { color: #10b981; }
+.threshold-label .danger {
+  color: #b91c1c;
+  background: #fee2e2;
+  display: block;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.threshold-label .warning {
+  color: #92400e;
+  background: #fef3c7;
+  display: block;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.threshold-label .success {
+  color: #065f46;
+  background: #d1fae5;
+  display: block;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
 
 /* Details */
 .completude-details {

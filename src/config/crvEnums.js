@@ -92,28 +92,122 @@ export const CATEGORIE_PHASE = Object.freeze({
 })
 
 // ============================================
-// TYPES ÉVÉNEMENT
-// Référence : DOCUMENTATION_FRONTEND_CRV.md - Bloc 6.c
+// RÔLES PERSONNEL (MVS-9 #1)
+// Référence : MVS-9-Transversal/05-process-metier.md
+// ============================================
+
+export const ROLE_PERSONNEL = Object.freeze({
+  CHEF_AVION: 'CHEF_AVION',
+  AGENT_TRAFIC: 'AGENT_TRAFIC',
+  AGENT_PISTE: 'AGENT_PISTE',
+  AGENT_BAGAGES: 'AGENT_BAGAGES',
+  AGENT_FRET: 'AGENT_FRET',
+  SUPERVISEUR: 'SUPERVISEUR',
+  COORDINATEUR: 'COORDINATEUR',
+  AUTRE: 'AUTRE'
+})
+
+export const ROLE_PERSONNEL_LABELS = Object.freeze({
+  [ROLE_PERSONNEL.CHEF_AVION]: 'Chef avion',
+  [ROLE_PERSONNEL.AGENT_TRAFIC]: 'Agent trafic',
+  [ROLE_PERSONNEL.AGENT_PISTE]: 'Agent piste',
+  [ROLE_PERSONNEL.AGENT_BAGAGES]: 'Agent bagages',
+  [ROLE_PERSONNEL.AGENT_FRET]: 'Agent fret',
+  [ROLE_PERSONNEL.SUPERVISEUR]: 'Superviseur',
+  [ROLE_PERSONNEL.COORDINATEUR]: 'Coordinateur',
+  [ROLE_PERSONNEL.AUTRE]: 'Autre'
+})
+
+export const ROLE_PERSONNEL_DESCRIPTIONS = Object.freeze({
+  [ROLE_PERSONNEL.CHEF_AVION]: 'Responsable de la coordination des opérations autour de l\'avion',
+  [ROLE_PERSONNEL.AGENT_TRAFIC]: 'Gère le trafic passagers et les formalités',
+  [ROLE_PERSONNEL.AGENT_PISTE]: 'Intervient sur les opérations piste',
+  [ROLE_PERSONNEL.AGENT_BAGAGES]: 'Gère le chargement/déchargement des bagages',
+  [ROLE_PERSONNEL.AGENT_FRET]: 'Gère le chargement/déchargement du fret',
+  [ROLE_PERSONNEL.SUPERVISEUR]: 'Supervise les équipes au sol',
+  [ROLE_PERSONNEL.COORDINATEUR]: 'Coordonne entre différents services',
+  [ROLE_PERSONNEL.AUTRE]: 'Autre rôle (précisez)'
+})
+
+// ============================================
+// TYPES ÉVÉNEMENT (MVS-9 #2 - ÉTENDU)
+// Référence : MVS-9-Transversal/05-process-metier.md - 14 types
 // ============================================
 
 export const TYPE_EVENEMENT = Object.freeze({
-  PANNE_EQUIPEMENT: 'PANNE_EQUIPEMENT',
-  ABSENCE_PERSONNEL: 'ABSENCE_PERSONNEL',
-  RETARD: 'RETARD',
+  // Types retard détaillés
+  RETARD_PASSAGERS: 'RETARD_PASSAGERS',
+  RETARD_BAGAGES: 'RETARD_BAGAGES',
+  RETARD_FRET: 'RETARD_FRET',
+  RETARD_CARBURANT: 'RETARD_CARBURANT',
+  RETARD_EQUIPAGE: 'RETARD_EQUIPAGE',
+  RETARD_TECHNIQUE: 'RETARD_TECHNIQUE',
+  RETARD_METEO: 'RETARD_METEO',
+  RETARD_ATC: 'RETARD_ATC',
+  // Types incidents
   INCIDENT_SECURITE: 'INCIDENT_SECURITE',
-  PROBLEME_TECHNIQUE: 'PROBLEME_TECHNIQUE',
-  METEO: 'METEO',
+  INCIDENT_SURETE: 'INCIDENT_SURETE',
+  INCIDENT_TECHNIQUE: 'INCIDENT_TECHNIQUE',
+  // Types changements
+  CHANGEMENT_PORTE: 'CHANGEMENT_PORTE',
+  CHANGEMENT_STAND: 'CHANGEMENT_STAND',
+  // Autre
   AUTRE: 'AUTRE'
 })
 
 export const TYPE_EVENEMENT_LABELS = Object.freeze({
-  [TYPE_EVENEMENT.PANNE_EQUIPEMENT]: 'Panne équipement',
-  [TYPE_EVENEMENT.ABSENCE_PERSONNEL]: 'Absence personnel',
-  [TYPE_EVENEMENT.RETARD]: 'Retard',
+  [TYPE_EVENEMENT.RETARD_PASSAGERS]: 'Retard passagers',
+  [TYPE_EVENEMENT.RETARD_BAGAGES]: 'Retard bagages',
+  [TYPE_EVENEMENT.RETARD_FRET]: 'Retard fret',
+  [TYPE_EVENEMENT.RETARD_CARBURANT]: 'Retard carburant',
+  [TYPE_EVENEMENT.RETARD_EQUIPAGE]: 'Retard équipage',
+  [TYPE_EVENEMENT.RETARD_TECHNIQUE]: 'Retard technique',
+  [TYPE_EVENEMENT.RETARD_METEO]: 'Retard météo',
+  [TYPE_EVENEMENT.RETARD_ATC]: 'Retard ATC',
   [TYPE_EVENEMENT.INCIDENT_SECURITE]: 'Incident sécurité',
-  [TYPE_EVENEMENT.PROBLEME_TECHNIQUE]: 'Problème technique',
-  [TYPE_EVENEMENT.METEO]: 'Météo',
+  [TYPE_EVENEMENT.INCIDENT_SURETE]: 'Incident sûreté',
+  [TYPE_EVENEMENT.INCIDENT_TECHNIQUE]: 'Incident technique',
+  [TYPE_EVENEMENT.CHANGEMENT_PORTE]: 'Changement de porte',
+  [TYPE_EVENEMENT.CHANGEMENT_STAND]: 'Changement de stand',
   [TYPE_EVENEMENT.AUTRE]: 'Autre'
+})
+
+// Groupes de types événement pour UI simplifiée
+export const TYPE_EVENEMENT_GROUPES = Object.freeze({
+  RETARDS: {
+    label: 'Retards',
+    types: [
+      TYPE_EVENEMENT.RETARD_PASSAGERS,
+      TYPE_EVENEMENT.RETARD_BAGAGES,
+      TYPE_EVENEMENT.RETARD_FRET,
+      TYPE_EVENEMENT.RETARD_CARBURANT,
+      TYPE_EVENEMENT.RETARD_EQUIPAGE,
+      TYPE_EVENEMENT.RETARD_TECHNIQUE,
+      TYPE_EVENEMENT.RETARD_METEO,
+      TYPE_EVENEMENT.RETARD_ATC
+    ]
+  },
+  INCIDENTS: {
+    label: 'Incidents',
+    types: [
+      TYPE_EVENEMENT.INCIDENT_SECURITE,
+      TYPE_EVENEMENT.INCIDENT_SURETE,
+      TYPE_EVENEMENT.INCIDENT_TECHNIQUE
+    ]
+  },
+  CHANGEMENTS: {
+    label: 'Changements',
+    types: [
+      TYPE_EVENEMENT.CHANGEMENT_PORTE,
+      TYPE_EVENEMENT.CHANGEMENT_STAND
+    ]
+  },
+  AUTRES: {
+    label: 'Autres',
+    types: [
+      TYPE_EVENEMENT.AUTRE
+    ]
+  }
 })
 
 // ============================================
@@ -444,7 +538,9 @@ const ENUM_LABELS_MAP = new Map([
   [CATEGORIE_OBSERVATION, CATEGORIE_OBSERVATION_LABELS],
   [VISIBILITE_OBSERVATION, VISIBILITE_OBSERVATION_LABELS],
   [MOTIF_NON_REALISATION, MOTIF_NON_REALISATION_LABELS],
-  [USAGE_ENGIN, USAGE_ENGIN_LABELS]
+  [USAGE_ENGIN, USAGE_ENGIN_LABELS],
+  // MVS-9: Nouveaux enums
+  [ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS]
 ])
 
 /**
@@ -482,6 +578,7 @@ export default {
   // Types
   TYPE_EVENEMENT,
   TYPE_EVENEMENT_LABELS,
+  TYPE_EVENEMENT_GROUPES, // MVS-9: Groupes pour UI
   TYPE_CHARGE,
   TYPE_CHARGE_LABELS,
   TYPE_FRET,
@@ -505,6 +602,11 @@ export default {
   MOTIF_NON_REALISATION_LABELS,
   USAGE_ENGIN,
   USAGE_ENGIN_LABELS,
+
+  // MVS-9: Rôles personnel
+  ROLE_PERSONNEL,
+  ROLE_PERSONNEL_LABELS,
+  ROLE_PERSONNEL_DESCRIPTIONS,
 
   // Constantes
   SEUILS_COMPLETUDE,

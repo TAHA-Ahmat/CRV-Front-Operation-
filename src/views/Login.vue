@@ -56,6 +56,13 @@
             </button>
           </div>
 
+          <!-- MVS-1 #1: Information sur la durée de session -->
+          <div class="session-info text-center">
+            <p class="text-xs text-gray-500">
+              La session reste active pendant 3 heures
+            </p>
+          </div>
+
           <!-- Texte mot de passe oublié - CONFORME AU CONTRAT BACKEND -->
           <div class="pt-4 text-center">
             <p class="text-sm text-gray-600">
@@ -66,9 +73,10 @@
         </form>
       </div>
 
+      <!-- MVS-1 #3: Système fermé explicite -->
       <div class="bg-gray-50 px-6 py-4 text-center border-t border-gray-200 rounded-b-lg">
-        <p class="text-xs text-gray-600">Portail sécurisé - Accès réservé au personnel THS</p>
-        <p class="text-xs text-gray-500 mt-1">Aucune inscription publique disponible</p>
+        <p class="text-xs text-gray-600">Portail sécurisé - Accès réservé au personnel SDTA/THS</p>
+        <p class="text-xs text-gray-500 mt-1">Pour obtenir un accès, contactez votre responsable</p>
       </div>
     </div>
   </div>

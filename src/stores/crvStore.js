@@ -172,6 +172,31 @@ export const useCRVStore = defineStore('crv', {
     getErrorFields: (state) => state.errorFields,
     hasError: (state) => !!state.error,
 
+    // MVS-2 #5: Vérification si CRV peut être annulé
+    canAnnuler: (state) => {
+      const crv = state.currentCRV
+      if (!crv) return false
+      const statut = crv.statut
+      // Pas déjà annulé et pas verrouillé
+      return statut && statut !== STATUT_CRV.ANNULE && statut !== STATUT_CRV.VERROUILLE
+    },
+
+    // MVS-2 #11: Vérification si CRV peut être supprimé
+    canSupprimer: (state) => {
+      const crv = state.currentCRV
+      if (!crv) return false
+      const statut = crv.statut
+      // Pas verrouillé
+      return statut && statut !== STATUT_CRV.VERROUILLE
+    },
+
+    // MVS-2 #5: Vérification si CRV peut être réactivé
+    canReactiver: (state) => {
+      const crv = state.currentCRV
+      if (!crv) return false
+      return crv.statut === STATUT_CRV.ANNULE
+    },
+
     // Phases
     getPhases: (state) => state.phases,
     getPhasesEnCours: (state) => state.phases.filter(p => p.statut === 'EN_COURS'),
@@ -495,17 +520,38 @@ export const useCRVStore = defineStore('crv', {
     },
 
     /**
-     * SUPPRIMÉ : confirmerAbsence(type)
-     * RAISON : Doctrine "Absence = Non documenté"
-     * REF : DOCUMENTATION_FRONTEND_CRV.md Section 1.2.5
-     * Le backend attribue automatiquement les points pour absence (vol nominal)
+     * MVS-2: Confirmer l'absence de données pour une section
+     * Permet de signaler explicitement qu'une section est vide (vol nominal)
+     * @param {string} type - 'charge', 'evenement', 'observation'
      */
+    async confirmerAbsence(type) {
+      if (!this.currentCRV) throw new Error('Aucun CRV actif')
+      this._checkEditable()
 
-    /**
-     * SUPPRIMÉ : annulerConfirmationAbsence(type)
-     * RAISON : Doctrine "Absence = Non documenté"
-     * REF : DOCUMENTATION_FRONTEND_CRV.md Section 1.2.5
-     */
+      const crvId = this.currentCRV.id || this.currentCRV._id
+      console.log('[CRV][CONFIRMER_ABSENCE]', { crvId, type })
+
+      this.saving = true
+      this.clearError()
+
+      try {
+        const response = await crvAPI.confirmerAbsence(crvId, type)
+        const result = this._extractData(response)
+
+        console.log('[CRV][CONFIRMER_ABSENCE]', { result: 'success', type })
+
+        // Recharger pour mettre à jour la complétude
+        await this.loadCRV(crvId)
+
+        return result
+      } catch (error) {
+        console.log('[CRV][API_ERROR]', { action: 'confirmerAbsence', error: error.message })
+        this._handleError(error, `Erreur lors de la confirmation d'absence de ${type}`)
+        throw error
+      } finally {
+        this.saving = false
+      }
+    },
 
     async updateHoraire(data) {
       if (!this.currentCRV) throw new Error('Aucun CRV actif')

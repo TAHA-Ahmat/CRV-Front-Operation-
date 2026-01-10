@@ -48,13 +48,33 @@
             />
           </div>
 
+          <!-- MVS-9 #1: Select avec enum ROLE_PERSONNEL -->
           <div class="form-group">
-            <label class="form-label">Fonction <span class="required">*</span></label>
+            <label class="form-label">Rôle <span class="required">*</span></label>
+            <select
+              v-model="personne.role"
+              class="form-input"
+              :disabled="disabled"
+              @change="emitUpdate"
+            >
+              <option value="">Sélectionner un rôle</option>
+              <option v-for="role in rolesPersonnel" :key="role.value" :value="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+            <span v-if="personne.role && roleDescriptions[personne.role]" class="role-description">
+              {{ roleDescriptions[personne.role] }}
+            </span>
+          </div>
+
+          <!-- MVS-9: Champ libre si rôle = AUTRE -->
+          <div v-if="personne.role === 'AUTRE'" class="form-group">
+            <label class="form-label">Précision du rôle <span class="required">*</span></label>
             <input
-              v-model="personne.fonction"
+              v-model="personne.fonctionAutre"
               type="text"
               class="form-input"
-              placeholder="ex: Chef d'escale"
+              placeholder="Précisez le rôle..."
               :disabled="disabled"
               @input="emitUpdate"
             />
@@ -116,8 +136,15 @@
  * - AJOUTÉ: Champ telephone (manquant selon doctrine)
  * - AJOUTÉ: Champ remarques (manquant selon doctrine)
  * - AJOUTÉ: Console.log format [CRV][PERSONNE_*]
+ * - MVS-9: Utilisation enum ROLE_PERSONNEL au lieu de champ libre fonction
  */
 import { ref, watch } from 'vue'
+import {
+  ROLE_PERSONNEL,
+  ROLE_PERSONNEL_LABELS,
+  ROLE_PERSONNEL_DESCRIPTIONS,
+  getEnumOptions
+} from '@/config/crvEnums'
 
 const props = defineProps({
   modelValue: {
@@ -132,15 +159,25 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const localData = ref([...props.modelValue])
+// MVS-9: Utilisation des enums centralisés pour les rôles
+const rolesPersonnel = getEnumOptions(ROLE_PERSONNEL)
+const roleDescriptions = ROLE_PERSONNEL_DESCRIPTIONS
 
-console.log('[CRV][PERSONNE_INIT] Composant personnel initialisé')
+const localData = ref([...props.modelValue])
+let isUpdating = false // Flag pour éviter boucle infinie
+
+console.log('[CRV][PERSONNE_INIT] Composant personnel initialisé, rôles:', rolesPersonnel.length)
 
 watch(() => props.modelValue, (newValue) => {
+  if (isUpdating) return // Éviter boucle infinie
   if (newValue && Array.isArray(newValue)) {
-    // Recréer le tableau pour que Vue détecte les changements
-    localData.value = newValue.map(item => ({ ...item }))
-    console.log('[CRV][PERSONNE_WATCH] Données mises à jour:', localData.value.length, 'personnes')
+    // Vérifier si les données ont réellement changé
+    const newJson = JSON.stringify(newValue)
+    const localJson = JSON.stringify(localData.value)
+    if (newJson !== localJson) {
+      localData.value = newValue.map(item => ({ ...item }))
+      console.log('[CRV][PERSONNE_WATCH] Données mises à jour:', localData.value.length, 'personnes')
+    }
   }
 }, { deep: true, immediate: true })
 
@@ -149,10 +186,11 @@ const addPersonne = () => {
   localData.value.push({
     nom: '',
     prenom: '',
-    fonction: '',
+    role: '',        // MVS-9: Utilisation enum ROLE_PERSONNEL
+    fonctionAutre: '', // MVS-9: Champ libre si role = AUTRE
     matricule: '',
-    telephone: '',  // CORRECTION AUDIT: Champ manquant
-    remarques: ''   // CORRECTION AUDIT: Champ manquant
+    telephone: '',   // CORRECTION AUDIT: Champ manquant
+    remarques: ''    // CORRECTION AUDIT: Champ manquant
   })
   emitUpdate()
 }
@@ -164,8 +202,10 @@ const removePersonne = (index) => {
 }
 
 const emitUpdate = () => {
+  isUpdating = true
   console.log('[CRV][PERSONNE_UPDATE] Émission mise à jour:', localData.value.length, 'personnes')
-  emit('update:modelValue', localData.value)
+  emit('update:modelValue', [...localData.value])
+  setTimeout(() => { isUpdating = false }, 0)
 }
 </script>
 
@@ -298,6 +338,14 @@ const emitUpdate = () => {
 .required {
   color: #dc2626;
   font-weight: 700;
+}
+
+/* MVS-9: Style description rôle */
+.role-description {
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 4px;
 }
 
 @media (max-width: 768px) {

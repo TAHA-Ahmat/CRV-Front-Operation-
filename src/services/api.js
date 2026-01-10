@@ -1015,11 +1015,11 @@ export const slaAPI = {
 
 export const validationAPI = {
   /**
-   * Valider un CRV (SUPERVISEUR, MANAGER)
+   * Valider un CRV (QUALITE, ADMIN uniquement - MVS-10)
    * POST /api/validation/:id/valider
    * Body: { commentaires? }
    * Prérequis: statut=TERMINE, completude >= 80%
-   * Résultat: statut passe à VALIDE puis potentiellement VERROUILLE
+   * Résultat: statut passe à VALIDE
    */
   valider: (id, commentaires = null) => {
     console.log('[VALIDATION API] valider() - CRV ID:', id, '- Commentaires:', commentaires)
@@ -1028,9 +1028,21 @@ export const validationAPI = {
   },
 
   /**
-   * 🆕 Verrouiller manuellement un CRV (après validation)
+   * MVS-10: Rejeter un CRV (QUALITE, ADMIN uniquement)
+   * POST /api/validation/:id/rejeter
+   * Body: { commentaires } (obligatoire)
+   * Résultat: CRV retourne à EN_COURS pour correction
+   */
+  rejeter: (id, commentaires) => {
+    console.log('[VALIDATION API] rejeter() - CRV ID:', id, '- Commentaires:', commentaires)
+    return api.post(`/validation/${id}/rejeter`, { commentaires })
+  },
+
+  /**
+   * Verrouiller un CRV (QUALITE, ADMIN uniquement - MVS-10)
    * POST /api/validation/:id/verrouiller
    * Prérequis: statut=VALIDE
+   * Résultat: CRV définitif, aucune modification possible
    */
   verrouiller: (id) => {
     console.log('[VALIDATION API] verrouiller() - CRV ID:', id)
@@ -1038,10 +1050,10 @@ export const validationAPI = {
   },
 
   /**
-   * Déverrouiller un CRV (MANAGER uniquement)
+   * Déverrouiller un CRV (ADMIN uniquement - MVS-10)
    * POST /api/validation/:id/deverrouiller
-   * Body: { raison }
-   * Résultat: CRV repasse en EN_COURS
+   * Body: { raison } (obligatoire)
+   * Résultat: CRV retourne à VALIDE
    */
   deverrouiller: (id, raison) => {
     console.log('[VALIDATION API] deverrouiller() - CRV ID:', id, '- Raison:', raison)
@@ -1051,6 +1063,7 @@ export const validationAPI = {
   /**
    * Statut de validation d'un CRV
    * GET /api/validation/:id
+   * Retourne: statut validation, historique actions
    */
   getStatus: (id) => {
     console.log('[VALIDATION API] getStatus() - CRV ID:', id)

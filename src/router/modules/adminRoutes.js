@@ -26,7 +26,8 @@ const adminRoutes = [
   {
     path: '/users',
     name: 'UserManagement',
-    component: () => import('@/views/Admin/UserManagement.vue'),
+    // MVS-1: Remplacé par GestionUtilisateurs avec vérification dépendances
+    component: () => import('@/views/Admin/GestionUtilisateurs.vue'),
     meta: {
       requiresAuth: true,
       allowedRoles: [ROLES.ADMIN]

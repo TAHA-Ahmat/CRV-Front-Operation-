@@ -1,6 +1,13 @@
 <template>
   <div class="crv-phases-component card">
-    <h3 class="section-title">Phases opérationnelles</h3>
+    <div class="section-header">
+      <h3 class="section-title">Phases opérationnelles</h3>
+      <!-- MVS-3 #3: Compteur progression phases -->
+      <div class="phases-progress">
+        <span class="progress-count">{{ phasesCompletes }}/{{ phases.length }} terminées</span>
+        <span class="progress-impact">= {{ phasesCompletude }}% complétude phases</span>
+      </div>
+    </div>
 
     <div v-if="loading" class="loading-state">
       <p>Chargement des phases...</p>
@@ -18,10 +25,33 @@
         :class="{ 'phase-termine': phase.statut === 'TERMINE', 'phase-non-realise': phase.statut === 'NON_REALISE' }"
       >
         <div class="phase-header">
-          <h4>{{ getPhaseNom(phase) }}</h4>
+          <div class="phase-title-row">
+            <h4>{{ getPhaseNom(phase) }}</h4>
+            <!-- MVS-3 #2: Tag type opération -->
+            <span
+              v-if="getPhaseTypeOperation(phase)"
+              class="type-operation-tag"
+              :class="'type-' + getPhaseTypeOperation(phase).toLowerCase()"
+            >
+              {{ getPhaseTypeOperation(phase) }}
+            </span>
+          </div>
           <span class="phase-status" :class="getStatusClass(phase.statut)">
             {{ getStatusLabel(phase.statut) }}
           </span>
+        </div>
+
+        <!-- MVS-3 #1: Affichage des prérequis -->
+        <div v-if="phase.phase?.prerequis?.length > 0" class="phase-prerequis">
+          <span class="prerequis-label">Prérequis :</span>
+          <template v-if="canStartPhase(phase).canStart">
+            <span class="prerequis-ok">Tous satisfaits</span>
+          </template>
+          <template v-else>
+            <span class="prerequis-manquants">
+              Terminez d'abord : {{ canStartPhase(phase).prerequisManquants.join(', ') }}
+            </span>
+          </template>
         </div>
 
         <!-- Phase NON_COMMENCE: permettre de démarrer avec saisie manuelle des heures -->
@@ -83,10 +113,12 @@
             <div class="form-group">
               <label class="form-label">Action</label>
               <div class="action-buttons">
+                <!-- MVS-3 #1: Bouton bloqué si prérequis manquants -->
                 <button
                   @click="showEditForm(phase)"
                   class="btn btn-primary btn-sm"
-                  :disabled="disabled || saving"
+                  :disabled="disabled || saving || !canStartPhase(phase).canStart"
+                  :title="!canStartPhase(phase).canStart ? 'Terminez d\'abord les phases prérequises' : ''"
                   type="button"
                 >
                   Saisir les heures
@@ -105,6 +137,12 @@
 
           <!-- Formulaire pour phase non réalisée - CORRECTION AUDIT: detailMotif OBLIGATOIRE si AUTRE -->
           <div v-if="phaseNonRealiseId === (phase.id || phase._id)" class="non-realise-form">
+            <!-- MVS-3 #4 & #5: Notes informationnelles -->
+            <div class="non-realise-info-banner">
+              <p><strong>Note :</strong> Les heures saisies seront effacées.</p>
+              <p>Une phase non réalisée compte comme terminée pour la progression.</p>
+            </div>
+
             <div class="form-group">
               <label class="form-label">
                 Motif de non-réalisation <span class="required">*</span>
@@ -316,6 +354,22 @@
                   disabled
                 />
               </div>
+              <!-- MVS-3 #6: Affichage écart SLA -->
+              <div v-if="phase.dureeReelleMinutes && phase.phase?.dureePrevue" class="form-group">
+                <label class="form-label">Écart</label>
+                <div
+                  class="ecart-sla"
+                  :class="{
+                    'ecart-ok': (phase.dureeReelleMinutes - phase.phase.dureePrevue) <= getPhaseSeuil(phase),
+                    'ecart-depassement': (phase.dureeReelleMinutes - phase.phase.dureePrevue) > getPhaseSeuil(phase)
+                  }"
+                >
+                  <span class="ecart-valeur">
+                    {{ phase.dureeReelleMinutes - phase.phase.dureePrevue > 0 ? '+' : '' }}{{ phase.dureeReelleMinutes - phase.phase.dureePrevue }} min
+                  </span>
+                  <span class="ecart-seuil">(tolérance: {{ getPhaseSeuil(phase) }} min)</span>
+                </div>
+              </div>
               <div v-if="!disabled" class="form-group">
                 <label class="form-label">Action</label>
                 <button
@@ -434,6 +488,51 @@ const canSubmitNonRealise = computed(() => {
   console.log('[CRV][PHASE_VALIDATION] canSubmitNonRealise: true')
   return true
 })
+
+// MVS-3 #3: Computed pour compteur phases terminées
+const phasesCompletes = computed(() => {
+  return props.phases.filter(p => p.statut === 'TERMINE' || p.statut === 'NON_REALISE').length
+})
+
+// MVS-3 #3: Computed pour % complétude phases (phases = 40% du total)
+const phasesCompletude = computed(() => {
+  if (props.phases.length === 0) return 0
+  const ratio = phasesCompletes.value / props.phases.length
+  return Math.round(ratio * 40) // phases = 40% de la complétude totale
+})
+
+// MVS-3 #1: Vérifier si une phase peut être démarrée (prérequis satisfaits)
+const canStartPhase = (phase) => {
+  if (!phase.phase?.prerequis || phase.phase.prerequis.length === 0) {
+    return { canStart: true, prerequisManquants: [] }
+  }
+
+  const prerequisManquants = []
+  for (const prereqId of phase.phase.prerequis) {
+    const prereqPhase = props.phases.find(p =>
+      (p.phase?.id || p.phase?._id) === prereqId ||
+      (p.phaseId) === prereqId
+    )
+    if (prereqPhase && prereqPhase.statut !== 'TERMINE' && prereqPhase.statut !== 'NON_REALISE') {
+      prerequisManquants.push(getPhaseNom(prereqPhase))
+    }
+  }
+
+  return {
+    canStart: prerequisManquants.length === 0,
+    prerequisManquants
+  }
+}
+
+// MVS-3 #2: Obtenir le type d'opération de la phase
+const getPhaseTypeOperation = (phase) => {
+  return phase.phase?.typeOperation || phase.typeOperation || null
+}
+
+// MVS-3 #6: Obtenir le seuil SLA de la phase (en minutes)
+const getPhaseSeuil = (phase) => {
+  return phase.phase?.seuilSLA || phase.seuilSLA || 15 // 15 min par défaut
+}
 
 // Formatters
 const formatTime = (datetime) => {
@@ -912,5 +1011,151 @@ textarea.form-input {
   display: flex;
   gap: 10px;
   margin-top: 15px;
+}
+
+/* MVS-3: Styles section-header avec progression */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.phases-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.progress-impact {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* MVS-3 #1: Styles prérequis */
+.phase-prerequis {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.prerequis-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.prerequis-ok {
+  color: #059669;
+  font-weight: 500;
+}
+
+.prerequis-manquants {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* MVS-3 #2: Styles tags type opération */
+.phase-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.type-operation-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.type-arrivee {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.type-depart {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.type-turn_around {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* MVS-3 #4 & #5: Banner info non réalisé */
+.non-realise-info-banner {
+  margin-bottom: 15px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+}
+
+.non-realise-info-banner p {
+  margin: 0;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.non-realise-info-banner p:first-child {
+  margin-bottom: 4px;
+}
+
+/* MVS-3 #6: Styles écart SLA */
+.ecart-sla {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.ecart-ok {
+  background: #dcfce7;
+}
+
+.ecart-ok .ecart-valeur {
+  color: #166534;
+  font-weight: 600;
+}
+
+.ecart-depassement {
+  background: #fee2e2;
+}
+
+.ecart-depassement .ecart-valeur {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.ecart-seuil {
+  font-size: 11px;
+  color: #6b7280;
 }
 </style>

@@ -130,6 +130,33 @@
                   >
                     {{ canEditCRV(crv) ? 'Modifier' : 'Voir' }}
                   </button>
+                  <!-- MVS-2 #5: Bouton Annuler -->
+                  <button
+                    v-if="canAnnulerCRV(crv)"
+                    @click="openAnnulerModal(crv)"
+                    class="btn-action btn-cancel"
+                    title="Annuler ce CRV"
+                  >
+                    Annuler
+                  </button>
+                  <!-- MVS-2 #5: Bouton Réactiver -->
+                  <button
+                    v-if="canReactiverCRV(crv)"
+                    @click="openReactiverModal(crv)"
+                    class="btn-action btn-reactivate"
+                    title="Réactiver ce CRV"
+                  >
+                    Réactiver
+                  </button>
+                  <!-- MVS-2 #11: Bouton Supprimer -->
+                  <button
+                    v-if="canSupprimerCRV(crv)"
+                    @click="openSupprimerModal(crv)"
+                    class="btn-action btn-delete"
+                    title="Supprimer ce CRV"
+                  >
+                    Supprimer
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -161,6 +188,125 @@
         </div>
       </div>
     </main>
+
+    <!-- MVS-2: Modal Annuler CRV -->
+    <div v-if="showAnnulerModal" class="modal-overlay" @click.self="closeAnnulerModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Annuler le CRV</h2>
+          <button @click="closeAnnulerModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="warning-box">
+            <strong>Attention</strong>
+            <p>L'annulation d'un CRV est une action réversible. Le CRV pourra être réactivé ultérieurement.</p>
+          </div>
+          <p>CRV concerné : <strong>{{ selectedCRV?.numeroCRV }}</strong></p>
+          <div class="form-group">
+            <label>Motif d'annulation <span class="required">*</span></label>
+            <select v-model="annulationData.motif" required>
+              <option value="">Sélectionner un motif</option>
+              <option value="VOL_ANNULE">Vol annulé</option>
+              <option value="DOUBLON">Doublon</option>
+              <option value="ERREUR_SAISIE">Erreur de saisie</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Commentaire <span class="required">*</span></label>
+            <textarea
+              v-model="annulationData.commentaire"
+              rows="3"
+              placeholder="Décrivez la raison de l'annulation..."
+              required
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeAnnulerModal" class="btn btn-secondary">Annuler</button>
+          <button
+            @click="confirmerAnnulation"
+            class="btn btn-warning"
+            :disabled="!annulationData.motif || !annulationData.commentaire"
+          >
+            Confirmer l'annulation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MVS-2: Modal Réactiver CRV -->
+    <div v-if="showReactiverModal" class="modal-overlay" @click.self="closeReactiverModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Réactiver le CRV</h2>
+          <button @click="closeReactiverModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>CRV concerné : <strong>{{ selectedCRV?.numeroCRV }}</strong></p>
+          <p>Le CRV sera remis en statut <strong>EN_COURS</strong> pour modification.</p>
+          <div class="form-group">
+            <label>Raison de la réactivation <span class="required">*</span></label>
+            <textarea
+              v-model="reactivationData.raison"
+              rows="3"
+              placeholder="Décrivez la raison de la réactivation..."
+              required
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeReactiverModal" class="btn btn-secondary">Annuler</button>
+          <button
+            @click="confirmerReactivation"
+            class="btn btn-primary"
+            :disabled="!reactivationData.raison"
+          >
+            Réactiver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MVS-2: Modal Supprimer CRV -->
+    <div v-if="showSupprimerModal" class="modal-overlay" @click.self="closeSupprimerModal">
+      <div class="modal-content">
+        <div class="modal-header modal-header-danger">
+          <h2>Supprimer le CRV</h2>
+          <button @click="closeSupprimerModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="danger-box">
+            <strong>Action irréversible</strong>
+            <p>La suppression d'un CRV est définitive et ne peut pas être annulée.</p>
+          </div>
+          <p>CRV concerné : <strong>{{ selectedCRV?.numeroCRV }}</strong></p>
+          <div class="form-group">
+            <label>Tapez "SUPPRIMER" pour confirmer <span class="required">*</span></label>
+            <input
+              v-model="suppressionConfirmation"
+              type="text"
+              placeholder="SUPPRIMER"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeSupprimerModal" class="btn btn-secondary">Annuler</button>
+          <button
+            @click="confirmerSuppression"
+            class="btn btn-danger"
+            :disabled="suppressionConfirmation !== 'SUPPRIMER'"
+          >
+            Supprimer définitivement
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div v-if="toast.show" class="toast" :class="toast.type">
+      {{ toast.message }}
+    </div>
   </div>
 </template>
 
@@ -169,7 +315,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCRVStore } from '@/stores/crvStore'
 import { useAuthStore } from '@/stores/authStore'
-import { canEdit } from '@/utils/permissions'
+import { canEdit, canCancelCRV, canDeleteCRV } from '@/utils/permissions'
 
 const router = useRouter()
 const crvStore = useCRVStore()
@@ -191,6 +337,16 @@ const filters = reactive({
   dateDebut: '',
   dateFin: ''
 })
+
+// MVS-2: États modaux
+const selectedCRV = ref(null)
+const showAnnulerModal = ref(false)
+const showReactiverModal = ref(false)
+const showSupprimerModal = ref(false)
+const annulationData = reactive({ motif: '', commentaire: '' })
+const reactivationData = reactive({ raison: '' })
+const suppressionConfirmation = ref('')
+const toast = reactive({ show: false, message: '', type: 'success' })
 
 // Chargement initial
 onMounted(() => {
@@ -338,6 +494,123 @@ const getCompletudeClass = (completude) => {
   if (completude >= 80) return 'completude-high'
   if (completude >= 50) return 'completude-medium'
   return 'completude-low'
+}
+
+// MVS-2: Vérifications permissions
+const canAnnulerCRV = (crv) => {
+  const userRole = authStore.currentUser?.fonction || authStore.currentUser?.role
+  if (!canCancelCRV(userRole)) return false
+  // Pas déjà annulé et pas verrouillé
+  return crv.statut && crv.statut !== 'ANNULE' && crv.statut !== 'VERROUILLE'
+}
+
+const canReactiverCRV = (crv) => {
+  const userRole = authStore.currentUser?.fonction || authStore.currentUser?.role
+  if (!canCancelCRV(userRole)) return false
+  return crv.statut === 'ANNULE'
+}
+
+const canSupprimerCRV = (crv) => {
+  const userRole = authStore.currentUser?.fonction || authStore.currentUser?.role
+  if (!canDeleteCRV(userRole)) return false
+  // Pas verrouillé
+  return crv.statut !== 'VERROUILLE'
+}
+
+// MVS-2: Gestion modaux Annuler
+const openAnnulerModal = (crv) => {
+  selectedCRV.value = crv
+  annulationData.motif = ''
+  annulationData.commentaire = ''
+  showAnnulerModal.value = true
+}
+
+const closeAnnulerModal = () => {
+  showAnnulerModal.value = false
+  selectedCRV.value = null
+}
+
+const confirmerAnnulation = async () => {
+  if (!selectedCRV.value || !annulationData.motif || !annulationData.commentaire) return
+
+  try {
+    // Charger le CRV dans le store pour utiliser annulerCRV
+    await crvStore.loadCRV(selectedCRV.value._id || selectedCRV.value.id)
+    await crvStore.annulerCRV({
+      motif: annulationData.motif,
+      commentaire: annulationData.commentaire
+    })
+
+    showToast('CRV annulé avec succès', 'success')
+    closeAnnulerModal()
+    loadCRVList()
+  } catch (err) {
+    showToast(err.message || 'Erreur lors de l\'annulation', 'error')
+  }
+}
+
+// MVS-2: Gestion modaux Réactiver
+const openReactiverModal = (crv) => {
+  selectedCRV.value = crv
+  reactivationData.raison = ''
+  showReactiverModal.value = true
+}
+
+const closeReactiverModal = () => {
+  showReactiverModal.value = false
+  selectedCRV.value = null
+}
+
+const confirmerReactivation = async () => {
+  if (!selectedCRV.value || !reactivationData.raison) return
+
+  try {
+    await crvStore.loadCRV(selectedCRV.value._id || selectedCRV.value.id)
+    await crvStore.reactiverCRV({
+      raison: reactivationData.raison
+    })
+
+    showToast('CRV réactivé avec succès', 'success')
+    closeReactiverModal()
+    loadCRVList()
+  } catch (err) {
+    showToast(err.message || 'Erreur lors de la réactivation', 'error')
+  }
+}
+
+// MVS-2: Gestion modaux Supprimer
+const openSupprimerModal = (crv) => {
+  selectedCRV.value = crv
+  suppressionConfirmation.value = ''
+  showSupprimerModal.value = true
+}
+
+const closeSupprimerModal = () => {
+  showSupprimerModal.value = false
+  selectedCRV.value = null
+}
+
+const confirmerSuppression = async () => {
+  if (!selectedCRV.value || suppressionConfirmation.value !== 'SUPPRIMER') return
+
+  try {
+    await crvStore.deleteCRV(selectedCRV.value._id || selectedCRV.value.id)
+    showToast('CRV supprimé définitivement', 'success')
+    closeSupprimerModal()
+    loadCRVList()
+  } catch (err) {
+    showToast(err.message || 'Erreur lors de la suppression', 'error')
+  }
+}
+
+// Toast
+const showToast = (message, type = 'success') => {
+  toast.message = message
+  toast.type = type
+  toast.show = true
+  setTimeout(() => {
+    toast.show = false
+  }, 4000)
 }
 </script>
 
@@ -620,6 +893,243 @@ const getCompletudeClass = (completude) => {
 
 .btn-secondary:hover {
   background: #e5e7eb;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-danger:disabled,
+.btn-warning:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Actions boutons dans tableau */
+.btn-cancel {
+  background: #fef3c7;
+  color: #92400e;
+  margin-left: 4px;
+}
+
+.btn-cancel:hover {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-reactivate {
+  background: #d1fae5;
+  color: #065f46;
+  margin-left: 4px;
+}
+
+.btn-reactivate:hover {
+  background: #10b981;
+  color: white;
+}
+
+.btn-delete {
+  background: #fee2e2;
+  color: #991b1b;
+  margin-left: 4px;
+}
+
+.btn-delete:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* Modaux */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.modal-header-danger {
+  background: #fee2e2;
+}
+
+.modal-header-danger h2 {
+  color: #991b1b;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #1f2937;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.warning-box {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.warning-box strong {
+  color: #92400e;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.warning-box p {
+  color: #92400e;
+  margin: 0;
+  font-size: 14px;
+}
+
+.danger-box {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.danger-box strong {
+  color: #991b1b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.danger-box p {
+  color: #991b1b;
+  margin: 0;
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group .required {
+  color: #ef4444;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+  background: #10b981;
+  color: white;
+}
+
+.toast.error {
+  background: #ef4444;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {

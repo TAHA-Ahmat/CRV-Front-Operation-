@@ -73,6 +73,15 @@
       <p>Aucune charge enregistrée pour ce vol</p>
     </div>
 
+    <!-- MVS-4 #1: Impact complétude affiché -->
+    <div class="completude-impact-info">
+      <span class="info-icon">ℹ️</span>
+      <div class="info-text">
+        <strong>Impact sur la complétude :</strong>
+        1 type de charge = +20% | 2 types = +25% | 3+ types = +30%
+      </div>
+    </div>
+
     <!-- Formulaire d'ajout -->
     <div v-if="!disabled" class="add-charge-section">
       <h4 class="subsection-title">Ajouter une charge</h4>
@@ -190,8 +199,10 @@
               type="number"
               class="form-input"
               min="0"
-              placeholder="0"
+              placeholder="Laisser vide si non applicable"
             />
+            <!-- MVS-4 #2: Doctrine VIDE != ZERO -->
+            <span class="form-hint">0 = zéro explicite, vide = non renseigné</span>
           </div>
           <div class="form-group">
             <label class="form-label">Poids total (kg)</label>
@@ -201,7 +212,7 @@
               class="form-input"
               min="0"
               step="0.1"
-              placeholder="0"
+              placeholder="Laisser vide si non applicable"
             />
           </div>
           <div class="form-group">
@@ -212,6 +223,118 @@
                 {{ typeFret.label }}
               </option>
             </select>
+          </div>
+        </div>
+
+        <!-- MVS-4 #6, #7, #8: Section DGR (Marchandises Dangereuses) -->
+        <div v-if="newCharge.typeFret === 'DANGEREUX'" class="dgr-section">
+          <h5 class="dgr-title">Marchandises Dangereuses (DGR)</h5>
+
+          <div class="form-row">
+            <!-- MVS-4 #6: Format code ONU -->
+            <div class="form-group">
+              <label class="form-label">Code ONU <span class="required">*</span></label>
+              <input
+                v-model="newCharge.dgr.codeONU"
+                type="text"
+                class="form-input"
+                :class="{ 'input-error': dgrCodeONUError }"
+                placeholder="UN0000"
+                maxlength="6"
+                @input="validateCodeONU"
+              />
+              <span class="form-hint">Format: UN + 4 chiffres (ex: UN1234)</span>
+              <span v-if="dgrCodeONUError" class="form-error">{{ dgrCodeONUError }}</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Classe ONU <span class="required">*</span></label>
+              <select v-model="newCharge.dgr.classeONU" class="form-input">
+                <option value="">Sélectionner</option>
+                <option value="1">1 - Explosifs</option>
+                <option value="2">2 - Gaz</option>
+                <option value="3">3 - Liquides inflammables</option>
+                <option value="4">4 - Solides inflammables</option>
+                <option value="5">5 - Matières comburantes</option>
+                <option value="6">6 - Matières toxiques</option>
+                <option value="7">7 - Matières radioactives</option>
+                <option value="8">8 - Matières corrosives</option>
+                <option value="9">9 - Divers</option>
+              </select>
+            </div>
+
+            <!-- MVS-4 #7: Groupe emballage -->
+            <div class="form-group">
+              <label class="form-label">Groupe emballage</label>
+              <select v-model="newCharge.dgr.groupeEmballage" class="form-input">
+                <option value="">Non spécifié</option>
+                <option value="I">I - Danger élevé</option>
+                <option value="II">II - Danger moyen</option>
+                <option value="III">III - Danger faible</option>
+              </select>
+              <span class="form-hint">I=danger élevé, II=moyen, III=faible</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Désignation officielle</label>
+              <input
+                v-model="newCharge.dgr.designationOfficielle"
+                type="text"
+                class="form-input"
+                placeholder="Nom officiel de transport"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantité</label>
+              <input
+                v-model.number="newCharge.dgr.quantite"
+                type="number"
+                class="form-input"
+                min="0"
+                step="0.1"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unité</label>
+              <select v-model="newCharge.dgr.unite" class="form-input">
+                <option value="kg">kg</option>
+                <option value="L">Litres</option>
+                <option value="pcs">Pièces</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- MVS-4 #8: Bouton validation DGR -->
+          <div class="dgr-validation-section">
+            <button
+              type="button"
+              class="btn btn-outline btn-validate-dgr"
+              @click="validateDGR"
+              :disabled="!canValidateDGR || validatingDGR"
+            >
+              {{ validatingDGR ? 'Vérification...' : 'Vérifier conformité DGR' }}
+            </button>
+
+            <!-- Résultats validation -->
+            <div v-if="dgrValidationResult" class="dgr-validation-result" :class="dgrValidationResult.valide ? 'valid' : 'invalid'">
+              <div v-if="dgrValidationResult.valide" class="result-success">
+                ✓ Marchandise dangereuse conforme
+              </div>
+              <div v-else class="result-errors">
+                <strong>Erreurs :</strong>
+                <ul>
+                  <li v-for="(err, idx) in dgrValidationResult.erreurs" :key="idx">{{ err }}</li>
+                </ul>
+              </div>
+              <div v-if="dgrValidationResult.avertissements?.length > 0" class="result-warnings">
+                <strong>Avertissements :</strong>
+                <ul>
+                  <li v-for="(warn, idx) in dgrValidationResult.avertissements" :key="idx">{{ warn }}</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -261,6 +384,7 @@
  */
 import { ref, computed } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
+import { chargesAPI } from '@/services/api'
 import {
   TYPE_CHARGE,
   SENS_OPERATION,
@@ -291,6 +415,11 @@ const crvStore = useCRVStore()
 const saving = ref(false)
 const errorMessage = ref('')
 
+// MVS-4: États DGR
+const dgrCodeONUError = ref('')
+const validatingDGR = ref(false)
+const dgrValidationResult = ref(null)
+
 // CORRECTION AUDIT: Utilisation des enums centralisés
 const typesCharge = getEnumOptions(TYPE_CHARGE)
 const sensOperations = getEnumOptions(SENS_OPERATION)
@@ -317,7 +446,16 @@ const newCharge = ref({
   // Fret
   nombreFret: 0,
   poidsFretKg: 0,
-  typeFret: ''
+  typeFret: '',
+  // MVS-4: DGR (Marchandises Dangereuses)
+  dgr: {
+    codeONU: '',
+    classeONU: '',
+    groupeEmballage: '',
+    designationOfficielle: '',
+    quantite: 0,
+    unite: 'kg'
+  }
 })
 
 // Computed
@@ -349,11 +487,25 @@ const canAddCharge = computed(() => {
       isValid = newCharge.value.nombreFret !== undefined &&
                newCharge.value.nombreFret !== null &&
                newCharge.value.nombreFret !== ''
+      // MVS-4: Si DGR, vérifier les champs obligatoires
+      if (newCharge.value.typeFret === 'DANGEREUX') {
+        isValid = isValid &&
+                  newCharge.value.dgr.codeONU &&
+                  !dgrCodeONUError.value &&
+                  newCharge.value.dgr.classeONU
+      }
       break
   }
 
   console.log('[CRV][CHARGE_VALIDATION] canAddCharge:', isValid, 'type:', newCharge.value.typeCharge)
   return isValid
+})
+
+// MVS-4 #8: Computed pour valider DGR
+const canValidateDGR = computed(() => {
+  return newCharge.value.dgr.codeONU &&
+         !dgrCodeONUError.value &&
+         newCharge.value.dgr.classeONU
 })
 
 // Formatters
@@ -478,6 +630,54 @@ const handleAddCharge = async () => {
 
 // SUPPRIMÉ AUDIT: handleConfirmNoCharge et watcher hasConfirmationAucuneCharge
 // DOCTRINE: "Absence = Non documenté" - pas de confirmation d'absence
+
+// MVS-4 #6: Validation format code ONU
+const validateCodeONU = () => {
+  const code = newCharge.value.dgr.codeONU
+  if (!code) {
+    dgrCodeONUError.value = ''
+    return
+  }
+
+  // Format attendu: UN + 4 chiffres
+  const regex = /^UN\d{4}$/
+  if (!regex.test(code.toUpperCase())) {
+    dgrCodeONUError.value = 'Format invalide. Exemple: UN1234'
+  } else {
+    dgrCodeONUError.value = ''
+    // Normaliser en majuscules
+    newCharge.value.dgr.codeONU = code.toUpperCase()
+  }
+}
+
+// MVS-4 #8: Validation DGR via API
+const validateDGR = async () => {
+  if (!canValidateDGR.value) return
+
+  validatingDGR.value = true
+  dgrValidationResult.value = null
+
+  try {
+    const response = await chargesAPI.validerMarchandiseDangereuse({
+      codeONU: newCharge.value.dgr.codeONU,
+      classeONU: newCharge.value.dgr.classeONU,
+      quantite: newCharge.value.dgr.quantite,
+      groupeEmballage: newCharge.value.dgr.groupeEmballage || undefined
+    })
+
+    dgrValidationResult.value = response.data
+    console.log('[CRV][DGR_VALIDATION] Résultat:', response.data)
+  } catch (error) {
+    console.error('[CRV][DGR_VALIDATION] Erreur:', error)
+    dgrValidationResult.value = {
+      valide: false,
+      erreurs: [error.response?.data?.message || 'Erreur lors de la validation'],
+      avertissements: []
+    }
+  } finally {
+    validatingDGR.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -693,5 +893,126 @@ const handleAddCharge = async () => {
   border-radius: 6px;
   color: #dc2626;
   font-size: 14px;
+}
+
+/* MVS-4 #1: Info complétude */
+.completude-impact-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+}
+
+.completude-impact-info .info-icon {
+  font-size: 18px;
+}
+
+.completude-impact-info .info-text {
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+/* MVS-4 #2: Form hints */
+.form-hint {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.form-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+}
+
+/* MVS-4: Section DGR */
+.dgr-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+}
+
+.dgr-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dgr-title::before {
+  content: '⚠️';
+}
+
+/* MVS-4 #8: Validation DGR */
+.dgr-validation-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #fcd34d;
+}
+
+.btn-validate-dgr {
+  background: white;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.btn-validate-dgr:hover:not(:disabled) {
+  background: #fef3c7;
+}
+
+.dgr-validation-result {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.dgr-validation-result.valid {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.dgr-validation-result.invalid {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.result-success {
+  color: #166534;
+  font-weight: 600;
+}
+
+.result-errors {
+  color: #991b1b;
+}
+
+.result-errors ul,
+.result-warnings ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.result-errors li,
+.result-warnings li {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.result-warnings {
+  margin-top: 10px;
+  color: #92400e;
 }
 </style>
