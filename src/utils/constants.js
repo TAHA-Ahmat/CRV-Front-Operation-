@@ -38,12 +38,17 @@ export const USER_ROLE_LABELS = {
 }
 
 // PHASES CRV
+// REF: Backend seedPhases.js - Mise à jour 2026-01-11
+// 8 phases (6 obligatoires + 2 facultatives)
 export const PHASES_ARRIVEE = [
-  'Calage avion',
-  'Déchargement bagages',
-  'Déchargement fret',
-  'Livraison bagages',
-  'Nettoyage cabine'
+  'Briefing équipes',           // Obligatoire - BRIEFING
+  'Arrivée avion',              // Obligatoire - PISTE
+  'Ouverture des soutes',       // Obligatoire - BAGAGE
+  'Déchargement',               // Obligatoire - BAGAGE
+  'Livraison bagages',          // Obligatoire - BAGAGE
+  'Débarquement passagers',     // Obligatoire - PASSAGERS
+  'Mise en condition cabine',   // Facultatif - NETTOYAGE
+  'Débriefing clôture'          // Facultatif - BRIEFING
 ]
 
 export const PHASES_DEPART = [

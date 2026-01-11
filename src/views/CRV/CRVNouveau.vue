@@ -241,10 +241,11 @@ const errorCode = ref(null)
 const selectedVol = ref(null)
 
 // Options de type pour mode simple
+// REF: Backend seedPhases.js - Mise à jour 2026-01-11
 const typeOptions = [
-  { value: 'arrivee', label: 'Arrivee', icon: '&#9992;&#65039;', phases: '6 phases' },
+  { value: 'arrivee', label: 'Arrivee', icon: '&#9992;&#65039;', phases: '8 phases' },
   { value: 'depart', label: 'Depart', icon: '&#128747;', phases: '9 phases' },
-  { value: 'turnaround', label: 'Turn Around', icon: '&#128260;', phases: '15 phases' }
+  { value: 'turnaround', label: 'Turn Around', icon: '&#128260;', phases: '17 phases' }
 ]
 
 // Formulaire mode simple

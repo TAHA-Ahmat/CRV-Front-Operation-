@@ -21,14 +21,19 @@ export const STATUTS_CRV = {
 }
 
 /**
- * Types de phases
+ * Types de phases ARRIVEE
+ * REF: Backend seedPhases.js - Mise à jour 2026-01-11
+ * 8 phases (6 obligatoires + 2 facultatives)
  */
 export const PHASES_ARRIVEE = [
-  { id: 'phase-pos', nom: 'Positionnement passerelle', ordre: 1, dureeEstimee: 5 },
-  { id: 'phase-cal', nom: 'Calage avion', ordre: 2, dureeEstimee: 3 },
-  { id: 'phase-deb', nom: 'Débarquement passagers', ordre: 3, dureeEstimee: 20 },
-  { id: 'phase-dech-bag', nom: 'Déchargement bagages', ordre: 4, dureeEstimee: 25 },
-  { id: 'phase-dech-fret', nom: 'Déchargement fret', ordre: 5, dureeEstimee: 15 }
+  { id: 'ARR_BRIEFING', nom: 'Briefing équipes', ordre: 1, dureeEstimee: 10, categorie: 'BRIEFING', obligatoire: true },
+  { id: 'ARR_ARRIVEE_AVION', nom: 'Arrivée avion', ordre: 2, dureeEstimee: 15, categorie: 'PISTE', obligatoire: true },
+  { id: 'ARR_OUVERTURE_SOUTES', nom: 'Ouverture des soutes', ordre: 3, dureeEstimee: 5, categorie: 'BAGAGE', obligatoire: true },
+  { id: 'ARR_DECHARGEMENT', nom: 'Déchargement', ordre: 4, dureeEstimee: 25, categorie: 'BAGAGE', obligatoire: true },
+  { id: 'ARR_LIVRAISON_BAGAGES', nom: 'Livraison bagages', ordre: 5, dureeEstimee: 15, categorie: 'BAGAGE', obligatoire: true },
+  { id: 'ARR_DEBARQUEMENT_PAX', nom: 'Débarquement passagers', ordre: 6, dureeEstimee: 20, categorie: 'PASSAGERS', obligatoire: true },
+  { id: 'ARR_MISE_CONDITION_CABINE', nom: 'Mise en condition cabine', ordre: 7, dureeEstimee: 20, categorie: 'NETTOYAGE', obligatoire: false },
+  { id: 'ARR_DEBRIEFING', nom: 'Débriefing clôture', ordre: 8, dureeEstimee: 10, categorie: 'BRIEFING', obligatoire: false }
 ]
 
 export const PHASES_DEPART = [
@@ -87,11 +92,15 @@ export const crv = [
     dateCreation: '2024-01-15T14:35:00Z',
     dateModification: '2024-01-15T15:10:00Z',
     phases: [
-      { ...PHASES_ARRIVEE[0], statut: 'TERMINE', heureDebut: '2024-01-15T14:32:00Z', heureFin: '2024-01-15T14:35:00Z', dureeMinutes: 3 },
-      { ...PHASES_ARRIVEE[1], statut: 'TERMINE', heureDebut: '2024-01-15T14:35:00Z', heureFin: '2024-01-15T14:38:00Z', dureeMinutes: 3 },
-      { ...PHASES_ARRIVEE[2], statut: 'TERMINE', heureDebut: '2024-01-15T14:38:00Z', heureFin: '2024-01-15T14:54:00Z', dureeMinutes: 16 },
-      { ...PHASES_ARRIVEE[3], statut: 'EN_COURS', heureDebut: '2024-01-15T14:54:00Z', heureFin: null, dureeMinutes: null },
-      { ...PHASES_ARRIVEE[4], statut: 'NON_DEMARRE', heureDebut: null, heureFin: null, dureeMinutes: null }
+      // 8 phases ARRIVEE (REF: Backend seedPhases.js 2026-01-11)
+      { ...PHASES_ARRIVEE[0], statut: 'TERMINE', heureDebut: '2024-01-15T14:20:00Z', heureFin: '2024-01-15T14:30:00Z', dureeMinutes: 10 },
+      { ...PHASES_ARRIVEE[1], statut: 'TERMINE', heureDebut: '2024-01-15T14:32:00Z', heureFin: '2024-01-15T14:47:00Z', dureeMinutes: 15 },
+      { ...PHASES_ARRIVEE[2], statut: 'TERMINE', heureDebut: '2024-01-15T14:47:00Z', heureFin: '2024-01-15T14:52:00Z', dureeMinutes: 5 },
+      { ...PHASES_ARRIVEE[3], statut: 'EN_COURS', heureDebut: '2024-01-15T14:52:00Z', heureFin: null, dureeMinutes: null },
+      { ...PHASES_ARRIVEE[4], statut: 'NON_DEMARRE', heureDebut: null, heureFin: null, dureeMinutes: null },
+      { ...PHASES_ARRIVEE[5], statut: 'NON_DEMARRE', heureDebut: null, heureFin: null, dureeMinutes: null },
+      { ...PHASES_ARRIVEE[6], statut: 'NON_DEMARRE', heureDebut: null, heureFin: null, dureeMinutes: null },
+      { ...PHASES_ARRIVEE[7], statut: 'NON_DEMARRE', heureDebut: null, heureFin: null, dureeMinutes: null }
     ],
     charges: [],
     evenements: [],
