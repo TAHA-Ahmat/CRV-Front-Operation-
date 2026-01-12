@@ -27,6 +27,7 @@
         <template v-if="isOperationnel">
           <router-link to="/crv" class="nav-link">Mes CRV</router-link>
           <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
+          <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
           <router-link to="/archives" class="nav-link">Archives</router-link>
         </template>
 
@@ -44,6 +45,7 @@
         <!-- QUALITE : Lecture seule (pas de "Nouveau CRV") -->
         <template v-if="isQualite">
           <router-link to="/crv" class="nav-link">Consulter CRV</router-link>
+          <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
           <router-link to="/archives" class="nav-link">Archives</router-link>
           <router-link to="/statistiques" class="nav-link">Statistiques</router-link>
         </template>

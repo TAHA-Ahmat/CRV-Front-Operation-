@@ -52,9 +52,9 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ProgrammesVol.vue'),
     meta: {
       requiresAuth: true,
-      // MVS-5 Extension 2: Gestion des programmes saisonniers
-      // MANAGER peut créer/modifier, QUALITE peut valider, ADMIN peut tout faire
-      allowedRoles: [ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN]
+      // Programmes de vol accessibles à tous les rôles (lecture)
+      // Actions selon permissions : CREER/MODIFIER (opérationnels), VALIDER/ACTIVER (superviseurs+), SUPPRIMER (manager)
+      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN]
     }
   },
   {
