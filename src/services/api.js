@@ -660,7 +660,7 @@ export const programmesVolAPI = {
   suspendre: (id, raison = '') => api.post(`/programmes-vol/${id}/suspendre`, { raison }),
 
   /**
-   * Importer un programme depuis Excel
+   * Importer un programme depuis Excel (legacy - FormData)
    * POST /api/programmes-vol/import
    * Body: FormData avec fichier
    */
@@ -673,11 +673,47 @@ export const programmesVolAPI = {
   },
 
   /**
+   * Import en masse de programmes (JSON)
+   * POST /api/programmes-vol/import
+   * Body: { programmes: ProgrammeVolSaisonnier[] }
+   * @param {Array} programmes - Tableau de programmes à importer
+   */
+  importBulk: (programmes) => api.post('/programmes-vol/import', { programmes }),
+
+  /**
    * Programmes applicables à une date (Extension 1)
    * GET /api/programmes-vol/applicables/:date
-   * Retourne: { programmes: Programme[] }
+   * Query: { compagnieAerienne?, categorieVol? }
    */
-  getApplicables: (date) => api.get(`/programmes-vol/applicables/${date}`)
+  getApplicables: (date, params = {}) => api.get(`/programmes-vol/applicables/${date}`, { params }),
+
+  /**
+   * Recherche par route
+   * GET /api/programmes-vol/par-route
+   * Query: { provenance?, destination?, categorieVol? }
+   */
+  getParRoute: (params) => api.get('/programmes-vol/par-route', { params }),
+
+  /**
+   * Résumé global des programmes
+   * GET /api/programmes-vol/resume
+   * Retourne: { totalProgrammesActifs, totalVolsHebdomadaires, parCategorie, parJour }
+   */
+  getResume: () => api.get('/programmes-vol/resume'),
+
+  /**
+   * Statistiques par catégorie
+   * GET /api/programmes-vol/statistiques/categories
+   * Retourne: [{ _id: 'PASSAGER', count, compagnies }]
+   */
+  getStatistiquesCategories: () => api.get('/programmes-vol/statistiques/categories'),
+
+  /**
+   * Statistiques par jour de la semaine
+   * GET /api/programmes-vol/statistiques/jours
+   * Retourne: { Lundi: { total, passagers, cargo, domestiques }, ... }
+   */
+  getStatistiquesJours: () => api.get('/programmes-vol/statistiques/jours')
 }
 
 // ============================================

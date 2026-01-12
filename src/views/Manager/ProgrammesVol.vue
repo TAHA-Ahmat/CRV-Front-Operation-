@@ -34,6 +34,15 @@
               <input v-model="filters.compagnie" @input="debounceSearch" placeholder="Code IATA...">
             </div>
             <div class="filter-group">
+              <label>Catégorie</label>
+              <select v-model="filters.categorieVol" @change="loadProgrammes">
+                <option value="">Toutes</option>
+                <option value="PASSAGER">Passager</option>
+                <option value="CARGO">Cargo</option>
+                <option value="DOMESTIQUE">Domestique</option>
+              </select>
+            </div>
+            <div class="filter-group">
               <label>&nbsp;</label>
               <button @click="resetFilters" class="btn btn-secondary">Réinitialiser</button>
             </div>
@@ -72,7 +81,12 @@
             :class="getStatutClass(programme.statut)"
           >
             <div class="programme-header">
-              <h3>{{ programme.nom || programme.nomProgramme }}</h3>
+              <div class="programme-title">
+                <h3>{{ programme.nom || programme.nomProgramme }}</h3>
+                <span v-if="programme.categorieVol" class="category-badge" :class="getCategoryBadgeClass(programme.categorieVol)">
+                  {{ programme.categorieVol }}
+                </span>
+              </div>
               <span class="status-badge" :class="getStatutBadgeClass(programme.statut)">
                 {{ programme.statut }}
               </span>
@@ -86,6 +100,10 @@
               <div class="info-row">
                 <span class="label">Type:</span>
                 <span class="value">{{ formatTypeOperation(programme.typeOperation) }}</span>
+              </div>
+              <div v-if="programme.route" class="info-row">
+                <span class="label">Route:</span>
+                <span class="value">{{ formatRoute(programme.route) }}</span>
               </div>
               <div class="info-row">
                 <span class="label">Période:</span>
@@ -179,6 +197,16 @@
               </div>
 
               <div class="form-group">
+                <label>Catégorie de vol <span class="required">*</span></label>
+                <select v-model="formData.categorieVol" required>
+                  <option value="">Sélectionner...</option>
+                  <option value="PASSAGER">Passager</option>
+                  <option value="CARGO">Cargo</option>
+                  <option value="DOMESTIQUE">Domestique</option>
+                </select>
+              </div>
+
+              <div class="form-group">
                 <label>Type d'opération <span class="required">*</span></label>
                 <select v-model="formData.typeOperation" required>
                   <option value="">Sélectionner...</option>
@@ -196,6 +224,16 @@
               <div class="form-group">
                 <label>Date de fin <span class="required">*</span></label>
                 <input v-model="formData.dateFin" type="date" required>
+              </div>
+
+              <div class="form-group">
+                <label>Provenance <span class="required">*</span></label>
+                <input v-model="formData.provenance" type="text" required placeholder="Ex: CDG (Paris)">
+              </div>
+
+              <div class="form-group">
+                <label>Destination <span class="required">*</span></label>
+                <input v-model="formData.destination" type="text" required placeholder="Ex: NDJ (N'Djamena)">
               </div>
 
               <div class="form-group">
@@ -218,14 +256,37 @@
                 </div>
               </div>
 
-              <div class="form-group full-width">
+              <div class="form-group">
                 <label>Numéro de vol type</label>
                 <input v-model="formData.numeroVolType" type="text" placeholder="Ex: THS001">
               </div>
 
+              <div class="form-group">
+                <label>Type d'avion</label>
+                <input v-model="formData.avionType" type="text" placeholder="Ex: B737-800">
+              </div>
+
+              <div class="form-group">
+                <label>Capacité passagers</label>
+                <input v-model.number="formData.capacitePassagers" type="number" min="0" placeholder="Ex: 189">
+              </div>
+
+              <div class="form-group">
+                <label>Night Stop</label>
+                <select v-model="formData.nightStop">
+                  <option :value="false">Non</option>
+                  <option :value="true">Oui</option>
+                </select>
+              </div>
+
               <div class="form-group full-width">
                 <label>Description</label>
-                <textarea v-model="formData.description" rows="3" placeholder="Description du programme..."></textarea>
+                <textarea v-model="formData.description" rows="2" placeholder="Description du programme..."></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label>Remarques</label>
+                <textarea v-model="formData.remarques" rows="2" placeholder="Remarques additionnelles..."></textarea>
               </div>
             </div>
 
@@ -260,8 +321,19 @@
               <span class="detail-value">{{ selectedProgramme?.compagnieAerienne }}</span>
             </div>
             <div class="detail-item">
+              <span class="detail-label">Catégorie</span>
+              <span v-if="selectedProgramme?.categorieVol" class="category-badge" :class="getCategoryBadgeClass(selectedProgramme?.categorieVol)">
+                {{ selectedProgramme?.categorieVol }}
+              </span>
+              <span v-else class="detail-value">-</span>
+            </div>
+            <div class="detail-item">
               <span class="detail-label">Type</span>
               <span class="detail-value">{{ formatTypeOperation(selectedProgramme?.typeOperation) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Route</span>
+              <span class="detail-value">{{ formatRoute(selectedProgramme?.route) }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Période</span>
@@ -273,9 +345,25 @@
               <span class="detail-label">Récurrence</span>
               <span class="detail-value">{{ formatRecurrence(selectedProgramme?.recurrence) }}</span>
             </div>
+            <div class="detail-item">
+              <span class="detail-label">Night Stop</span>
+              <span class="detail-value">{{ selectedProgramme?.nightStop ? 'Oui' : 'Non' }}</span>
+            </div>
+            <div v-if="selectedProgramme?.detailsVol?.avionType" class="detail-item">
+              <span class="detail-label">Type d'avion</span>
+              <span class="detail-value">{{ selectedProgramme.detailsVol.avionType }}</span>
+            </div>
+            <div v-if="selectedProgramme?.detailsVol?.capacitePassagers" class="detail-item">
+              <span class="detail-label">Capacité</span>
+              <span class="detail-value">{{ selectedProgramme.detailsVol.capacitePassagers }} pax</span>
+            </div>
             <div v-if="selectedProgramme?.description" class="detail-item full-width">
               <span class="detail-label">Description</span>
               <span class="detail-value">{{ selectedProgramme.description }}</span>
+            </div>
+            <div v-if="selectedProgramme?.remarques" class="detail-item full-width">
+              <span class="detail-label">Remarques</span>
+              <span class="detail-value">{{ selectedProgramme.remarques }}</span>
             </div>
           </div>
 
@@ -390,20 +478,28 @@ const suspendreRaison = ref('')
 // Filters
 const filters = reactive({
   statut: '',
-  compagnie: ''
+  compagnie: '',
+  categorieVol: ''
 })
 
 // Form
 const formData = reactive({
   nom: '',
   compagnieAerienne: '',
+  categorieVol: '',
   typeOperation: '',
   dateDebut: '',
   dateFin: '',
+  provenance: '',
+  destination: '',
   recurrence: '',
   joursRecurrence: [],
   numeroVolType: '',
-  description: ''
+  avionType: '',
+  capacitePassagers: null,
+  nightStop: false,
+  description: '',
+  remarques: ''
 })
 
 // Toast
@@ -437,6 +533,7 @@ const debounceSearch = () => {
 const resetFilters = () => {
   filters.statut = ''
   filters.compagnie = ''
+  filters.categorieVol = ''
   loadProgrammes()
 }
 
@@ -446,6 +543,7 @@ const loadProgrammes = async () => {
     const params = {}
     if (filters.statut) params.statut = filters.statut
     if (filters.compagnie) params.compagnie = filters.compagnie
+    if (filters.categorieVol) params.categorieVol = filters.categorieVol
 
     const response = await programmesVolAPI.getAll(params)
     const data = response.data.data || response.data
@@ -474,13 +572,20 @@ const openEditModal = (programme) => {
   Object.assign(formData, {
     nom: programme.nom || programme.nomProgramme || '',
     compagnieAerienne: programme.compagnieAerienne || '',
+    categorieVol: programme.categorieVol || '',
     typeOperation: programme.typeOperation || '',
     dateDebut: programme.dateDebut?.split('T')[0] || '',
     dateFin: programme.dateFin?.split('T')[0] || '',
+    provenance: programme.route?.provenance || '',
+    destination: programme.route?.destination || '',
     recurrence: programme.recurrence || '',
     joursRecurrence: programme.joursRecurrence || [],
-    numeroVolType: programme.numeroVolType || '',
-    description: programme.description || ''
+    numeroVolType: programme.numeroVolType || programme.detailsVol?.numeroVolBase || '',
+    avionType: programme.detailsVol?.avionType || '',
+    capacitePassagers: programme.detailsVol?.capacitePassagers || null,
+    nightStop: programme.nightStop || false,
+    description: programme.description || '',
+    remarques: programme.remarques || ''
   })
   showFormModal.value = true
 }
@@ -500,13 +605,20 @@ const resetFormData = () => {
   Object.assign(formData, {
     nom: '',
     compagnieAerienne: '',
+    categorieVol: '',
     typeOperation: '',
     dateDebut: '',
     dateFin: '',
+    provenance: '',
+    destination: '',
     recurrence: '',
     joursRecurrence: [],
     numeroVolType: '',
-    description: ''
+    avionType: '',
+    capacitePassagers: null,
+    nightStop: false,
+    description: '',
+    remarques: ''
   })
 }
 
@@ -517,13 +629,25 @@ const saveProgramme = async () => {
       nom: formData.nom,
       nomProgramme: formData.nom,
       compagnieAerienne: formData.compagnieAerienne,
+      categorieVol: formData.categorieVol,
       typeOperation: formData.typeOperation,
       dateDebut: formData.dateDebut,
       dateFin: formData.dateFin,
+      route: {
+        provenance: formData.provenance,
+        destination: formData.destination
+      },
       recurrence: formData.recurrence || null,
       joursRecurrence: formData.joursRecurrence,
       numeroVolType: formData.numeroVolType,
-      description: formData.description
+      nightStop: formData.nightStop,
+      detailsVol: {
+        numeroVolBase: formData.numeroVolType,
+        avionType: formData.avionType || undefined,
+        capacitePassagers: formData.capacitePassagers || undefined
+      },
+      description: formData.description,
+      remarques: formData.remarques || undefined
     }
 
     if (editingProgramme.value) {
@@ -629,6 +753,24 @@ const formatRecurrence = (rec) => {
     'MENSUEL': 'Mensuel'
   }
   return recs[rec] || 'Aucune'
+}
+
+const formatRoute = (route) => {
+  if (!route) return '-'
+  const { provenance, destination, escales } = route
+  let routeStr = `${provenance || '?'} → ${destination || '?'}`
+  if (escales && escales.length > 0) {
+    routeStr += ` (via ${escales.join(', ')})`
+  }
+  return routeStr
+}
+
+const getCategoryBadgeClass = (category) => {
+  return {
+    'badge-passager': category === 'PASSAGER',
+    'badge-cargo': category === 'CARGO',
+    'badge-domestique': category === 'DOMESTIQUE'
+  }
 }
 
 const getStatutClass = (statut) => {
@@ -820,12 +962,31 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
+.programme-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .programme-header h3 {
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
 }
+
+.category-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.badge-passager { background: #dbeafe; color: #1e40af; }
+.badge-cargo { background: #fef3c7; color: #92400e; }
+.badge-domestique { background: #d1fae5; color: #065f46; }
 
 .status-badge {
   padding: 4px 10px;
