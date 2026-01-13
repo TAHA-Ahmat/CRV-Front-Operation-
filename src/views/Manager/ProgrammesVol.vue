@@ -122,6 +122,14 @@
                 Modifier
               </button>
               <button
+                v-if="programme.nombreVols > 0"
+                @click="openPDFExport(programme)"
+                class="btn-action btn-pdf"
+                title="Exporter en PDF"
+              >
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
+              <button
                 v-if="canValidate && programme.statut === 'BROUILLON' && programme.nombreVols > 0"
                 @click="validerProgramme(programme)"
                 class="btn-action btn-validate"
@@ -301,6 +309,14 @@
                   <option v-for="(jour, idx) in joursNom" :key="idx" :value="idx">{{ jour }}</option>
                 </select>
               </div>
+              <button
+                v-if="vols.length > 0"
+                @click="openPDFExport(selectedProgramme)"
+                class="btn btn-secondary btn-sm btn-pdf-detail"
+                title="Exporter en PDF"
+              >
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
               <button
                 v-if="canEditVols"
                 @click="openAddVolModal"
@@ -631,6 +647,37 @@
       </div>
     </div>
 
+    <!-- Modal Export PDF -->
+    <div v-if="showPDFExportModal" class="modal-overlay" @click.self="closePDFExportModal">
+      <div class="modal-content modal-pdf">
+        <div class="modal-header">
+          <h2><i class="fas fa-file-pdf mr-2"></i> Export PDF</h2>
+          <button @click="closePDFExportModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="programmeForPDF" class="pdf-export-content">
+            <div class="pdf-programme-info">
+              <h3>{{ programmeForPDF.nom }}</h3>
+              <p class="pdf-periode">
+                {{ formatDate(programmeForPDF.dateDebut) }} - {{ formatDate(programmeForPDF.dateFin) }}
+              </p>
+              <p class="pdf-vols-count">{{ programmeForPDF.nombreVols || 0 }} vols</p>
+            </div>
+            <ProgrammeVolPDF
+              :programme-id="programmeForPDF._id || programmeForPDF.id"
+              :programme-nom="programmeForPDF.nom"
+              :show-preview-data="false"
+              @success="onPDFSuccess"
+              @error="onPDFError"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closePDFExportModal" class="btn btn-secondary">Fermer</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast -->
     <div v-if="toast.show" class="toast" :class="toast.type">
       {{ toast.message }}
@@ -655,6 +702,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { programmesVolAPI } from '@/services/api'
 import { canValidateProgramme, canDeleteProgramme } from '@/utils/permissions'
 import { normalizeRole } from '@/config/roles'
+import ProgrammeVolPDF from '@/components/flights/ProgrammeVolPDF.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -700,6 +748,8 @@ const showVolModal = ref(false)
 const showSuspendreModal = ref(false)
 const showDeleteModal = ref(false)
 const showDeleteVolModal = ref(false)
+const showPDFExportModal = ref(false)
+const programmeForPDF = ref(null)
 const suspendreRaison = ref('')
 
 // ============================================
@@ -1292,6 +1342,28 @@ const showToast = (message, type = 'success') => {
   toast.type = type
   toast.show = true
   setTimeout(() => { toast.show = false }, 4000)
+}
+
+// ============================================
+// PDF EXPORT
+// ============================================
+
+const openPDFExport = (programme) => {
+  programmeForPDF.value = programme
+  showPDFExportModal.value = true
+}
+
+const closePDFExportModal = () => {
+  showPDFExportModal.value = false
+  programmeForPDF.value = null
+}
+
+const onPDFSuccess = (message) => {
+  showToast(message, 'success')
+}
+
+const onPDFError = (message) => {
+  showToast(message, 'error')
 }
 
 // ============================================
@@ -2506,4 +2578,55 @@ onMounted(() => {
 
 .toast.success { background: #10b981; color: white; }
 .toast.error { background: #ef4444; color: white; }
+
+/* PDF Export */
+.btn-pdf { background: #dc2626; color: white; }
+.btn-pdf:hover { background: #b91c1c; }
+
+.btn-pdf-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-pdf {
+  max-width: 450px;
+}
+
+.pdf-export-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pdf-programme-info {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.pdf-programme-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.pdf-periode {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+}
+
+.pdf-vols-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
 </style>

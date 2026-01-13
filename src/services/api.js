@@ -803,10 +803,27 @@ export const programmesVolAPI = {
   deleteVol: (programmeId, volId) => api.delete(`/programmes-vol/${programmeId}/vols/${volId}`),
 
   /**
-   * Exporter les données pour PDF
+   * Exporter les données pour PDF (aperçu JSON)
    * GET /api/programmes-vol/:programmeId/export-pdf
+   * @returns {Object} Données structurées pour affichage
    */
-  exportPDF: (programmeId) => api.get(`/programmes-vol/${programmeId}/export-pdf`)
+  exportPDF: (programmeId) => api.get(`/programmes-vol/${programmeId}/export-pdf`),
+
+  /**
+   * Télécharger le PDF du programme de vols
+   * GET /api/programmes-vol/:programmeId/telecharger-pdf
+   * @returns {Blob} Fichier PDF
+   */
+  telechargerPDF: (programmeId) => api.get(`/programmes-vol/${programmeId}/telecharger-pdf`, {
+    responseType: 'blob'
+  }),
+
+  /**
+   * Obtenir le PDF en base64 (pour preview dans modal)
+   * GET /api/programmes-vol/:programmeId/pdf-base64
+   * @returns {Object} { base64: string, mimeType: string }
+   */
+  getPDFBase64: (programmeId) => api.get(`/programmes-vol/${programmeId}/pdf-base64`)
 }
 
 // ============================================
