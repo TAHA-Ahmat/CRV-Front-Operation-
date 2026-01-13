@@ -713,7 +713,100 @@ export const programmesVolAPI = {
    * GET /api/programmes-vol/statistiques/jours
    * Retourne: { Lundi: { total, passagers, cargo, domestiques }, ... }
    */
-  getStatistiquesJours: () => api.get('/programmes-vol/statistiques/jours')
+  getStatistiquesJours: () => api.get('/programmes-vol/statistiques/jours'),
+
+  /**
+   * Obtenir le programme actif
+   * GET /api/programmes-vol/actif
+   */
+  getActif: () => api.get('/programmes-vol/actif'),
+
+  /**
+   * Dupliquer un programme
+   * POST /api/programmes-vol/:id/dupliquer
+   */
+  dupliquer: (id) => api.post(`/programmes-vol/${id}/dupliquer`),
+
+  /**
+   * Obtenir les statistiques d'un programme
+   * GET /api/programmes-vol/:id/statistiques
+   */
+  getStatistiques: (id) => api.get(`/programmes-vol/${id}/statistiques`),
+
+  // ============================================
+  // VOLS D'UN PROGRAMME (architecture 2 niveaux)
+  // ============================================
+
+  /**
+   * Lister les vols d'un programme
+   * GET /api/programmes-vol/:programmeId/vols
+   */
+  getVols: (programmeId, params = {}) => api.get(`/programmes-vol/${programmeId}/vols`, { params }),
+
+  /**
+   * Obtenir les vols d'un jour spécifique
+   * GET /api/programmes-vol/:programmeId/vols/jour/:jour
+   * @param jour - 0=Dimanche, 1=Lundi, ..., 6=Samedi
+   */
+  getVolsParJour: (programmeId, jour) => api.get(`/programmes-vol/${programmeId}/vols/jour/${jour}`),
+
+  /**
+   * Rechercher des vols par numéro
+   * GET /api/programmes-vol/:programmeId/vols/recherche
+   * Query: { q: "ET939" }
+   */
+  rechercherVols: (programmeId, query) => api.get(`/programmes-vol/${programmeId}/vols/recherche`, { params: { q: query } }),
+
+  /**
+   * Obtenir les vols d'une compagnie
+   * GET /api/programmes-vol/:programmeId/vols/compagnie/:code
+   */
+  getVolsParCompagnie: (programmeId, codeCompagnie) => api.get(`/programmes-vol/${programmeId}/vols/compagnie/${codeCompagnie}`),
+
+  /**
+   * Ajouter un vol à un programme
+   * POST /api/programmes-vol/:programmeId/vols
+   * Body: { joursSemaine, numeroVol, typeAvion, provenance, heureArrivee, destination, heureDepart, ... }
+   */
+  addVol: (programmeId, data) => api.post(`/programmes-vol/${programmeId}/vols`, data),
+
+  /**
+   * Importer plusieurs vols
+   * POST /api/programmes-vol/:programmeId/vols/import
+   * Body: { vols: [...] }
+   */
+  importVols: (programmeId, vols) => api.post(`/programmes-vol/${programmeId}/vols/import`, { vols }),
+
+  /**
+   * Réorganiser l'ordre des vols
+   * PATCH /api/programmes-vol/:programmeId/vols/reorganiser
+   * Body: { volsOrdre: [{ id, ordre }] }
+   */
+  reorganiserVols: (programmeId, volsOrdre) => api.patch(`/programmes-vol/${programmeId}/vols/reorganiser`, { volsOrdre }),
+
+  /**
+   * Obtenir un vol spécifique
+   * GET /api/programmes-vol/:programmeId/vols/:volId
+   */
+  getVol: (programmeId, volId) => api.get(`/programmes-vol/${programmeId}/vols/${volId}`),
+
+  /**
+   * Modifier un vol
+   * PATCH /api/programmes-vol/:programmeId/vols/:volId
+   */
+  updateVol: (programmeId, volId, data) => api.patch(`/programmes-vol/${programmeId}/vols/${volId}`, data),
+
+  /**
+   * Supprimer un vol
+   * DELETE /api/programmes-vol/:programmeId/vols/:volId
+   */
+  deleteVol: (programmeId, volId) => api.delete(`/programmes-vol/${programmeId}/vols/${volId}`),
+
+  /**
+   * Exporter les données pour PDF
+   * GET /api/programmes-vol/:programmeId/export-pdf
+   */
+  exportPDF: (programmeId) => api.get(`/programmes-vol/${programmeId}/export-pdf`)
 }
 
 // ============================================

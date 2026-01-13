@@ -207,14 +207,17 @@ export function hasPermission(role, action) {
     return false
   }
 
+  // Normaliser le rôle en majuscules pour correspondre à la matrice
+  const normalizedRole = typeof role === 'string' ? role.toUpperCase().trim() : role
+
   const allowedRoles = PERMISSION_MATRIX[action]
   if (!allowedRoles) {
     console.warn(`[CRV][PERMISSION_CHECK] Action non définie dans la matrice: ${action}`)
     return false
   }
 
-  const hasAccess = allowedRoles.includes(role)
-  console.log(`[CRV][PERMISSION_CHECK] ${role} pour ${action}: ${hasAccess ? 'AUTORISÉ' : 'REFUSÉ'}`)
+  const hasAccess = allowedRoles.includes(normalizedRole)
+  console.log(`[CRV][PERMISSION_CHECK] ${normalizedRole} pour ${action}: ${hasAccess ? 'AUTORISÉ' : 'REFUSÉ'}`)
 
   return hasAccess
 }
