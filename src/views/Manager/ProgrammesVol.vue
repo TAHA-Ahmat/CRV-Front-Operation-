@@ -129,6 +129,18 @@
               >
                 <i class="fas fa-file-pdf"></i> PDF
               </button>
+              <ArchiveButton
+                v-if="programme.statut === 'ACTIF' || programme.statut === 'VALIDE'"
+                document-type="programme-vol"
+                :document-id="programme._id || programme.id"
+                :document-name="programme.nom"
+                :archivage-info="programme.archivage"
+                :document-statut="programme.statut"
+                :api-service="programmesVolAPI"
+                :compact="true"
+                @archived="onProgrammeArchived"
+                @error="onArchiveError"
+              />
               <button
                 v-if="canValidate && programme.statut === 'BROUILLON' && programme.nombreVols > 0"
                 @click="validerProgramme(programme)"
@@ -317,6 +329,17 @@
               >
                 <i class="fas fa-file-pdf"></i> PDF
               </button>
+              <ArchiveButton
+                v-if="selectedProgramme && (selectedProgramme.statut === 'ACTIF' || selectedProgramme.statut === 'VALIDE')"
+                document-type="programme-vol"
+                :document-id="selectedProgramme._id || selectedProgramme.id"
+                :document-name="selectedProgramme.nom"
+                :archivage-info="selectedProgramme.archivage"
+                :document-statut="selectedProgramme.statut"
+                :api-service="programmesVolAPI"
+                @archived="onProgrammeArchived"
+                @error="onArchiveError"
+              />
               <button
                 v-if="canEditVols"
                 @click="openAddVolModal"
@@ -703,6 +726,7 @@ import { programmesVolAPI } from '@/services/api'
 import { canValidateProgramme, canDeleteProgramme } from '@/utils/permissions'
 import { normalizeRole } from '@/config/roles'
 import ProgrammeVolPDF from '@/components/flights/ProgrammeVolPDF.vue'
+import ArchiveButton from '@/components/Common/ArchiveButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -1364,6 +1388,28 @@ const onPDFSuccess = (message) => {
 
 const onPDFError = (message) => {
   showToast(message, 'error')
+}
+
+// ============================================
+// ARCHIVAGE GOOGLE DRIVE
+// ============================================
+
+const onProgrammeArchived = async ({ documentId, archivage }) => {
+  console.log('[ProgrammesVol] Programme archivé:', documentId, archivage)
+  showToast('Programme archivé dans Google Drive', 'success')
+
+  // Rafraîchir la liste pour mettre à jour les infos d'archivage
+  await loadProgrammes()
+
+  // Si le modal détail est ouvert, rafraîchir aussi
+  if (showDetailModal.value && selectedProgramme.value) {
+    await refreshSelectedProgramme()
+  }
+}
+
+const onArchiveError = ({ documentId, error }) => {
+  console.error('[ProgrammesVol] Erreur archivage:', documentId, error)
+  showToast(error || 'Erreur lors de l\'archivage', 'error')
 }
 
 // ============================================

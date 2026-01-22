@@ -388,11 +388,51 @@ export const crvAPI = {
    */
   getAnnules: (params) => api.get('/crv/annules', { params }),
 
+  // ============================================
+  // ARCHIVAGE GOOGLE DRIVE
+  // ============================================
+
   /**
-   * Archiver un CRV
+   * Archiver un CRV dans Google Drive
    * POST /api/crv/:id/archive
+   * @returns {Object} { crv, archivage: { fileId, webViewLink, filename, folderPath, size, archivedAt, version } }
    */
-  archive: (id) => api.post(`/crv/${id}/archive`),
+  archive: (id) => {
+    console.log('[CRV API] archive() - Archivage CRV ID:', id)
+    return api.post(`/crv/${id}/archive`)
+  },
+
+  /**
+   * Vérifier si un CRV peut être archivé
+   * GET /api/crv/:id/archive/status
+   * @returns {Object} { canArchive, crv: { isAlreadyArchived, statut }, messages }
+   */
+  getArchivageStatus: (id) => {
+    console.log('[CRV API] getArchivageStatus() - CRV ID:', id)
+    return api.get(`/crv/${id}/archive/status`)
+  },
+
+  /**
+   * Obtenir le PDF d'un CRV en base64 (pour preview)
+   * GET /api/crv/:id/pdf-base64
+   * @returns {Object} { base64, mimeType }
+   */
+  getPDFBase64: (id) => {
+    console.log('[CRV API] getPDFBase64() - CRV ID:', id)
+    return api.get(`/crv/${id}/pdf-base64`)
+  },
+
+  /**
+   * Télécharger le PDF d'un CRV
+   * GET /api/crv/:id/telecharger-pdf
+   * @returns {Blob} Fichier PDF
+   */
+  telechargerPDF: (id) => {
+    console.log('[CRV API] telechargerPDF() - CRV ID:', id)
+    return api.get(`/crv/${id}/telecharger-pdf`, {
+      responseType: 'blob'
+    })
+  },
 
   // ============================================
   // Extension 6 - Annulation CRV
@@ -823,7 +863,31 @@ export const programmesVolAPI = {
    * GET /api/programmes-vol/:programmeId/pdf-base64
    * @returns {Object} { base64: string, mimeType: string }
    */
-  getPDFBase64: (programmeId) => api.get(`/programmes-vol/${programmeId}/pdf-base64`)
+  getPDFBase64: (programmeId) => api.get(`/programmes-vol/${programmeId}/pdf-base64`),
+
+  // ============================================
+  // ARCHIVAGE GOOGLE DRIVE
+  // ============================================
+
+  /**
+   * Archiver un programme de vols dans Google Drive
+   * POST /api/programmes-vol/:programmeId/archiver
+   * @returns {Object} { programme, archivage: { fileId, webViewLink, filename, folderPath, size, archivedAt, version } }
+   */
+  archiver: (programmeId) => {
+    console.log('[PROGRAMMES VOL API] archiver() - Programme ID:', programmeId)
+    return api.post(`/programmes-vol/${programmeId}/archiver`)
+  },
+
+  /**
+   * Vérifier si un programme peut être archivé
+   * GET /api/programmes-vol/:programmeId/archivage/status
+   * @returns {Object} { canArchive, programme: { isAlreadyArchived, statut }, messages }
+   */
+  getArchivageStatus: (programmeId) => {
+    console.log('[PROGRAMMES VOL API] getArchivageStatus() - Programme ID:', programmeId)
+    return api.get(`/programmes-vol/${programmeId}/archivage/status`)
+  }
 }
 
 // ============================================

@@ -157,6 +157,19 @@
                   >
                     Supprimer
                   </button>
+                  <!-- Bouton Archiver Google Drive -->
+                  <ArchiveButton
+                    v-if="canArchiveCRV(crv)"
+                    document-type="crv"
+                    :document-id="crv._id || crv.id"
+                    :document-name="crv.numeroCRV"
+                    :archivage-info="crv.archivage"
+                    :document-statut="crv.statut"
+                    :api-service="crvAPI"
+                    :compact="true"
+                    @archived="onCRVArchived"
+                    @error="onArchiveError"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -315,7 +328,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCRVStore } from '@/stores/crvStore'
 import { useAuthStore } from '@/stores/authStore'
+import { crvAPI } from '@/services/api'
 import { canEdit, canCancelCRV, canDeleteCRV } from '@/utils/permissions'
+import ArchiveButton from '@/components/Common/ArchiveButton.vue'
 
 const router = useRouter()
 const crvStore = useCRVStore()
@@ -517,6 +532,11 @@ const canSupprimerCRV = (crv) => {
   return crv.statut !== 'VERROUILLE'
 }
 
+// Vérifier si un CRV peut être archivé (VALIDE ou VERROUILLE)
+const canArchiveCRV = (crv) => {
+  return crv.statut === 'VALIDE' || crv.statut === 'VERROUILLE'
+}
+
 // MVS-2: Gestion modaux Annuler
 const openAnnulerModal = (crv) => {
   selectedCRV.value = crv
@@ -601,6 +621,19 @@ const confirmerSuppression = async () => {
   } catch (err) {
     showToast(err.message || 'Erreur lors de la suppression', 'error')
   }
+}
+
+// Archivage Google Drive
+const onCRVArchived = async ({ documentId, archivage }) => {
+  console.log('[CRVList] CRV archivé:', documentId, archivage)
+  showToast('CRV archivé dans Google Drive', 'success')
+  // Rafraîchir la liste pour mettre à jour les infos d'archivage
+  await loadCRVList()
+}
+
+const onArchiveError = ({ documentId, error }) => {
+  console.error('[CRVList] Erreur archivage:', documentId, error)
+  showToast(error || 'Erreur lors de l\'archivage', 'error')
 }
 
 // Toast

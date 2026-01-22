@@ -109,6 +109,21 @@
                 Déverrouiller
               </button>
             </template>
+            <!-- Bouton Archiver Google Drive -->
+            <div @click.stop>
+              <ArchiveButton
+                v-if="crv.statut === 'VALIDE' || crv.statut === 'VERROUILLE'"
+                document-type="crv"
+                :document-id="crv._id || crv.id"
+                :document-name="crv.numeroCRV"
+                :archivage-info="crv.archivage"
+                :document-statut="crv.statut"
+                :api-service="crvAPI"
+                :compact="true"
+                @archived="onCRVArchived"
+                @error="onArchiveError"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -233,6 +248,18 @@
                 Déverrouiller
               </button>
             </template>
+            <!-- Bouton Archiver Google Drive -->
+            <ArchiveButton
+              v-if="selectedCRV.statut === 'VALIDE' || selectedCRV.statut === 'VERROUILLE'"
+              document-type="crv"
+              :document-id="selectedCRV._id || selectedCRV.id"
+              :document-name="selectedCRV.numeroCRV"
+              :archivage-info="selectedCRV.archivage"
+              :document-statut="selectedCRV.statut"
+              :api-service="crvAPI"
+              @archived="onCRVArchived"
+              @error="onArchiveError"
+            />
             <button @click="closeCRVDetail" class="btn btn-secondary">Fermer</button>
           </div>
         </div>
@@ -381,6 +408,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { crvAPI, validationAPI } from '@/services/api'
 import { canValidateCRV, canRejectCRV, canLockCRV, canUnlockCRV } from '@/utils/permissions'
 import { STATUT_CRV_LABELS, TYPE_OPERATION_LABELS } from '@/config/crvEnums'
+import ArchiveButton from '@/components/Common/ArchiveButton.vue'
 
 // Stores
 const authStore = useAuthStore()
@@ -654,6 +682,23 @@ function showToast(message, type = 'success') {
   setTimeout(() => {
     toast.value.show = false
   }, 4000)
+}
+
+// Archivage Google Drive
+async function onCRVArchived({ documentId, archivage }) {
+  console.log('[ValidationCRV] CRV archivé:', documentId, archivage)
+  showToast('CRV archivé dans Google Drive', 'success')
+  // Rafraîchir la liste pour mettre à jour les infos d'archivage
+  await loadCRVList()
+  // Rafraîchir le CRV sélectionné si ouvert
+  if (selectedCRV.value && (selectedCRV.value._id === documentId || selectedCRV.value.id === documentId)) {
+    await selectCRV(selectedCRV.value)
+  }
+}
+
+function onArchiveError({ documentId, error }) {
+  console.error('[ValidationCRV] Erreur archivage:', documentId, error)
+  showToast(error || 'Erreur lors de l\'archivage', 'error')
 }
 
 // Lifecycle
