@@ -1,13 +1,9 @@
 /**
  * ROUTES MANAGER / SUPERVISEUR - CONTRAT BACKEND
  *
- * Source de vérité : docs/process/MVS-10-Validation/05-process-metier.md
- *
- * Rôles autorisés :
- * - MANAGER → Accès complet (dashboard, validation, statistiques)
- * - SUPERVISEUR → Accès dashboard et statistiques
- * - QUALITE → Accès validation et statistiques (MVS-10: peut valider/rejeter/verrouiller)
- * - ADMIN → Accès validation (peut tout faire y compris déverrouiller)
+ * Alignement Backend 2026-01-23 (excludeQualite):
+ * - Tous les opérationnels + ADMIN peuvent tout faire sur les CRV
+ * - QUALITE: lecture seule absolue (pas d'accès aux pages de modification)
  */
 
 import { ROLES } from '@/config/roles';
@@ -28,8 +24,8 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ValidationCRV.vue'),
     meta: {
       requiresAuth: true,
-      // Validation réservée ADMIN uniquement (QUALITE = lecture seule absolue)
-      allowedRoles: [ROLES.ADMIN]
+      // Tous les opérationnels + ADMIN (sauf QUALITE)
+      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN]
     }
   },
   {

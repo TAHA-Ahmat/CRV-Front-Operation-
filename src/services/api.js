@@ -1238,7 +1238,7 @@ export const validationAPI = {
   },
 
   /**
-   * Rejeter un CRV (ADMIN uniquement)
+   * Rejeter un CRV (tous sauf QUALITE)
    * POST /api/validation/:id/rejeter
    * Body: { commentaires } (obligatoire)
    * Résultat: CRV retourne à EN_COURS pour correction

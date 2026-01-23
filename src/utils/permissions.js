@@ -6,13 +6,9 @@
  * RÈGLE ABSOLUE : Cette matrice reflète EXACTEMENT les permissions backend.
  * Le frontend ne DÉCIDE pas, il AFFICHE ce que le backend autorise.
  *
- * CORRECTION 2026-01-23 - Alignement Backend:
+ * CORRECTION 2026-01-23 - Alignement Backend (excludeQualite):
+ * - Tous les opérationnels + ADMIN peuvent TOUT faire sur les CRV
  * - QUALITE: LECTURE SEULE ABSOLUE (ne peut RIEN faire sauf lire)
- * - CRV_VALIDER: ADMIN uniquement
- * - CRV_REJETER: ADMIN uniquement
- * - CRV_VERROUILLER: ADMIN uniquement
- * - CRV_DEVERROUILLER: ADMIN uniquement (opération exceptionnelle)
- * - CRV_SUPPRIMER: SUPERVISEUR, MANAGER uniquement
  */
 
 import { ROLES } from '@/config/roles'
@@ -99,41 +95,37 @@ export const ACTIONS = Object.freeze({
 // ============================================
 
 /**
- * CORRECTION 2026-01-23 - Alignement Backend:
- * - QUALITE: LECTURE SEULE ABSOLUE (excludeQualite bloque TOUT)
- * - CRV_VALIDER: ADMIN uniquement
- * - CRV_REJETER: ADMIN uniquement
- * - CRV_VERROUILLER: ADMIN uniquement
- * - CRV_DEVERROUILLER: ADMIN uniquement (opération exceptionnelle)
- * - CRV_SUPPRIMER: SUPERVISEUR, MANAGER uniquement
+ * Alignement Backend 2026-01-23:
+ * - excludeQualite = tous les rôles sauf QUALITE peuvent agir
+ * - QUALITE: LECTURE SEULE ABSOLUE
  */
+
+// Tous les rôles qui peuvent agir sur les CRV (backend excludeQualite)
+const ROLES_OPERATIONNELS_ET_ADMIN = [
+  ROLES.AGENT_ESCALE,
+  ROLES.CHEF_EQUIPE,
+  ROLES.SUPERVISEUR,
+  ROLES.MANAGER,
+  ROLES.ADMIN
+]
+
 const PERMISSION_MATRIX = {
-  // CRV - Opérations de base
-  [ACTIONS.CRV_CREER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.CRV_MODIFIER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.CRV_LIRE]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE],
+  // CRV - Tous les opérationnels + ADMIN peuvent tout faire (sauf QUALITE)
+  [ACTIONS.CRV_CREER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_MODIFIER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_LIRE]: [...ROLES_OPERATIONNELS_ET_ADMIN, ROLES.QUALITE],
+  [ACTIONS.CRV_SUPPRIMER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_ARCHIVER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_DEMARRER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_TERMINER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_VALIDER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_REJETER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_VERROUILLER]: ROLES_OPERATIONNELS_ET_ADMIN,
 
-  // Suppression réservée SUPERVISEUR et MANAGER
-  [ACTIONS.CRV_SUPPRIMER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_DEVERROUILLER]: ROLES_OPERATIONNELS_ET_ADMIN,
 
-  [ACTIONS.CRV_ARCHIVER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.CRV_DEMARRER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.CRV_TERMINER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-
-  // ADMIN uniquement - QUALITE est en lecture seule absolue (backend excludeQualite)
-  [ACTIONS.CRV_VALIDER]: [ROLES.ADMIN],
-
-  // ADMIN uniquement (commentaire obligatoire)
-  [ACTIONS.CRV_REJETER]: [ROLES.ADMIN],
-
-  // ADMIN uniquement (prérequis: statut VALIDE)
-  [ACTIONS.CRV_VERROUILLER]: [ROLES.ADMIN],
-
-  // MVS-10: Déverrouillage ADMIN uniquement (opération exceptionnelle, raison obligatoire)
-  [ACTIONS.CRV_DEVERROUILLER]: [ROLES.ADMIN],
-
-  [ACTIONS.CRV_ANNULER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.CRV_REACTIVER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_ANNULER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  [ACTIONS.CRV_REACTIVER]: ROLES_OPERATIONNELS_ET_ADMIN,
 
   // Charges
   [ACTIONS.CHARGE_AJOUTER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
@@ -382,46 +374,46 @@ export function isReadOnlyRole(role) {
 }
 
 /**
- * Validation ADMIN uniquement (QUALITE = lecture seule absolue)
+ * Validation CRV - Tous sauf QUALITE
  * @param {string} role
  * @returns {boolean}
  */
 export function canValidateCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_VALIDER)
-  console.log(`[CRV][PERMISSION_CRV] canValidateCRV(${role}): ${result} [ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canValidateCRV(${role}): ${result}`)
   return result
 }
 
 /**
- * Rejet ADMIN uniquement
+ * Rejet CRV - Tous sauf QUALITE
  * @param {string} role
  * @returns {boolean}
  */
 export function canRejectCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_REJETER)
-  console.log(`[CRV][PERMISSION_CRV] canRejectCRV(${role}): ${result} [ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canRejectCRV(${role}): ${result}`)
   return result
 }
 
 /**
- * Verrouillage ADMIN uniquement
+ * Verrouillage CRV - Tous sauf QUALITE
  * @param {string} role
  * @returns {boolean}
  */
 export function canLockCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_VERROUILLER)
-  console.log(`[CRV][PERMISSION_CRV] canLockCRV(${role}): ${result} [ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canLockCRV(${role}): ${result}`)
   return result
 }
 
 /**
- * MVS-10: Déverrouillage ADMIN uniquement
+ * Déverrouillage CRV - Tous sauf QUALITE
  * @param {string} role
  * @returns {boolean}
  */
 export function canUnlockCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_DEVERROUILLER)
-  console.log(`[CRV][PERMISSION_CRV] canUnlockCRV(${role}): ${result} [ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canUnlockCRV(${role}): ${result}`)
   return result
 }
 
@@ -464,14 +456,13 @@ export function isAdminRole(role) {
 // ============================================
 
 export const PERMISSION_MESSAGES = Object.freeze({
-  QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule pour les opérations CRV (création/modification).',
-  ADMIN_NO_CRV: 'Les comptes ADMIN ne peuvent pas créer ou modifier des CRV. Utilisez un compte opérationnel.',
+  QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule. Seuls les opérationnels et ADMIN peuvent agir sur les CRV.',
   INSUFFICIENT_PERMISSIONS: 'Vous n\'avez pas les permissions nécessaires pour cette action.',
-  VALIDATION_RESERVED: 'Validation CRV réservée au rôle ADMIN uniquement.',
-  REJET_RESERVED: 'Rejet CRV réservé au rôle ADMIN uniquement.',
-  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé au rôle ADMIN uniquement.',
-  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé au rôle ADMIN uniquement.',
-  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux SUPERVISEUR et MANAGER.',
+  VALIDATION_RESERVED: 'Validation CRV réservée aux rôles opérationnels et ADMIN.',
+  REJET_RESERVED: 'Rejet CRV réservé aux rôles opérationnels et ADMIN.',
+  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux rôles opérationnels et ADMIN.',
+  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux rôles opérationnels et ADMIN.',
+  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux rôles opérationnels et ADMIN.',
   SUPPRESSION_PROGRAMME_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
   ADMIN_ONLY: 'Accès refusé. Cette action est réservée aux administrateurs.',
   COMPLETUDE_INSUFFISANTE: 'Complétude insuffisante. Minimum 80% requis pour valider.',
@@ -489,33 +480,12 @@ export const PERMISSION_MESSAGES = Object.freeze({
 export function getPermissionDeniedMessage(role, action) {
   console.log(`[CRV][PERMISSION_DENIED] ${role} tentative: ${action}`)
 
-  // Actions de validation/rejet/verrouillage réservées ADMIN uniquement
-  if (action === ACTIONS.CRV_VALIDER) {
-    return PERMISSION_MESSAGES.VALIDATION_RESERVED
-  }
-
-  if (action === ACTIONS.CRV_REJETER) {
-    return PERMISSION_MESSAGES.REJET_RESERVED
-  }
-
-  if (action === ACTIONS.CRV_VERROUILLER) {
-    return PERMISSION_MESSAGES.VERROUILLAGE_RESERVED
-  }
-
-  if (action === ACTIONS.CRV_DEVERROUILLER) {
-    return PERMISSION_MESSAGES.DEVERROUILLAGE_RESERVED
-  }
-
-  // QUALITE en lecture seule pour création/modification CRV
-  if (role === ROLES.QUALITE && (action === ACTIONS.CRV_CREER || action === ACTIONS.CRV_MODIFIER)) {
+  // QUALITE est en lecture seule absolue pour toutes les actions CRV
+  if (role === ROLES.QUALITE) {
     return PERMISSION_MESSAGES.QUALITE_READ_ONLY
   }
 
-  // ADMIN ne peut pas créer/modifier de CRV
-  if (role === ROLES.ADMIN && (action === ACTIONS.CRV_CREER || action === ACTIONS.CRV_MODIFIER)) {
-    return PERMISSION_MESSAGES.ADMIN_NO_CRV
-  }
-
+  // Messages spécifiques par action (pour les autres cas rares)
   if (action === ACTIONS.CRV_SUPPRIMER) {
     return PERMISSION_MESSAGES.SUPPRESSION_CRV_RESERVED
   }
@@ -549,38 +519,13 @@ export function getPermissionDeniedMessage(role, action) {
 export function canTransitionCRV(role, fromStatus, toStatus) {
   console.log(`[CRV][TRANSITION_CHECK] ${role}: ${fromStatus} → ${toStatus}`)
 
-  // Validation - ADMIN uniquement (QUALITE = lecture seule absolue)
-  if (toStatus === 'VALIDE') {
-    if (role !== ROLES.ADMIN) {
-      console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas valider`)
-      return { allowed: false, message: PERMISSION_MESSAGES.VALIDATION_RESERVED }
-    }
+  // QUALITE ne peut faire aucune transition (lecture seule absolue)
+  if (role === ROLES.QUALITE) {
+    console.log(`[CRV][TRANSITION_DENIED] QUALITE est en lecture seule`)
+    return { allowed: false, message: PERMISSION_MESSAGES.QUALITE_READ_ONLY }
   }
 
-  // Verrouillage - ADMIN uniquement
-  if (toStatus === 'VERROUILLE') {
-    if (role !== ROLES.ADMIN) {
-      console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas verrouiller`)
-      return { allowed: false, message: PERMISSION_MESSAGES.VERROUILLAGE_RESERVED }
-    }
-  }
-
-  // Déverrouillage (depuis VERROUILLE) - ADMIN uniquement
-  if (fromStatus === 'VERROUILLE') {
-    if (role !== ROLES.ADMIN) {
-      console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas déverrouiller`)
-      return { allowed: false, message: PERMISSION_MESSAGES.DEVERROUILLAGE_RESERVED }
-    }
-  }
-
-  // Rejet (retour EN_COURS depuis TERMINE) - ADMIN uniquement
-  if (fromStatus === 'TERMINE' && toStatus === 'EN_COURS') {
-    if (role !== ROLES.ADMIN) {
-      console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas rejeter`)
-      return { allowed: false, message: PERMISSION_MESSAGES.REJET_RESERVED }
-    }
-  }
-
+  // Tous les autres rôles (opérationnels + ADMIN) peuvent faire toutes les transitions
   console.log(`[CRV][TRANSITION_ALLOWED] ${role}: ${fromStatus} → ${toStatus}`)
   return { allowed: true, message: '' }
 }
