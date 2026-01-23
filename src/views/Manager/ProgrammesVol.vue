@@ -137,7 +137,7 @@
                 :archivage-info="programme.archivage"
                 :document-statut="programme.statut"
                 :api-service="programmesVolAPI"
-                :compact="true"
+                :compact="false"
                 @archived="onProgrammeArchived"
                 @error="onArchiveError"
               />
@@ -533,8 +533,14 @@
               </div>
 
               <div class="form-group">
-                <label>Code compagnie</label>
-                <input v-model="volForm.codeCompagnie" type="text" placeholder="Auto-déduit si vide">
+                <label>Code compagnie (2-3 car.)</label>
+                <input
+                  v-model="volForm.codeCompagnie"
+                  type="text"
+                  maxlength="3"
+                  placeholder="Ex: ET, AF (auto si vide)"
+                  style="text-transform: uppercase;"
+                >
               </div>
 
               <div class="form-group">
@@ -1246,10 +1252,15 @@ const saveVol = async () => {
   savingVol.value = true
   try {
     const programmeId = selectedProgramme.value._id || selectedProgramme.value.id
+    // Forcer majuscules et limiter codeCompagnie à 3 caractères max
+    const codeCompagnieClean = volForm.codeCompagnie
+      ? volForm.codeCompagnie.toUpperCase().trim().substring(0, 3)
+      : undefined
+
     const data = {
       joursSemaine: volForm.joursSemaine.sort((a, b) => a - b),
       numeroVol: volForm.numeroVol.toUpperCase(),
-      codeCompagnie: volForm.codeCompagnie || undefined,
+      codeCompagnie: codeCompagnieClean,
       typeAvion: volForm.typeAvion || undefined,
       version: volForm.version || 'TBN',
       provenance: volForm.provenance || undefined,

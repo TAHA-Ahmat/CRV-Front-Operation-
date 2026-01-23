@@ -33,3 +33,6 @@ dist-ssr
 # Build
 build
 .cache
+
+# Test coverage
+coverage/
