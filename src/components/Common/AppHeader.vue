@@ -10,21 +10,22 @@
   -->
   <header v-if="isAuthenticated" class="fixed top-0 w-full bg-white shadow-sm z-50 border-b border-gray-200">
     <div class="container mx-auto px-4 h-16 flex items-center justify-between">
-      <!-- Logo CRV -->
-      <div class="flex items-center space-x-3">
+      <!-- Logo CRV - Cliquable pour revenir à l'accueil -->
+      <router-link to="/services" class="flex items-center space-x-3 hover:opacity-80 transition">
         <div class="text-2xl">✈️</div>
         <span class="text-xl font-semibold text-gray-800">THS - CRV</span>
         <!-- Badge rôle -->
         <span class="hidden lg:inline-block px-2 py-0.5 text-xs rounded" :class="roleBadgeClass">
           {{ roleLabel }}
         </span>
-      </div>
+      </router-link>
 
       <!-- Menu de Navigation selon le rôle (6 rôles backend) -->
       <nav class="hidden md:flex items-center space-x-6">
 
         <!-- RÔLES OPÉRATIONNELS : AGENT_ESCALE, CHEF_EQUIPE, SUPERVISEUR, MANAGER -->
         <template v-if="isOperationnel">
+          <router-link to="/services" class="nav-link">Accueil</router-link>
           <router-link to="/crv" class="nav-link">Mes CRV</router-link>
           <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
@@ -44,6 +45,7 @@
 
         <!-- QUALITE : Lecture seule (pas de "Nouveau CRV") -->
         <template v-if="isQualite">
+          <router-link to="/services" class="nav-link">Accueil</router-link>
           <router-link to="/crv" class="nav-link">Consulter CRV</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
           <router-link to="/archives" class="nav-link">Archives</router-link>
