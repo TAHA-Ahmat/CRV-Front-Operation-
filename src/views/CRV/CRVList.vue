@@ -1,20 +1,14 @@
 <template>
   <div class="crv-list-container">
-    <header class="app-header">
-      <div class="header-content">
-        <div class="header-left">
-          <button @click="goBack" class="btn-back">← Retour</button>
-          <h1>Liste des CRV</h1>
-        </div>
-        <div class="header-actions">
-          <button @click="goToNewCRV" class="btn btn-primary">
-            + Nouveau CRV
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- Pas de header local - AppHeader global dans App.vue -->
 
     <main class="crv-main">
+      <div class="page-header-bar">
+        <h1>Mes CRV</h1>
+        <button @click="goToNewCRV" class="btn btn-primary">
+          + Nouveau CRV
+        </button>
+      </div>
       <div class="container">
         <!-- Filtres -->
         <div class="filters-card">
@@ -419,10 +413,6 @@ const goToPage = (page) => {
 }
 
 // Navigation
-const goBack = () => {
-  router.push('/crv')
-}
-
 const goToNewCRV = () => {
   router.push('/crv')
 }
@@ -649,54 +639,28 @@ const showToast = (message, type = 'success') => {
 
 <style scoped>
 .crv-list-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   background: #f9fafb;
-}
-
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.btn-back {
-  background: #f3f4f6;
-  color: #374151;
-  padding: 8px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-back:hover {
-  background: #e5e7eb;
-}
-
-.app-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
 }
 
 .crv-main {
   padding: 30px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-header-bar h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
 }
 
 .container {

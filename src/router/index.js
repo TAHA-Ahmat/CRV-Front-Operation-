@@ -42,13 +42,8 @@ const routes = [
       const userRole = getUserRole();
 
       if (token) {
-        // Redirection des utilisateurs connectés selon leur rôle (adapté pour CRV)
-        const redirectPath = {
-          agent_ops: '/crv',
-          manager: '/dashboard-manager',
-          admin: '/dashboard-admin',
-        }[userRole] || '/login';
-        next(redirectPath);
+        // Redirection des utilisateurs connectés selon leur rôle
+        next(getRedirectPathForRole(userRole));
       } else {
         next();
       }
@@ -176,20 +171,20 @@ function getRedirectPathForRole(role) {
     case ROLES.MANAGER:
       return '/dashboard-manager';
     case ROLES.QUALITE:
-      return '/crv'; // Lecture seule
+      return '/services'; // Lecture seule - page d'accueil
     case ROLES.SUPERVISEUR:
     case ROLES.CHEF_EQUIPE:
     case ROLES.AGENT_ESCALE:
-      return '/crv';
+      return '/services'; // Page d'accueil
     // Compatibilité anciens rôles (à supprimer après migration)
     case 'admin':
       return '/dashboard-admin';
     case 'manager':
       return '/dashboard-manager';
     case 'agent_ops':
-      return '/crv';
+      return '/services';
     default:
-      return '/crv';
+      return '/services';
   }
 }
 

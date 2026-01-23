@@ -1,31 +1,13 @@
 <template>
   <div class="crv-home-container">
-    <header class="app-header">
-      <div class="header-content">
-        <div class="header-left">
-          <button @click="goBack" class="btn-back">← Retour</button>
-          <h1>Compte Rendu de Vol</h1>
-        </div>
-        <div class="user-info">
-          <span>{{ authStore.currentUser?.email }}</span>
-          <button @click="handleLogout" class="btn btn-secondary">
-            Déconnexion
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- Pas de header local - AppHeader global dans App.vue -->
 
     <main class="crv-main">
       <div class="container">
-        <div class="crv-actions-bar">
-          <button @click="goToList" class="btn btn-secondary btn-large">
-            Voir les CRV existants
-          </button>
-        </div>
-
-        <div class="crv-type-selector">
-          <h2>Créer un nouveau CRV</h2>
+        <div class="page-header">
+          <h1>Nouveau CRV</h1>
           <p class="subtitle">Choisissez le type d'opération à documenter</p>
+        </div>
 
           <div class="crv-types-grid">
             <div class="crv-type-card" @click="selectType('arrivee')">
@@ -64,7 +46,6 @@
               </ul>
             </div>
           </div>
-        </div>
       </div>
     </main>
   </div>
@@ -72,123 +53,48 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore } from '@/stores/crvStore'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const crvStore = useCRVStore()
-
-const goBack = () => {
-  router.push('/services')
-}
-
-const goToList = () => {
-  router.push('/crv/liste')
-}
 
 const selectType = async (type) => {
   // Réinitialiser le CRV en cours
   crvStore.resetCurrentCRV()
 
   // Rediriger vers la page correspondante
-  switch (type) {
-    case 'arrivee':
-      router.push('/crv/arrivee')
-      break
-    case 'depart':
-      router.push('/crv/depart')
-      break
-    case 'turnaround':
-      router.push('/crv/turnaround')
-      break
+  const routes = {
+    arrivee: '/crv/arrivee',
+    depart: '/crv/depart',
+    turnaround: '/crv/turnaround'
   }
-}
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
+  if (routes[type]) {
+    router.push(routes[type])
+  }
 }
 </script>
 
 <style scoped>
 .crv-home-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   background: #f9fafb;
-}
-
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0;
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.btn-back {
-  background: #f3f4f6;
-  color: #374151;
-  padding: 8px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-back:hover {
-  background: #e5e7eb;
-}
-
-.app-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.user-info span {
-  color: #6b7280;
-  font-size: 14px;
 }
 
 .crv-main {
   padding: 40px 20px;
 }
 
-.crv-actions-bar {
-  text-align: center;
-  margin-bottom: 30px;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.btn-large {
-  padding: 15px 30px;
-  font-size: 16px;
-}
-
-.crv-type-selector {
+.page-header {
   text-align: center;
   margin-bottom: 40px;
 }
 
-.crv-type-selector h2 {
+.page-header h1 {
   font-size: 28px;
   font-weight: 700;
   color: #1f2937;
@@ -198,7 +104,6 @@ const handleLogout = async () => {
 .subtitle {
   color: #6b7280;
   font-size: 16px;
-  margin-bottom: 40px;
 }
 
 .crv-types-grid {
