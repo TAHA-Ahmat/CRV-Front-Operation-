@@ -26,7 +26,7 @@
         <!-- RÔLES OPÉRATIONNELS : AGENT_ESCALE, CHEF_EQUIPE, SUPERVISEUR, MANAGER -->
         <template v-if="isOperationnel">
           <router-link to="/services" class="nav-link">Accueil</router-link>
-          <router-link to="/crv" class="nav-link">Mes CRV</router-link>
+          <router-link to="/crv/liste" class="nav-link">Mes CRV</router-link>
           <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
           <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
@@ -47,7 +47,7 @@
         <!-- QUALITE : Lecture seule (pas de "Nouveau CRV") -->
         <template v-if="isQualite">
           <router-link to="/services" class="nav-link">Accueil</router-link>
-          <router-link to="/crv" class="nav-link">Consulter CRV</router-link>
+          <router-link to="/crv/liste" class="nav-link">Consulter CRV</router-link>
           <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes Vol</router-link>
           <router-link to="/archives" class="nav-link">Archives</router-link>

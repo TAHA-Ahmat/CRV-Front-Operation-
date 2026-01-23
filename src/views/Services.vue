@@ -83,7 +83,7 @@ const userName = computed(() => {
   return 'Utilisateur'
 })
 
-const goToNewCRV = () => router.push('/crv')
+const goToNewCRV = () => router.push('/crv/nouveau')
 const goToList = () => router.push('/crv/liste')
 const goToBulletins = () => router.push('/bulletins')
 const goToProgrammes = () => router.push('/programmes-vol')

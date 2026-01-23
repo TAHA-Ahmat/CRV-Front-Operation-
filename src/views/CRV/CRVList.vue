@@ -414,7 +414,7 @@ const goToPage = (page) => {
 
 // Navigation
 const goToNewCRV = () => {
-  router.push('/crv')
+  router.push('/crv/nouveau')
 }
 
 const viewCRV = (crv) => {
