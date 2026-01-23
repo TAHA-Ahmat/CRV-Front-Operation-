@@ -1238,7 +1238,7 @@ export const validationAPI = {
   },
 
   /**
-   * MVS-10: Rejeter un CRV (QUALITE, ADMIN uniquement)
+   * Rejeter un CRV (ADMIN uniquement)
    * POST /api/validation/:id/rejeter
    * Body: { commentaires } (obligatoire)
    * Résultat: CRV retourne à EN_COURS pour correction

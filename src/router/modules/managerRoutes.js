@@ -28,8 +28,8 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ValidationCRV.vue'),
     meta: {
       requiresAuth: true,
-      // MVS-10: Validation réservée QUALITE et ADMIN uniquement
-      allowedRoles: [ROLES.QUALITE, ROLES.ADMIN]
+      // Validation réservée ADMIN uniquement (QUALITE = lecture seule absolue)
+      allowedRoles: [ROLES.ADMIN]
     }
   },
   {

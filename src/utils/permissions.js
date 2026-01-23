@@ -1,18 +1,18 @@
 /**
  * MATRICE DES PERMISSIONS - CONTRAT BACKEND
  *
- * Source de vérité : docs/process/MVS-10-Validation/05-process-metier.md
+ * Source de vérité : Backend (excludeQualite middleware)
  *
  * RÈGLE ABSOLUE : Cette matrice reflète EXACTEMENT les permissions backend.
  * Le frontend ne DÉCIDE pas, il AFFICHE ce que le backend autorise.
  *
- * CORRECTION MVS-10 2026-01-10:
- * - CRV_VALIDER: QUALITE, ADMIN uniquement (validation = rôle QUALITE)
- * - CRV_REJETER: QUALITE, ADMIN uniquement (rejet avec commentaire obligatoire)
- * - CRV_VERROUILLER: QUALITE, ADMIN uniquement (verrouillage définitif)
+ * CORRECTION 2026-01-23 - Alignement Backend:
+ * - QUALITE: LECTURE SEULE ABSOLUE (ne peut RIEN faire sauf lire)
+ * - CRV_VALIDER: ADMIN uniquement
+ * - CRV_REJETER: ADMIN uniquement
+ * - CRV_VERROUILLER: ADMIN uniquement
  * - CRV_DEVERROUILLER: ADMIN uniquement (opération exceptionnelle)
  * - CRV_SUPPRIMER: SUPERVISEUR, MANAGER uniquement
- * - QUALITE: lecture seule sur CRV mais peut valider/rejeter/verrouiller
  */
 
 import { ROLES } from '@/config/roles'
@@ -99,10 +99,11 @@ export const ACTIONS = Object.freeze({
 // ============================================
 
 /**
- * CORRECTION MVS-10 2026-01-10:
- * - CRV_VALIDER: QUALITE, ADMIN uniquement (séparation des rôles)
- * - CRV_REJETER: QUALITE, ADMIN uniquement (commentaire obligatoire)
- * - CRV_VERROUILLER: QUALITE, ADMIN uniquement (verrouillage définitif)
+ * CORRECTION 2026-01-23 - Alignement Backend:
+ * - QUALITE: LECTURE SEULE ABSOLUE (excludeQualite bloque TOUT)
+ * - CRV_VALIDER: ADMIN uniquement
+ * - CRV_REJETER: ADMIN uniquement
+ * - CRV_VERROUILLER: ADMIN uniquement
  * - CRV_DEVERROUILLER: ADMIN uniquement (opération exceptionnelle)
  * - CRV_SUPPRIMER: SUPERVISEUR, MANAGER uniquement
  */
@@ -119,14 +120,14 @@ const PERMISSION_MATRIX = {
   [ACTIONS.CRV_DEMARRER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.CRV_TERMINER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
 
-  // MVS-10: Validation QUALITE/ADMIN uniquement (prérequis: complétude >= 80%)
-  [ACTIONS.CRV_VALIDER]: [ROLES.QUALITE, ROLES.ADMIN],
+  // ADMIN uniquement - QUALITE est en lecture seule absolue (backend excludeQualite)
+  [ACTIONS.CRV_VALIDER]: [ROLES.ADMIN],
 
-  // MVS-10: Rejet QUALITE/ADMIN uniquement (commentaire obligatoire)
-  [ACTIONS.CRV_REJETER]: [ROLES.QUALITE, ROLES.ADMIN],
+  // ADMIN uniquement (commentaire obligatoire)
+  [ACTIONS.CRV_REJETER]: [ROLES.ADMIN],
 
-  // MVS-10: Verrouillage QUALITE/ADMIN uniquement (prérequis: statut VALIDE)
-  [ACTIONS.CRV_VERROUILLER]: [ROLES.QUALITE, ROLES.ADMIN],
+  // ADMIN uniquement (prérequis: statut VALIDE)
+  [ACTIONS.CRV_VERROUILLER]: [ROLES.ADMIN],
 
   // MVS-10: Déverrouillage ADMIN uniquement (opération exceptionnelle, raison obligatoire)
   [ACTIONS.CRV_DEVERROUILLER]: [ROLES.ADMIN],
@@ -381,35 +382,35 @@ export function isReadOnlyRole(role) {
 }
 
 /**
- * MVS-10: Validation QUALITE/ADMIN uniquement
+ * Validation ADMIN uniquement (QUALITE = lecture seule absolue)
  * @param {string} role
  * @returns {boolean}
  */
 export function canValidateCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_VALIDER)
-  console.log(`[CRV][PERMISSION_CRV] canValidateCRV(${role}): ${result} [QUALITE/ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canValidateCRV(${role}): ${result} [ADMIN only]`)
   return result
 }
 
 /**
- * MVS-10: Rejet QUALITE/ADMIN uniquement
+ * Rejet ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canRejectCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_REJETER)
-  console.log(`[CRV][PERMISSION_CRV] canRejectCRV(${role}): ${result} [QUALITE/ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canRejectCRV(${role}): ${result} [ADMIN only]`)
   return result
 }
 
 /**
- * MVS-10: Verrouillage QUALITE/ADMIN uniquement
+ * Verrouillage ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canLockCRV(role) {
   const result = hasPermission(role, ACTIONS.CRV_VERROUILLER)
-  console.log(`[CRV][PERMISSION_CRV] canLockCRV(${role}): ${result} [QUALITE/ADMIN only]`)
+  console.log(`[CRV][PERMISSION_CRV] canLockCRV(${role}): ${result} [ADMIN only]`)
   return result
 }
 
@@ -466,9 +467,9 @@ export const PERMISSION_MESSAGES = Object.freeze({
   QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule pour les opérations CRV (création/modification).',
   ADMIN_NO_CRV: 'Les comptes ADMIN ne peuvent pas créer ou modifier des CRV. Utilisez un compte opérationnel.',
   INSUFFICIENT_PERMISSIONS: 'Vous n\'avez pas les permissions nécessaires pour cette action.',
-  VALIDATION_RESERVED: 'Validation CRV réservée aux rôles QUALITE et ADMIN.',
-  REJET_RESERVED: 'Rejet CRV réservé aux rôles QUALITE et ADMIN.',
-  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux rôles QUALITE et ADMIN.',
+  VALIDATION_RESERVED: 'Validation CRV réservée au rôle ADMIN uniquement.',
+  REJET_RESERVED: 'Rejet CRV réservé au rôle ADMIN uniquement.',
+  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé au rôle ADMIN uniquement.',
   DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé au rôle ADMIN uniquement.',
   SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux SUPERVISEUR et MANAGER.',
   SUPPRESSION_PROGRAMME_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
@@ -488,7 +489,7 @@ export const PERMISSION_MESSAGES = Object.freeze({
 export function getPermissionDeniedMessage(role, action) {
   console.log(`[CRV][PERMISSION_DENIED] ${role} tentative: ${action}`)
 
-  // MVS-10: Actions de validation/rejet/verrouillage réservées QUALITE/ADMIN
+  // Actions de validation/rejet/verrouillage réservées ADMIN uniquement
   if (action === ACTIONS.CRV_VALIDER) {
     return PERMISSION_MESSAGES.VALIDATION_RESERVED
   }
@@ -548,17 +549,17 @@ export function getPermissionDeniedMessage(role, action) {
 export function canTransitionCRV(role, fromStatus, toStatus) {
   console.log(`[CRV][TRANSITION_CHECK] ${role}: ${fromStatus} → ${toStatus}`)
 
-  // MVS-10: Transitions de validation/rejet/verrouillage réservées QUALITE/ADMIN
+  // Validation - ADMIN uniquement (QUALITE = lecture seule absolue)
   if (toStatus === 'VALIDE') {
-    if (![ROLES.QUALITE, ROLES.ADMIN].includes(role)) {
+    if (role !== ROLES.ADMIN) {
       console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas valider`)
       return { allowed: false, message: PERMISSION_MESSAGES.VALIDATION_RESERVED }
     }
   }
 
-  // Transitions vers VERROUILLE - QUALITE/ADMIN uniquement
+  // Verrouillage - ADMIN uniquement
   if (toStatus === 'VERROUILLE') {
-    if (![ROLES.QUALITE, ROLES.ADMIN].includes(role)) {
+    if (role !== ROLES.ADMIN) {
       console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas verrouiller`)
       return { allowed: false, message: PERMISSION_MESSAGES.VERROUILLAGE_RESERVED }
     }
@@ -572,9 +573,9 @@ export function canTransitionCRV(role, fromStatus, toStatus) {
     }
   }
 
-  // Retour EN_COURS depuis TERMINE (rejet) - QUALITE/ADMIN uniquement
+  // Rejet (retour EN_COURS depuis TERMINE) - ADMIN uniquement
   if (fromStatus === 'TERMINE' && toStatus === 'EN_COURS') {
-    if (![ROLES.QUALITE, ROLES.ADMIN].includes(role)) {
+    if (role !== ROLES.ADMIN) {
       console.log(`[CRV][TRANSITION_DENIED] ${role} ne peut pas rejeter`)
       return { allowed: false, message: PERMISSION_MESSAGES.REJET_RESERVED }
     }
