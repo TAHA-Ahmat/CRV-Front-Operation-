@@ -200,15 +200,14 @@ export function useAuth() {
     switch (role) {
       case ROLES.ADMIN:
         return '/dashboard-admin';
-      case ROLES.QUALITE:
-        return '/crv'; // Lecture seule
       case ROLES.MANAGER:
         return '/dashboard-manager';
+      case ROLES.QUALITE:
       case ROLES.SUPERVISEUR:
       case ROLES.CHEF_EQUIPE:
       case ROLES.AGENT_ESCALE:
       default:
-        return '/crv';
+        return '/services'; // Page d'accueil
     }
   };
 
