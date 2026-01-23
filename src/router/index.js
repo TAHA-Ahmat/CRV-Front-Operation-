@@ -16,6 +16,7 @@ import agentRoutes from './modules/agentRoutes';
 import managerRoutes from './modules/managerRoutes';
 import adminRoutes from './modules/adminRoutes';
 import commonRoutes from './modules/commonRoutes';
+import bulletinRoutes from './modules/bulletinRoutes';
 
 // Importation des composants
 import Login from '@/views/Login.vue';
@@ -70,6 +71,7 @@ const routes = [
   ...managerRoutes,
   ...adminRoutes,
   ...commonRoutes,
+  ...bulletinRoutes,
   // Route 404 - à la fin
   {
     path: '/:pathMatch(.*)*',

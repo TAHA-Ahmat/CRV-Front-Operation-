@@ -1397,6 +1397,156 @@ export const enginsAPI = {
 }
 
 // ============================================
+// 15. BULLETINS API (14 routes) - Bulletin de Mouvement
+// ============================================
+
+export const bulletinsAPI = {
+  // ============================================
+  // CRUD Bulletins
+  // ============================================
+
+  /**
+   * Lister les bulletins
+   * GET /api/bulletins
+   * Query: { escale, statut, dateDebut, dateFin, page, limit }
+   */
+  getAll: (params) => {
+    console.log('[BULLETINS API] getAll() - Params:', params)
+    return api.get('/bulletins', { params })
+  },
+
+  /**
+   * Obtenir un bulletin par ID
+   * GET /api/bulletins/:id
+   */
+  getById: (id) => {
+    console.log('[BULLETINS API] getById() - ID:', id)
+    return api.get(`/bulletins/${id}`)
+  },
+
+  /**
+   * Obtenir le bulletin en cours pour une escale
+   * GET /api/bulletins/en-cours/:escale
+   */
+  getEnCours: (escale) => {
+    console.log('[BULLETINS API] getEnCours() - Escale:', escale)
+    return api.get(`/bulletins/en-cours/${escale}`)
+  },
+
+  /**
+   * Créer un bulletin vide
+   * POST /api/bulletins
+   * Body: { escale, dateDebut, dateFin, titre?, remarques? }
+   */
+  create: (data) => {
+    console.log('[BULLETINS API] create() - Data:', data)
+    return api.post('/bulletins', data)
+  },
+
+  /**
+   * Créer un bulletin pré-rempli depuis un programme
+   * POST /api/bulletins/depuis-programme
+   * Body: { escale, dateDebut, dateFin, programmeId, titre? }
+   */
+  createFromProgramme: (data) => {
+    console.log('[BULLETINS API] createFromProgramme() - Data:', data)
+    return api.post('/bulletins/depuis-programme', data)
+  },
+
+  /**
+   * Supprimer un bulletin (BROUILLON uniquement)
+   * DELETE /api/bulletins/:id
+   */
+  delete: (id) => {
+    console.log('[BULLETINS API] delete() - ID:', id)
+    return api.delete(`/bulletins/${id}`)
+  },
+
+  // ============================================
+  // Mouvements
+  // ============================================
+
+  /**
+   * Ajouter un mouvement à un bulletin
+   * POST /api/bulletins/:id/mouvements
+   * Body: { numeroVol, dateMouvement, heureArriveePrevue?, heureDepartPrevue?, provenance?, destination?, typeAvion? }
+   */
+  addMouvement: (bulletinId, data) => {
+    console.log('[BULLETINS API] addMouvement() - Bulletin:', bulletinId, '- Data:', data)
+    return api.post(`/bulletins/${bulletinId}/mouvements`, data)
+  },
+
+  /**
+   * Ajouter un vol hors programme
+   * POST /api/bulletins/:id/mouvements/hors-programme
+   * Body: { numeroVol, dateMouvement, typeHorsProgramme, raisonHorsProgramme?, ... }
+   */
+  addVolHorsProgramme: (bulletinId, data) => {
+    console.log('[BULLETINS API] addVolHorsProgramme() - Bulletin:', bulletinId, '- Data:', data)
+    return api.post(`/bulletins/${bulletinId}/mouvements/hors-programme`, data)
+  },
+
+  /**
+   * Modifier un mouvement
+   * PATCH /api/bulletins/:id/mouvements/:mouvementId
+   */
+  updateMouvement: (bulletinId, mouvementId, data) => {
+    console.log('[BULLETINS API] updateMouvement() - Bulletin:', bulletinId, '- Mouvement:', mouvementId)
+    return api.patch(`/bulletins/${bulletinId}/mouvements/${mouvementId}`, data)
+  },
+
+  /**
+   * Supprimer un mouvement (BROUILLON uniquement)
+   * DELETE /api/bulletins/:id/mouvements/:mouvementId
+   */
+  deleteMouvement: (bulletinId, mouvementId) => {
+    console.log('[BULLETINS API] deleteMouvement() - Bulletin:', bulletinId, '- Mouvement:', mouvementId)
+    return api.delete(`/bulletins/${bulletinId}/mouvements/${mouvementId}`)
+  },
+
+  /**
+   * Annuler un mouvement (garde trace avec statut ANNULE)
+   * POST /api/bulletins/:id/mouvements/:mouvementId/annuler
+   * Body: { raison }
+   */
+  cancelMouvement: (bulletinId, mouvementId, raison) => {
+    console.log('[BULLETINS API] cancelMouvement() - Bulletin:', bulletinId, '- Mouvement:', mouvementId)
+    return api.post(`/bulletins/${bulletinId}/mouvements/${mouvementId}/annuler`, { raison })
+  },
+
+  // ============================================
+  // Workflow
+  // ============================================
+
+  /**
+   * Publier un bulletin (BROUILLON → PUBLIE)
+   * POST /api/bulletins/:id/publier
+   */
+  publish: (id) => {
+    console.log('[BULLETINS API] publish() - ID:', id)
+    return api.post(`/bulletins/${id}/publier`)
+  },
+
+  /**
+   * Archiver un bulletin (PUBLIE → ARCHIVE)
+   * POST /api/bulletins/:id/archiver
+   */
+  archive: (id) => {
+    console.log('[BULLETINS API] archive() - ID:', id)
+    return api.post(`/bulletins/${id}/archiver`)
+  },
+
+  /**
+   * Créer les instances Vol depuis les mouvements
+   * POST /api/bulletins/:id/creer-vols
+   */
+  createVols: (id) => {
+    console.log('[BULLETINS API] createVols() - ID:', id)
+    return api.post(`/bulletins/${id}/creer-vols`)
+  }
+}
+
+// ============================================
 // EXPORT PAR DÉFAUT
 // ============================================
 

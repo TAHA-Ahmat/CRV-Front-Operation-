@@ -32,7 +32,17 @@
             <div class="service-arrow">→</div>
           </div>
 
-          <!-- Carte 3: Programmes Vol -->
+          <!-- Carte 3: Bulletins de Mouvement -->
+          <div class="service-card" @click="goToBulletins">
+            <div class="service-icon">📆</div>
+            <div class="service-content">
+              <h2>Bulletins de Mouvement</h2>
+              <p>Planifier les mouvements de vols sur 3-4 jours</p>
+            </div>
+            <div class="service-arrow">→</div>
+          </div>
+
+          <!-- Carte 4: Programmes Vol -->
           <div class="service-card" @click="goToProgrammes">
             <div class="service-icon">📅</div>
             <div class="service-content">
@@ -75,6 +85,7 @@ const userName = computed(() => {
 
 const goToNewCRV = () => router.push('/crv')
 const goToList = () => router.push('/crv/liste')
+const goToBulletins = () => router.push('/bulletins')
 const goToProgrammes = () => router.push('/programmes-vol')
 const goToArchives = () => router.push('/archives')
 </script>
