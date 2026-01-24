@@ -631,4 +631,155 @@ const getBarWidth = (count, total) => {
   font-weight: 500;
   color: #374151;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .page-header {
+    padding: 16px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-left h1 {
+    font-size: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .periode-select {
+    width: 100%;
+  }
+
+  .page-main {
+    padding: 16px;
+  }
+
+  .stats-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .stats-section h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .chart-container {
+    padding-top: 16px;
+  }
+
+  .chart-container h3 {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .status-bar-item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bar-label {
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .bar-wrapper {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .bar-count {
+    width: 40px;
+    font-size: 13px;
+  }
+
+  .type-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .type-card {
+    padding: 12px;
+  }
+
+  .type-count {
+    font-size: 20px;
+  }
+
+  .type-label {
+    font-size: 11px;
+  }
+
+  .form-input {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .type-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 </style>

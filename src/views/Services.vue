@@ -187,4 +187,80 @@ const goToArchives = () => router.push('/archives')
   color: var(--color-primary);
   flex-shrink: 0;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .services-main {
+    padding: 20px 16px;
+  }
+
+  .welcome-section {
+    margin-bottom: 20px;
+  }
+
+  .welcome-section h1 {
+    font-size: 22px;
+  }
+
+  .welcome-section .subtitle {
+    font-size: 14px;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .service-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .service-icon {
+    font-size: 28px;
+  }
+
+  .service-content h2 {
+    font-size: 16px;
+  }
+
+  .service-content p {
+    font-size: 13px;
+  }
+
+  .service-arrow {
+    font-size: 18px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .services-main {
+    padding: 30px 20px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .service-card {
+    padding: 20px;
+  }
+
+  .welcome-section h1 {
+    font-size: 26px;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .services-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 </style>

@@ -128,4 +128,55 @@ onMounted(() => {
 
 <style scoped>
 /* Styles spécifiques au Login - le reste est géré par Tailwind */
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .login {
+    padding: 16px !important;
+  }
+
+  .login > div {
+    margin: 0;
+  }
+
+  .bg-crv-dark {
+    padding: 20px 16px !important;
+  }
+
+  .bg-crv-dark .text-6xl {
+    font-size: 48px !important;
+  }
+
+  .bg-crv-dark h2 {
+    font-size: 18px !important;
+  }
+
+  .bg-crv-dark p {
+    font-size: 12px !important;
+  }
+
+  .p-8 {
+    padding: 20px 16px !important;
+  }
+
+  .form-input {
+    font-size: 16px !important; /* Empêche le zoom sur iOS */
+  }
+
+  .btn-primary {
+    padding: 14px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .login > div {
+    max-width: 420px;
+  }
+}
 </style>

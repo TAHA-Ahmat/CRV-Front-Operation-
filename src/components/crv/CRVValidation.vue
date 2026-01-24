@@ -256,4 +256,101 @@ textarea.form-input {
   resize: vertical;
   min-height: 80px;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .crv-validation-component {
+    padding: 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .validation-form {
+    gap: 16px;
+  }
+
+  .form-label {
+    font-size: 13px;
+  }
+
+  .form-input {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .validation-check {
+    padding: 12px;
+  }
+
+  .checkbox-label {
+    gap: 8px;
+  }
+
+  .checkbox-label span {
+    font-size: 13px;
+  }
+
+  .btn-large {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .validation-warning {
+    font-size: 12px;
+  }
+
+  .validation-success {
+    padding: 20px;
+  }
+
+  .success-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+
+  .validation-success h4 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .validation-info {
+    padding: 14px;
+  }
+
+  .validation-info p {
+    font-size: 13px;
+  }
+
+  .validation-comments {
+    padding: 12px;
+  }
+
+  .validation-comments p {
+    font-size: 13px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .crv-validation-component {
+    padding: 20px;
+  }
+
+  .validation-form {
+    gap: 18px;
+  }
+
+  .validation-success {
+    padding: 25px;
+  }
+}
 </style>

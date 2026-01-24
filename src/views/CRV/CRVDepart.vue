@@ -770,4 +770,230 @@ const handleLogout = async () => {
   opacity: 0.7;
   background: #9ca3af !important;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: flex-start;
+  }
+
+  .header-left {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-left h1 {
+    font-size: 18px;
+    order: 1;
+    width: 100%;
+  }
+
+  .btn-back {
+    padding: 6px 12px;
+    font-size: 13px;
+    order: 0;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    order: 2;
+  }
+
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .user-info span {
+    font-size: 12px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-info .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .crv-main {
+    padding: 16px 12px;
+  }
+
+  .crv-progress {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+
+  .progress-steps {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .progress-steps::before {
+    display: none;
+  }
+
+  .step {
+    flex: 0 0 calc(33.33% - 10px);
+    min-width: 70px;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    max-width: 60px;
+  }
+
+  .completude-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .completude-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .completude-label {
+    font-size: 14px;
+  }
+
+  .completude-value {
+    font-size: 20px;
+  }
+
+  .completude-bar {
+    height: 16px;
+  }
+
+  .completude-warning,
+  .completude-success {
+    font-size: 12px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .phases-progress-indicator {
+    padding: 14px;
+  }
+
+  .phases-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .phases-progress-label {
+    font-size: 13px;
+  }
+
+  .phases-progress-count {
+    font-size: 14px;
+  }
+
+  .phases-warning-message,
+  .phases-success-message {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .step-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 20px;
+    margin-top: 20px;
+  }
+
+  .step-actions .btn {
+    width: 100%;
+    min-width: unset;
+    padding: 12px;
+  }
+
+  .step-validation-error {
+    padding: 14px;
+  }
+
+  .step-validation-error strong {
+    font-size: 14px;
+  }
+
+  .step-validation-error pre {
+    font-size: 12px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .header-content {
+    padding: 16px 20px;
+  }
+
+  .header-left h1 {
+    font-size: 20px;
+  }
+
+  .crv-main {
+    padding: 24px 16px;
+  }
+
+  .crv-progress {
+    padding: 24px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+  }
+
+  .step-label {
+    font-size: 11px;
+    max-width: 70px;
+  }
+
+  .progress-steps::before {
+    left: 30px;
+    right: 30px;
+    top: 18px;
+  }
+
+  .step-actions {
+    gap: 12px;
+  }
+
+  .step-actions .btn {
+    min-width: 100px;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .crv-main {
+    padding: 30px 20px;
+  }
+
+  .crv-progress {
+    padding: 30px;
+  }
+}
 </style>

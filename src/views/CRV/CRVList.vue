@@ -1516,9 +1516,45 @@ const executeExport = async () => {
   color: var(--text-tertiary);
 }
 
-@media (max-width: 768px) {
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .crv-main {
+    padding: 16px 12px;
+  }
+
+  .page-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header-bar h1 {
+    font-size: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-actions .btn,
+  .header-actions .btn-export {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filters-card {
+    padding: 14px;
+  }
+
   .filters-row {
     flex-direction: column;
+    gap: 12px;
   }
 
   .filter-group {
@@ -1530,18 +1566,70 @@ const executeExport = async () => {
     width: 100%;
   }
 
+  .table-card {
+    padding: 12px;
+    overflow-x: auto;
+  }
+
   .crv-table {
-    font-size: 12px;
+    font-size: 11px;
+    min-width: 800px;
   }
 
   .crv-table th,
   .crv-table td {
-    padding: 8px;
+    padding: 8px 6px;
   }
 
-  .header-actions {
+  .type-badge,
+  .status-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .completude-bar {
+    width: 60px;
+    height: 16px;
+  }
+
+  .completude-text {
+    font-size: 9px;
+  }
+
+  .btn-action {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .pagination {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .modal-content {
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 14px 16px;
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
   }
 
   .date-range {
@@ -1553,12 +1641,47 @@ const executeExport = async () => {
     display: none;
   }
 
-  .modal-footer {
-    flex-direction: column;
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    text-align: center;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .crv-main {
+    padding: 24px 16px;
   }
 
-  .modal-footer .btn {
-    width: 100%;
+  .page-header-bar h1 {
+    font-size: 22px;
+  }
+
+  .filters-row {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .filter-group {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
+
+  .crv-table {
+    min-width: 900px;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .crv-main {
+    padding: 30px 20px;
   }
 }
 </style>

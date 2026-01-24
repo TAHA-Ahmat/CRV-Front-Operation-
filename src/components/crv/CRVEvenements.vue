@@ -622,4 +622,122 @@ textarea.form-input {
   color: #dc2626;
   font-size: 14px;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .crv-evenements-component {
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .subsection-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .existing-evenements {
+    margin-bottom: 20px;
+  }
+
+  .evenements-list {
+    gap: 12px;
+  }
+
+  .evenement-card {
+    padding: 12px;
+  }
+
+  .evenement-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .evenement-type {
+    font-size: 14px;
+  }
+
+  .evenement-gravite {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .evenement-details {
+    gap: 6px;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+  }
+
+  .detail-row span {
+    min-width: unset;
+  }
+
+  .empty-state {
+    padding: 20px;
+  }
+
+  .add-evenement-section {
+    padding: 14px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-input {
+    font-size: 16px; /* Évite le zoom iOS */
+    padding: 12px;
+  }
+
+  textarea.form-input {
+    min-height: 80px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+
+  .error-message {
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .form-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 </style>

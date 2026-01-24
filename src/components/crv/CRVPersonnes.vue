@@ -348,9 +348,85 @@ const emitUpdate = () => {
   margin-top: 4px;
 }
 
-@media (max-width: 768px) {
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .crv-personnes-component {
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .empty-state {
+    padding: 20px;
+  }
+
+  .personnes-list {
+    gap: 12px;
+  }
+
+  .personne-item {
+    padding: 12px;
+  }
+
+  .personne-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
   .form-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .form-group-wide {
+    grid-column: span 1;
+  }
+
+  .form-input {
+    font-size: 16px; /* Évite le zoom iOS */
+    padding: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  .btn-sm {
+    width: auto;
+    padding: 8px 12px;
+  }
+
+  .role-description {
+    font-size: 10px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-group-wide {
+    grid-column: span 2;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .form-row {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .form-group-wide {

@@ -356,9 +356,77 @@ const emitUpdate = () => {
   text-transform: none;
 }
 
-@media (max-width: 768px) {
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .crv-engins-component {
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .replacement-warning {
+    padding: 10px 12px;
+  }
+
+  .replacement-warning p {
+    font-size: 12px;
+  }
+
+  .empty-state {
+    padding: 20px;
+  }
+
+  .engin-item {
+    padding: 12px;
+  }
+
+  .engin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
   .form-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    font-size: 16px; /* Évite le zoom iOS */
+    padding: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  .btn-sm {
+    width: auto;
+    padding: 8px 12px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .form-row {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

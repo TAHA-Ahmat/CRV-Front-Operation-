@@ -370,4 +370,78 @@ const scoreClass = computed(() => {
   background: #f9fafb;
   color: #374151;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .completude-container {
+    padding: 12px;
+  }
+
+  .completude-title .score {
+    font-size: 20px;
+  }
+
+  .threshold-labels {
+    padding: 0 5%;
+  }
+
+  .threshold-info {
+    gap: 1px;
+  }
+
+  .threshold-mark {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .threshold-text {
+    font-size: 9px;
+  }
+
+  .threshold-label {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .detail-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .detail-label {
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .detail-bar {
+    flex: 1;
+    min-width: 0;
+    margin: 0 8px 0 0;
+  }
+
+  .detail-score {
+    width: 36px;
+    font-size: 12px;
+  }
+
+  .toggle-details {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .completude-container {
+    padding: 14px;
+  }
+
+  .detail-label {
+    width: 130px;
+  }
+}
 </style>

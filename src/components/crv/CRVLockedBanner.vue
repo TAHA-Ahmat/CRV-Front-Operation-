@@ -151,4 +151,47 @@ const formattedDate = computed(() => {
   background: rgba(255, 255, 255, 0.7);
   border-radius: 4px;
 }
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .locked-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .banner-icon {
+    font-size: 24px;
+  }
+
+  .banner-title {
+    font-size: 15px;
+  }
+
+  .banner-message {
+    font-size: 12px;
+  }
+
+  .banner-date {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .locked-banner {
+    gap: 14px;
+    padding: 14px 18px;
+  }
+
+  .banner-icon {
+    font-size: 26px;
+  }
+}
 </style>

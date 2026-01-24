@@ -1272,27 +1272,185 @@ td {
   border-top: 1px solid #e5e7eb;
 }
 
-@media (max-width: 768px) {
+/* ============================================ */
+/* RESPONSIVE DESIGN                            */
+/* ============================================ */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .bulletin-detail-main {
+    padding: 12px;
+  }
+
   .bulletin-header {
     flex-direction: column;
     gap: 16px;
+    padding: 16px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .btn-back {
+    align-self: flex-start;
+  }
+
+  .header-badges {
+    flex-wrap: wrap;
+  }
+
+  .header-info h1 {
+    font-size: 18px;
   }
 
   .header-actions {
     width: 100%;
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-actions button {
+    flex: 1;
+    min-width: 120px;
   }
 
   .stats-section {
     flex-direction: column;
+    gap: 8px;
   }
 
   .stat-card {
     width: 100%;
+    padding: 12px 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .mouvements-section {
+    padding: 16px;
+  }
+
+  .jour-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+
+  .mouvements-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mouvements-table table {
+    min-width: 800px;
+  }
+
+  th, td {
+    padding: 8px 6px;
+    font-size: 12px;
   }
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  /* Modal responsive */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px;
+  }
+
+  .modal-content.modal-small {
+    max-width: 100%;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .remarques-section {
+    padding: 16px;
+  }
+
+  .readonly-banner,
+  .qualite-banner,
+  .error-box {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .bulletin-detail-main {
+    padding: 20px;
+  }
+
+  .bulletin-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .stats-section {
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .mouvements-table {
+    overflow-x: auto;
+  }
+
+  .modal-content {
+    max-width: 90%;
+  }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+  .bulletin-header {
+    flex-wrap: nowrap;
+  }
+
+  .stats-section {
+    flex-wrap: nowrap;
   }
 }
 </style>

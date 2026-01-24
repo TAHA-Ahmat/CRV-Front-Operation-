@@ -1291,4 +1291,146 @@ const handleLogout = async () => {
   opacity: 0.6;
   cursor: wait;
 }
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Mobile (jusqu'à 640px) */
+@media (max-width: 640px) {
+  .header-content {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-header h1 {
+    font-size: 18px;
+  }
+
+  .btn-back {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .crv-main {
+    padding: 16px 12px;
+  }
+
+  .crv-progress {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .progress-steps {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .progress-steps::before {
+    display: none;
+  }
+
+  .step {
+    flex: 0 0 calc(33.33% - 8px);
+    margin-bottom: 8px;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    max-width: 60px;
+  }
+
+  .step-actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+
+  .step-actions .btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .completude-section,
+  .phases-progress-indicator {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .completude-value {
+    font-size: 20px;
+  }
+
+  .completude-bar {
+    height: 16px;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .header-content {
+    padding: 16px 20px;
+  }
+
+  .app-header h1 {
+    font-size: 20px;
+  }
+
+  .crv-main {
+    padding: 20px 16px;
+  }
+
+  .crv-progress {
+    padding: 20px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+  }
+
+  .step-label {
+    font-size: 11px;
+  }
+
+  .step-actions {
+    gap: 12px;
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1025px) {
+  .crv-main {
+    padding: 30px 20px;
+  }
+
+  .crv-progress {
+    padding: 30px;
+    margin-bottom: 30px;
+  }
+}
 </style>
