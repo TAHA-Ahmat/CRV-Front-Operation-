@@ -837,7 +837,7 @@ const executeExport = async () => {
 <style scoped>
 .crv-list-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .crv-main {
@@ -856,7 +856,7 @@ const executeExport = async () => {
 .page-header-bar h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -867,11 +867,12 @@ const executeExport = async () => {
 
 /* Filtres */
 .filters-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .filters-row {
@@ -890,24 +891,27 @@ const executeExport = async () => {
 .filter-group label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .filter-group select,
 .filter-group input {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   font-size: 14px;
   min-width: 150px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 /* Tableau */
 .table-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .loading-state,
@@ -915,7 +919,7 @@ const executeExport = async () => {
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .crv-table {
@@ -928,20 +932,21 @@ const executeExport = async () => {
   padding: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-color);
   text-transform: uppercase;
+  background: var(--bg-table-header);
 }
 
 .crv-table td {
   padding: 12px;
   font-size: 14px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .crv-table tr:hover {
-  background: #f9fafb;
+  background: var(--bg-table-row-hover);
 }
 
 .crv-number {
@@ -950,7 +955,7 @@ const executeExport = async () => {
 }
 
 .text-muted {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 /* Badges */
@@ -1035,20 +1040,21 @@ const executeExport = async () => {
   gap: 20px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-page {
   padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  background: white;
+  border: 1px solid var(--border-input);
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
 }
 
 .btn-page:hover:not(:disabled) {
-  background: #f3f4f6;
+  background: var(--bg-card-hover);
 }
 
 .btn-page:disabled {
@@ -1057,7 +1063,7 @@ const executeExport = async () => {
 }
 
 .page-info {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -1162,13 +1168,14 @@ const executeExport = async () => {
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-modal);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
 }
 
 .modal-header {
@@ -1176,38 +1183,39 @@ const executeExport = async () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h2 {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .modal-header-danger {
-  background: #fee2e2;
+  background: var(--color-error-bg);
 }
 
 .modal-header-danger h2 {
-  color: #991b1b;
+  color: var(--color-error);
 }
 
 .modal-close {
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
 .modal-close:hover {
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .modal-body {
   padding: 20px;
+  color: var(--text-primary);
 }
 
 .modal-footer {
@@ -1215,7 +1223,7 @@ const executeExport = async () => {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 .warning-box {
@@ -1266,12 +1274,12 @@ const executeExport = async () => {
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
 .form-group .required {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .form-group select,
@@ -1279,16 +1287,18 @@ const executeExport = async () => {
 .form-group textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .form-group select:focus,
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -1379,11 +1389,11 @@ const executeExport = async () => {
 }
 
 .export-info {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 20px;
   padding: 12px;
-  background: #f3f4f6;
+  background: var(--bg-table-header);
   border-radius: 8px;
 }
 
@@ -1398,7 +1408,7 @@ const executeExport = async () => {
 }
 
 .date-separator {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -1503,7 +1513,7 @@ const executeExport = async () => {
 
 .archivage-date {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 768px) {

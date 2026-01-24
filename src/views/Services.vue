@@ -93,7 +93,7 @@ const goToArchives = () => router.push('/archives')
 <style scoped>
 .services-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .services-main {
@@ -112,12 +112,12 @@ const goToArchives = () => router.push('/archives')
 .welcome-section h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .welcome-section .subtitle {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -128,8 +128,8 @@ const goToArchives = () => router.push('/archives')
 }
 
 .service-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 24px;
   cursor: pointer;
@@ -140,7 +140,7 @@ const goToArchives = () => router.push('/archives')
 }
 
 .service-card:hover {
-  border-color: #2563eb;
+  border-color: var(--color-primary);
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1);
   transform: translateY(-2px);
 }
@@ -172,19 +172,19 @@ const goToArchives = () => router.push('/archives')
 .service-content h2 {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .service-content p {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
 
 .service-arrow {
   font-size: 20px;
-  color: #2563eb;
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 </style>

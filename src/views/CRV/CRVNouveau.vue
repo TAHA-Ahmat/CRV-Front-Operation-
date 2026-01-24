@@ -583,7 +583,7 @@ watch(mode, (newMode) => {
 <style scoped>
 .crv-nouveau-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .crv-main {
@@ -599,13 +599,13 @@ watch(mode, (newMode) => {
 .page-header-bar h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
 .subtitle,
 .card-subtitle {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
@@ -628,8 +628,8 @@ watch(mode, (newMode) => {
   flex-direction: column;
   align-items: center;
   padding: 24px 20px;
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -637,12 +637,12 @@ watch(mode, (newMode) => {
 
 .mode-btn:hover {
   border-color: #93c5fd;
-  background: #f8fafc;
+  background: var(--bg-card-hover);
 }
 
 .mode-btn.active {
   border-color: #2563eb;
-  background: #eff6ff;
+  background: var(--color-info-bg);
 }
 
 .mode-icon {
@@ -653,12 +653,12 @@ watch(mode, (newMode) => {
 .mode-label {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .mode-desc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 4px;
   text-align: center;
 }
@@ -666,17 +666,18 @@ watch(mode, (newMode) => {
 /* Cards */
 .selection-card,
 .creation-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .selection-card h2,
 .creation-card h2 {
   font-size: 20px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
@@ -686,7 +687,7 @@ watch(mode, (newMode) => {
   gap: 8px;
   margin: 20px 0;
   padding: 4px;
-  background: #f3f4f6;
+  background: var(--bg-table-header);
   border-radius: 8px;
 }
 
@@ -698,26 +699,26 @@ watch(mode, (newMode) => {
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tab-btn:hover {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .tab-btn.active {
-  background: white;
-  color: #2563eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Filtres */
 .filters-section {
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .filter-row {
@@ -735,23 +736,23 @@ watch(mode, (newMode) => {
 .filter-group label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .filter-group input,
 .filter-group select {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   font-size: 14px;
-  color: #1f2937;
-  background: white;
+  color: var(--text-primary);
+  background: var(--bg-input);
 }
 
 .filter-group input:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -759,13 +760,14 @@ watch(mode, (newMode) => {
 .loading-state {
   text-align: center;
   padding: 40px;
+  color: var(--text-secondary);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563eb;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -785,21 +787,22 @@ watch(mode, (newMode) => {
 }
 
 .vol-card {
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border-color);
   border-radius: 10px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  background: var(--bg-card);
 }
 
 .vol-card:hover {
   border-color: #93c5fd;
-  background: #f8fafc;
+  background: var(--bg-card-hover);
 }
 
 .vol-card.selected {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: var(--color-primary);
+  background: var(--color-info-bg);
 }
 
 .vol-card.has-crv {
@@ -816,7 +819,7 @@ watch(mode, (newMode) => {
 .vol-numero {
   font-size: 18px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .vol-badges {
