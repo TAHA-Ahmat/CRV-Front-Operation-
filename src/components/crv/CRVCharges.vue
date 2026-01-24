@@ -10,7 +10,10 @@
           v-for="charge in charges"
           :key="charge.id || charge._id"
           class="charge-card"
-          :class="`charge-${charge.typeCharge?.toLowerCase()}`"
+          :class="[
+            `charge-${charge.typeCharge?.toLowerCase()}`,
+            { 'has-special-needs': charge.typeCharge === 'PASSAGERS' && hasSpecialNeeds(charge) }
+          ]"
         >
           <div class="charge-header">
             <span class="charge-type">{{ getTypeLabel(charge.typeCharge) }}</span>
@@ -34,6 +37,46 @@
                 <span>Total:</span>
                 <strong>{{ (charge.passagersAdultes ?? 0) + (charge.passagersEnfants ?? 0) + (charge.passagersBebes ?? 0) }}</strong>
               </div>
+
+              <!-- CONFORMITÉ RÉGLEMENTAIRE: Affichage besoins médicaux -->
+              <div v-if="charge.besoinsMedicaux && (charge.besoinsMedicaux.oxygeneBord > 0 || charge.besoinsMedicaux.brancardier > 0 || charge.besoinsMedicaux.accompagnementMedical > 0)" class="special-needs-section">
+                <div class="special-needs-title">Besoins médicaux</div>
+                <div v-if="charge.besoinsMedicaux.oxygeneBord > 0" class="detail-row medical">
+                  <span>Oxygène bord:</span>
+                  <strong>{{ charge.besoinsMedicaux.oxygeneBord }}</strong>
+                </div>
+                <div v-if="charge.besoinsMedicaux.brancardier > 0" class="detail-row medical">
+                  <span>Brancardier:</span>
+                  <strong>{{ charge.besoinsMedicaux.brancardier }}</strong>
+                </div>
+                <div v-if="charge.besoinsMedicaux.accompagnementMedical > 0" class="detail-row medical">
+                  <span>Accomp. médical:</span>
+                  <strong>{{ charge.besoinsMedicaux.accompagnementMedical }}</strong>
+                </div>
+              </div>
+
+              <!-- CONFORMITÉ RÉGLEMENTAIRE: Affichage mineurs -->
+              <div v-if="charge.mineurs && (charge.mineurs.mineurNonAccompagne > 0 || charge.mineurs.bebeNonAccompagne > 0)" class="special-needs-section">
+                <div class="special-needs-title">Mineurs non accompagnés</div>
+                <div v-if="charge.mineurs.mineurNonAccompagne > 0" class="detail-row minors">
+                  <span>UM (mineurs):</span>
+                  <strong>{{ charge.mineurs.mineurNonAccompagne }}</strong>
+                </div>
+                <div v-if="charge.mineurs.bebeNonAccompagne > 0" class="detail-row minors">
+                  <span>Bébés non acc.:</span>
+                  <strong>{{ charge.mineurs.bebeNonAccompagne }}</strong>
+                </div>
+              </div>
+
+              <!-- Bouton édition détails (besoins médicaux + mineurs) -->
+              <button
+                v-if="!disabled"
+                @click="openEditDetails(charge)"
+                class="btn btn-edit-details"
+                type="button"
+              >
+                {{ hasSpecialNeeds(charge) ? 'Modifier détails' : 'Ajouter besoins spéciaux' }}
+              </button>
             </template>
             <template v-else-if="charge.typeCharge === 'BAGAGES'">
               <div class="detail-row">
@@ -71,6 +114,121 @@
     <!-- Aucune charge - DOCTRINE: pas de confirmation, juste informatif -->
     <div v-else class="empty-state">
       <p>Aucune charge enregistrée pour ce vol</p>
+    </div>
+
+    <!-- CONFORMITÉ RÉGLEMENTAIRE: Modal édition besoins médicaux et mineurs -->
+    <div v-if="editingChargeId" class="edit-details-modal">
+      <div class="edit-details-content">
+        <div class="edit-details-header">
+          <h4>Détails passagers - Conformité réglementaire</h4>
+          <button @click="closeEditDetails" class="btn-close" type="button">&times;</button>
+        </div>
+
+        <div class="edit-details-body">
+          <!-- Section Besoins médicaux -->
+          <div class="edit-section">
+            <h5 class="edit-section-title">
+              <span class="icon-medical">🏥</span>
+              Besoins médicaux (MEDA)
+            </h5>
+            <p class="edit-section-info">Requis par IATA/OACI pour les passagers nécessitant une assistance médicale</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Oxygène à bord</label>
+                <input
+                  v-model.number="editBesoinsMedicaux.oxygeneBord"
+                  type="number"
+                  class="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+                <span class="form-hint">Passagers nécessitant de l'oxygène</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Brancardier (STCR)</label>
+                <input
+                  v-model.number="editBesoinsMedicaux.brancardier"
+                  type="number"
+                  class="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+                <span class="form-hint">Passagers sur civière</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Accompagnement médical</label>
+                <input
+                  v-model.number="editBesoinsMedicaux.accompagnementMedical"
+                  type="number"
+                  class="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+                <span class="form-hint">Avec personnel médical</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Mineurs non accompagnés -->
+          <div class="edit-section">
+            <h5 class="edit-section-title">
+              <span class="icon-minors">👶</span>
+              Mineurs non accompagnés (UM)
+            </h5>
+            <p class="edit-section-info">Requis par DGAC pour la traçabilité des mineurs voyageant seuls</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Mineurs non accompagnés (UM)</label>
+                <input
+                  v-model.number="editMineurs.mineurNonAccompagne"
+                  type="number"
+                  class="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+                <span class="form-hint">Enfants 5-17 ans voyageant seuls</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bébés non accompagnés</label>
+                <input
+                  v-model.number="editMineurs.bebeNonAccompagne"
+                  type="number"
+                  class="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+                <span class="form-hint">Cas exceptionnels (transfert médical)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="edit-details-footer">
+          <button
+            @click="saveDetailsPassagers"
+            class="btn btn-primary"
+            :disabled="savingDetails"
+            type="button"
+          >
+            {{ savingDetails ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+          <button
+            @click="closeEditDetails"
+            class="btn btn-secondary"
+            :disabled="savingDetails"
+            type="button"
+          >
+            Annuler
+          </button>
+        </div>
+
+        <!-- Message d'erreur -->
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+      </div>
     </div>
 
     <!-- MVS-4 #1: Impact complétude affiché -->
@@ -384,6 +542,7 @@
  */
 import { ref, computed } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
+import { useChargesStore } from '@/stores/chargesStore'
 import { chargesAPI } from '@/services/api'
 import {
   TYPE_CHARGE,
@@ -407,13 +566,18 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['charge-added'])
+const emit = defineEmits(['charge-added', 'charge-updated'])
 
 const crvStore = useCRVStore()
+const chargesStore = useChargesStore()
 
 // États locaux
 const saving = ref(false)
 const errorMessage = ref('')
+
+// États pour édition des détails passagers (besoins médicaux et mineurs)
+const editingChargeId = ref(null)
+const savingDetails = ref(false)
 
 // MVS-4: États DGR
 const dgrCodeONUError = ref('')
@@ -456,6 +620,18 @@ const newCharge = ref({
     quantite: 0,
     unite: 'kg'
   }
+})
+
+// CONFORMITÉ RÉGLEMENTAIRE: Formulaire besoins médicaux et mineurs (pour édition)
+const editBesoinsMedicaux = ref({
+  oxygeneBord: 0,
+  brancardier: 0,
+  accompagnementMedical: 0
+})
+
+const editMineurs = ref({
+  mineurNonAccompagne: 0,
+  bebeNonAccompagne: 0
 })
 
 // Computed
@@ -677,6 +853,112 @@ const validateDGR = async () => {
   } finally {
     validatingDGR.value = false
   }
+}
+
+// ============================================
+// CONFORMITÉ RÉGLEMENTAIRE: Besoins médicaux et Mineurs
+// Endpoints: PUT /api/charges/:id/besoins-medicaux
+//            PUT /api/charges/:id/mineurs
+// ============================================
+
+/**
+ * Ouvrir le formulaire d'édition des détails passagers (besoins médicaux + mineurs)
+ * @param {Object} charge - La charge passagers à éditer
+ */
+const openEditDetails = (charge) => {
+  console.log('[CRV][CHARGE_EDIT] Ouverture édition détails pour charge:', charge.id || charge._id)
+  editingChargeId.value = charge.id || charge._id
+
+  // Pré-remplir avec les valeurs existantes
+  editBesoinsMedicaux.value = {
+    oxygeneBord: charge.besoinsMedicaux?.oxygeneBord ?? 0,
+    brancardier: charge.besoinsMedicaux?.brancardier ?? 0,
+    accompagnementMedical: charge.besoinsMedicaux?.accompagnementMedical ?? 0
+  }
+
+  editMineurs.value = {
+    mineurNonAccompagne: charge.mineurs?.mineurNonAccompagne ?? 0,
+    bebeNonAccompagne: charge.mineurs?.bebeNonAccompagne ?? 0
+  }
+}
+
+/**
+ * Fermer le formulaire d'édition
+ */
+const closeEditDetails = () => {
+  console.log('[CRV][CHARGE_EDIT] Fermeture édition détails')
+  editingChargeId.value = null
+  // Reset des formulaires
+  editBesoinsMedicaux.value = { oxygeneBord: 0, brancardier: 0, accompagnementMedical: 0 }
+  editMineurs.value = { mineurNonAccompagne: 0, bebeNonAccompagne: 0 }
+}
+
+/**
+ * Sauvegarder les besoins médicaux et mineurs
+ */
+const saveDetailsPassagers = async () => {
+  if (!editingChargeId.value) return
+
+  console.log('[CRV][CHARGE_SAVE_DETAILS] Sauvegarde détails passagers pour charge:', editingChargeId.value)
+  savingDetails.value = true
+  errorMessage.value = ''
+
+  try {
+    // Appel parallèle des deux endpoints
+    const [resBesoinsMedicaux, resMineurs] = await Promise.all([
+      chargesStore.updateBesoinsMedicaux(editingChargeId.value, editBesoinsMedicaux.value),
+      chargesStore.updateMineurs(editingChargeId.value, editMineurs.value)
+    ])
+
+    console.log('[CRV][CHARGE_SAVE_DETAILS] Besoins médicaux sauvegardés:', resBesoinsMedicaux)
+    console.log('[CRV][CHARGE_SAVE_DETAILS] Mineurs sauvegardés:', resMineurs)
+
+    // Émettre l'événement pour rafraîchir le CRV parent
+    emit('charge-updated', { chargeId: editingChargeId.value })
+
+    // Fermer le formulaire
+    closeEditDetails()
+
+  } catch (error) {
+    console.error('[CRV][CHARGE_SAVE_DETAILS] Erreur:', error)
+    errorMessage.value = error.response?.data?.message || 'Erreur lors de la sauvegarde des détails'
+  } finally {
+    savingDetails.value = false
+  }
+}
+
+/**
+ * Vérifier si une charge passagers a des besoins spéciaux renseignés
+ * @param {Object} charge - La charge à vérifier
+ * @returns {boolean}
+ */
+const hasSpecialNeeds = (charge) => {
+  const bm = charge.besoinsMedicaux
+  const m = charge.mineurs
+  return (
+    (bm?.oxygeneBord > 0) ||
+    (bm?.brancardier > 0) ||
+    (bm?.accompagnementMedical > 0) ||
+    (m?.mineurNonAccompagne > 0) ||
+    (m?.bebeNonAccompagne > 0)
+  )
+}
+
+/**
+ * Obtenir le total des besoins spéciaux
+ * @param {Object} charge - La charge
+ * @returns {number}
+ */
+const getTotalSpecialNeeds = (charge) => {
+  const bm = charge.besoinsMedicaux || {}
+  const m = charge.mineurs || {}
+  return (
+    (bm.oxygeneBord || 0) +
+    (bm.brancardier || 0) +
+    (bm.accompagnementMedical || 0) +
+    (m.mineurNonAccompagne || 0) +
+    (m.bebeNonAccompagne || 0)
+  )
 }
 </script>
 
@@ -1014,5 +1296,177 @@ const validateDGR = async () => {
 .result-warnings {
   margin-top: 10px;
   color: #92400e;
+}
+
+/* ============================================
+   CONFORMITÉ RÉGLEMENTAIRE: Besoins médicaux et Mineurs
+   ============================================ */
+
+/* Sections spéciales dans les cartes */
+.special-needs-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d1d5db;
+}
+
+.special-needs-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.detail-row.medical {
+  color: #dc2626;
+}
+
+.detail-row.medical strong {
+  color: #991b1b;
+}
+
+.detail-row.minors {
+  color: #7c3aed;
+}
+
+.detail-row.minors strong {
+  color: #5b21b6;
+}
+
+/* Bouton édition détails */
+.btn-edit-details {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit-details:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+/* Modal édition détails passagers */
+.edit-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edit-details-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.edit-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.edit-details-header h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-close:hover {
+  color: #1f2937;
+}
+
+.edit-details-body {
+  padding: 20px;
+}
+
+.edit-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.edit-section:last-child {
+  margin-bottom: 0;
+}
+
+.edit-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.icon-medical {
+  font-size: 20px;
+}
+
+.icon-minors {
+  font-size: 20px;
+}
+
+.edit-section-info {
+  margin: 0 0 15px 0;
+  font-size: 13px;
+  color: #6b7280;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
+.edit-details-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Badge indicateur besoins spéciaux sur la carte */
+.charge-card.has-special-needs {
+  border-top: 3px solid #dc2626;
+}
+
+.charge-card.has-special-needs .charge-header::after {
+  content: '⚠️';
+  margin-left: 8px;
 }
 </style>

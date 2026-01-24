@@ -5,9 +5,15 @@
     <main class="crv-main">
       <div class="page-header-bar">
         <h1>Mes CRV</h1>
-        <button @click="goToNewCRV" class="btn btn-primary">
-          + Nouveau CRV
-        </button>
+        <div class="header-actions">
+          <button @click="openExportModal" class="btn btn-export">
+            <span class="export-icon">📥</span>
+            Exporter Excel
+          </button>
+          <button @click="goToNewCRV" class="btn btn-primary">
+            + Nouveau CRV
+          </button>
+        </div>
       </div>
       <div class="container">
         <!-- Filtres -->
@@ -79,6 +85,7 @@
                 <th>Complétude</th>
                 <th>Créé par</th>
                 <th>Date</th>
+                <th>Archivage</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -116,6 +123,31 @@
                   <span v-else class="text-muted">-</span>
                 </td>
                 <td>{{ formatDate(crv.dateCreation) }}</td>
+                <td class="archivage-cell">
+                  <div v-if="crv.archivage?.fileId" class="archivage-status archived">
+                    <span class="archivage-icon">📁</span>
+                    <div class="archivage-info">
+                      <a
+                        v-if="crv.archivage.webViewLink"
+                        :href="crv.archivage.webViewLink"
+                        target="_blank"
+                        class="archivage-link"
+                        title="Ouvrir dans Google Drive"
+                      >
+                        Archivé
+                      </a>
+                      <span v-else class="archivage-text">Archivé</span>
+                      <span class="archivage-date">{{ formatArchiveDate(crv.archivage.archivedAt) }}</span>
+                    </div>
+                  </div>
+                  <div v-else-if="canArchiveCRV(crv)" class="archivage-status pending">
+                    <span class="archivage-icon">⏳</span>
+                    <span class="archivage-text">En attente</span>
+                  </div>
+                  <div v-else class="archivage-status na">
+                    <span class="archivage-text text-muted">-</span>
+                  </div>
+                </td>
                 <td class="actions-cell">
                   <button
                     @click="viewCRV(crv)"
@@ -310,6 +342,81 @@
       </div>
     </div>
 
+    <!-- Modal Export Excel -->
+    <div v-if="showExportModal" class="modal-overlay" @click.self="closeExportModal">
+      <div class="modal-content modal-export">
+        <div class="modal-header modal-header-export">
+          <h2>Exporter les CRV en Excel</h2>
+          <button @click="closeExportModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="export-info">
+            Sélectionnez les critères pour filtrer les CRV à exporter.
+            Laissez vide pour exporter tous les CRV.
+          </p>
+
+          <div class="form-group">
+            <label>Période</label>
+            <div class="date-range">
+              <input
+                type="date"
+                v-model="exportFilters.dateDebut"
+                placeholder="Date début"
+              />
+              <span class="date-separator">à</span>
+              <input
+                type="date"
+                v-model="exportFilters.dateFin"
+                placeholder="Date fin"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Statut</label>
+            <select v-model="exportFilters.statut">
+              <option value="">Tous les statuts</option>
+              <option value="BROUILLON">Brouillon</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="TERMINE">Terminé</option>
+              <option value="VALIDE">Validé</option>
+              <option value="VERROUILLE">Verrouillé</option>
+              <option value="ANNULE">Annulé</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Escale</label>
+            <input
+              type="text"
+              v-model="exportFilters.escale"
+              placeholder="Code escale (ex: NIM)"
+              maxlength="4"
+            />
+          </div>
+
+          <div class="export-preview">
+            <span class="preview-icon">📊</span>
+            <span>Le fichier sera généré au format Excel (.xlsx)</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeExportModal" class="btn btn-secondary">Annuler</button>
+          <button @click="useCurrentFilters" class="btn btn-outline">
+            Utiliser filtres actuels
+          </button>
+          <button
+            @click="executeExport"
+            class="btn btn-primary btn-export-confirm"
+            :disabled="exporting"
+          >
+            <span v-if="exporting">Génération en cours...</span>
+            <span v-else>Télécharger Excel</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast notification -->
     <div v-if="toast.show" class="toast" :class="toast.type">
       {{ toast.message }}
@@ -356,6 +463,16 @@ const annulationData = reactive({ motif: '', commentaire: '' })
 const reactivationData = reactive({ raison: '' })
 const suppressionConfirmation = ref('')
 const toast = reactive({ show: false, message: '', type: 'success' })
+
+// Export Excel
+const showExportModal = ref(false)
+const exporting = ref(false)
+const exportFilters = reactive({
+  dateDebut: '',
+  dateFin: '',
+  statut: '',
+  escale: ''
+})
 
 // Chargement initial
 onMounted(() => {
@@ -473,6 +590,16 @@ const formatDate = (dateString) => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
+  })
+}
+
+const formatArchiveDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
   })
 }
 
@@ -634,6 +761,76 @@ const showToast = (message, type = 'success') => {
   setTimeout(() => {
     toast.show = false
   }, 4000)
+}
+
+// Export Excel - Fonctions
+const openExportModal = () => {
+  // Reset des filtres d'export
+  exportFilters.dateDebut = ''
+  exportFilters.dateFin = ''
+  exportFilters.statut = ''
+  exportFilters.escale = ''
+  showExportModal.value = true
+}
+
+const closeExportModal = () => {
+  showExportModal.value = false
+}
+
+const useCurrentFilters = () => {
+  // Copier les filtres actuels de la liste vers les filtres d'export
+  exportFilters.dateDebut = filters.dateDebut
+  exportFilters.dateFin = filters.dateFin
+  exportFilters.statut = filters.statut
+  showToast('Filtres actuels appliqués', 'success')
+}
+
+const executeExport = async () => {
+  exporting.value = true
+
+  try {
+    // Construire les paramètres
+    const params = {}
+    if (exportFilters.dateDebut) params.dateDebut = exportFilters.dateDebut
+    if (exportFilters.dateFin) params.dateFin = exportFilters.dateFin
+    if (exportFilters.statut) params.statut = exportFilters.statut
+    if (exportFilters.escale) params.escale = exportFilters.escale.toUpperCase()
+
+    console.log('[CRVList] Export Excel avec params:', params)
+
+    // Appeler l'API d'export
+    const response = await crvAPI.export(params)
+
+    // Créer un blob et télécharger le fichier
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+
+    // Générer le nom de fichier avec la date
+    const now = new Date()
+    const dateStr = now.toISOString().split('T')[0]
+    const filename = `CRV_Export_${dateStr}.xlsx`
+
+    // Créer un lien de téléchargement
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+
+    // Nettoyer
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(link)
+
+    showToast('Export Excel téléchargé avec succès', 'success')
+    closeExportModal()
+  } catch (err) {
+    console.error('[CRVList] Erreur export:', err)
+    showToast(err.response?.data?.message || 'Erreur lors de l\'export', 'error')
+  } finally {
+    exporting.value = false
+  }
 }
 </script>
 
@@ -1129,6 +1326,186 @@ const showToast = (message, type = 'success') => {
   }
 }
 
+/* Header actions */
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Bouton Export */
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #059669;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-export:hover {
+  background: #047857;
+}
+
+.export-icon {
+  font-size: 16px;
+}
+
+/* Modal Export */
+.modal-export {
+  max-width: 480px;
+}
+
+.modal-header-export {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.modal-header-export h2 {
+  color: white;
+}
+
+.modal-header-export .modal-close {
+  color: white;
+}
+
+.modal-header-export .modal-close:hover {
+  color: #d1fae5;
+}
+
+.export-info {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-range input {
+  flex: 1;
+}
+
+.date-separator {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.export-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  margin-top: 16px;
+  color: #065f46;
+  font-size: 14px;
+}
+
+.preview-icon {
+  font-size: 24px;
+}
+
+.btn-outline {
+  background: white;
+  color: #059669;
+  border: 1px solid #059669;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: #ecfdf5;
+}
+
+.btn-export-confirm {
+  background: #059669;
+  min-width: 160px;
+}
+
+.btn-export-confirm:hover:not(:disabled) {
+  background: #047857;
+}
+
+.btn-export-confirm:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Colonne Archivage */
+.archivage-cell {
+  white-space: nowrap;
+}
+
+.archivage-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.archivage-status.archived {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.archivage-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.archivage-status.na {
+  background: transparent;
+}
+
+.archivage-icon {
+  font-size: 14px;
+}
+
+.archivage-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archivage-link {
+  color: #059669;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.archivage-link:hover {
+  text-decoration: underline;
+}
+
+.archivage-text {
+  font-weight: 500;
+}
+
+.archivage-date {
+  font-size: 11px;
+  color: #6b7280;
+}
+
 @media (max-width: 768px) {
   .filters-row {
     flex-direction: column;
@@ -1150,6 +1527,28 @@ const showToast = (message, type = 'success') => {
   .crv-table th,
   .crv-table td {
     padding: 8px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .date-range {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .date-separator {
+    display: none;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
   }
 }
 </style>
