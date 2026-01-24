@@ -1,8 +1,8 @@
 <template>
   <!-- COPIÉ ET ADAPTÉ DEPUIS STOCK THS -->
-  <footer v-if="isAuthenticated" class="bg-white border-t border-gray-200 mt-auto">
+  <footer v-if="isAuthenticated" class="footer-theme border-t mt-auto">
     <div class="container mx-auto px-4 py-4">
-      <p class="text-center text-gray-600 text-sm">
+      <p class="text-center text-theme-secondary text-sm">
         © 2025 THS - Module CRV Opérations. Tous droits réservés.
       </p>
     </div>

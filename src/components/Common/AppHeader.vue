@@ -8,12 +8,12 @@
     - QUALITE → Lecture seule (pas de "Nouveau CRV")
     - ADMIN → Gestion utilisateurs uniquement
   -->
-  <header v-if="isAuthenticated" class="fixed top-0 w-full bg-white shadow-sm z-50 border-b border-gray-200">
+  <header v-if="isAuthenticated" class="fixed top-0 w-full shadow-sm z-50 border-b header-theme">
     <div class="container mx-auto px-4 h-16 flex items-center justify-between">
       <!-- Logo CRV - Cliquable pour revenir à l'accueil -->
       <router-link to="/services" class="flex items-center space-x-3 hover:opacity-80 transition">
         <div class="text-2xl">✈️</div>
-        <span class="text-xl font-semibold text-gray-800">THS - CRV</span>
+        <span class="text-xl font-semibold text-theme-primary">THS - CRV</span>
         <!-- Badge rôle -->
         <span class="hidden lg:inline-block px-2 py-0.5 text-xs rounded" :class="roleBadgeClass">
           {{ roleLabel }}
@@ -66,8 +66,24 @@
 
       <!-- Profil utilisateur et déconnexion -->
       <div class="flex items-center space-x-4">
+        <!-- Bouton Theme Jour/Nuit -->
+        <button
+          @click="toggleTheme"
+          class="theme-toggle"
+          :title="isDark ? 'Passer en mode jour' : 'Passer en mode nuit'"
+        >
+          <!-- Icone Soleil (mode nuit actif) -->
+          <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <!-- Icone Lune (mode jour actif) -->
+          <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+
         <!-- Menu profil -->
-        <router-link to="/profil" class="text-gray-600 hover:text-crv-blue flex items-center space-x-2">
+        <router-link to="/profil" class="profile-link flex items-center space-x-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
           </svg>
@@ -75,7 +91,7 @@
         </router-link>
 
         <!-- Bouton de déconnexion -->
-        <button @click="logout" class="text-gray-600 hover:text-red-600 flex items-center space-x-2 transition">
+        <button @click="logout" class="logout-btn flex items-center space-x-2 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>
@@ -99,6 +115,7 @@
  * Source : TRANSMISSION_BACKEND_FRONTEND.md
  */
 import { ROLES, ROLES_LABELS } from '@/config/roles';
+import { useThemeStore } from '@/stores/themeStore';
 
 export default {
   name: 'AppHeader',
@@ -117,7 +134,15 @@ export default {
     }
   },
   emits: ['logout'],
+  setup() {
+    const themeStore = useThemeStore();
+    return { themeStore };
+  },
   computed: {
+    // Theme
+    isDark() {
+      return this.themeStore.isDark;
+    },
     // Vérification des rôles (6 rôles backend)
     isAgentEscale() {
       return this.userRole === ROLES.AGENT_ESCALE;
@@ -173,6 +198,9 @@ export default {
   methods: {
     logout() {
       this.$emit('logout');
+    },
+    toggleTheme() {
+      this.themeStore.toggleTheme();
     }
   }
 };
@@ -180,7 +208,8 @@ export default {
 
 <style scoped>
 .nav-link {
-  @apply text-gray-700 font-medium text-sm hover:text-crv-blue transition-colors duration-200 relative;
+  @apply font-medium text-sm hover:text-crv-blue transition-colors duration-200 relative;
+  color: var(--text-primary);
 }
 
 .nav-link.router-link-active {
@@ -190,5 +219,22 @@ export default {
 .nav-link.router-link-active::after {
   content: '';
   @apply absolute bottom-0 left-0 right-0 h-0.5 bg-crv-blue;
+}
+
+.profile-link {
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.profile-link:hover {
+  color: var(--text-primary);
+}
+
+.logout-btn {
+  color: var(--text-secondary);
+}
+
+.logout-btn:hover {
+  color: var(--color-error);
 }
 </style>

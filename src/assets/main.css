@@ -2,37 +2,272 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CRV styles */
+/* ============================================
+   VARIABLES CSS - THEME JOUR/NUIT
+   ============================================ */
+
+:root {
+  /* Backgrounds */
+  --bg-body: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-header: #ffffff;
+  --bg-footer: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-modal: #ffffff;
+  --bg-dropdown: #ffffff;
+  --bg-table-header: #f9fafb;
+  --bg-table-row-hover: #f3f4f6;
+  --bg-badge: #f3f4f6;
+
+  /* Text */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-muted: #d1d5db;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border-color: #e5e7eb;
+  --border-color-dark: #d1d5db;
+  --border-input: #d1d5db;
+
+  /* Status colors (preserved in both modes) */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-success: #10b981;
+  --color-success-bg: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fef3c7;
+  --color-error: #ef4444;
+  --color-error-bg: #fee2e2;
+  --color-info: #3b82f6;
+  --color-info-bg: #dbeafe;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Mode Nuit */
+.dark {
+  /* Backgrounds */
+  --bg-body: #111827;
+  --bg-card: #1f2937;
+  --bg-card-hover: #374151;
+  --bg-input: #374151;
+  --bg-header: #1f2937;
+  --bg-footer: #1f2937;
+  --bg-sidebar: #1f2937;
+  --bg-modal: #1f2937;
+  --bg-dropdown: #374151;
+  --bg-table-header: #374151;
+  --bg-table-row-hover: #374151;
+  --bg-badge: #374151;
+
+  /* Text */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+  --text-inverse: #1f2937;
+
+  /* Borders */
+  --border-color: #374151;
+  --border-color-dark: #4b5563;
+  --border-input: #4b5563;
+
+  /* Status colors adjusted for dark mode */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-success: #34d399;
+  --color-success-bg: #064e3b;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #78350f;
+  --color-error: #f87171;
+  --color-error-bg: #7f1d1d;
+  --color-info: #60a5fa;
+  --color-info-bg: #1e3a8a;
+
+  /* Shadows (more subtle in dark mode) */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+}
+
+/* ============================================
+   STYLES DE BASE - THEME AWARE
+   ============================================ */
+
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================
+   COMPOSANTS TAILWIND CUSTOM
+   ============================================ */
+
 @layer components {
   .btn {
     @apply px-4 py-2 rounded font-medium transition-all duration-200 cursor-pointer;
   }
 
   .btn-primary {
-    @apply bg-crv-blue text-white hover:bg-crv-blue-dark;
+    background-color: var(--color-primary);
+    color: var(--text-inverse);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
   }
 
   .btn-secondary {
-    @apply bg-gray-600 text-white hover:bg-gray-700;
+    background-color: var(--bg-badge);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-card-hover);
   }
 
   .btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700;
+    background-color: var(--color-success);
+    color: white;
   }
 
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700;
+    background-color: var(--color-error);
+    color: white;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow p-6;
+    background-color: var(--bg-card);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
   }
 
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-crv-blue focus:border-transparent;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-input);
+    border-radius: 0.375rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-tertiary);
   }
 
   .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
   }
+}
+
+/* ============================================
+   DARK MODE UTILITIES
+   ============================================ */
+
+/* Background utilities */
+.bg-theme-body { background-color: var(--bg-body); }
+.bg-theme-card { background-color: var(--bg-card); }
+.bg-theme-input { background-color: var(--bg-input); }
+.bg-theme-header { background-color: var(--bg-header); }
+
+/* Text utilities */
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.text-theme-tertiary { color: var(--text-tertiary); }
+
+/* Border utilities */
+.border-theme { border-color: var(--border-color); }
+
+/* Header */
+.header-theme {
+  background-color: var(--bg-header);
+  border-color: var(--border-color);
+}
+
+/* Footer */
+.footer-theme {
+  background-color: var(--bg-footer);
+  border-color: var(--border-color);
+}
+
+/* ============================================
+   SCROLLBAR DARK MODE
+   ============================================ */
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ============================================
+   THEME TOGGLE BUTTON
+   ============================================ */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--bg-badge);
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
 }
