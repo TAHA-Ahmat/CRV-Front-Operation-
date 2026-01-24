@@ -548,7 +548,7 @@ export const phasesAPI = {
 }
 
 // ============================================
-// 7. VOLS API (12 routes) - inclut Extension 2
+// 7. VOLS API (4 routes)
 // ============================================
 
 export const volsAPI = {
@@ -579,69 +579,11 @@ export const volsAPI = {
    * Modifier un vol
    * PATCH /api/vols/:id
    */
-  update: (id, data) => api.patch(`/vols/${id}`, data),
-
-  /**
-   * Supprimer un vol
-   * DELETE /api/vols/:id
-   */
-  delete: (id) => api.delete(`/vols/${id}`),
-
-  /**
-   * Lier un vol à un programme
-   * POST /api/vols/:id/lier-programme
-   * Body: { programmeId }
-   */
-  lierProgramme: (id, programmeId) => api.post(`/vols/${id}/lier-programme`, { programmeId }),
-
-  /**
-   * Marquer un vol comme hors programme
-   * POST /api/vols/:id/marquer-hors-programme
-   * Body: { typeVolHorsProgramme: 'CHARTER'|'VOL_FERRY'|'MEDICAL'|'TECHNIQUE'|'AUTRE', raisonHorsProgramme? }
-   */
-  marquerHorsProgramme: (id, data) => api.post(`/vols/${id}/marquer-hors-programme`, data),
-
-  /**
-   * Détacher un vol d'un programme
-   * POST /api/vols/:id/detacher-programme
-   */
-  detacherProgramme: (id) => api.post(`/vols/${id}/detacher-programme`),
-
-  // ============================================
-  // Extension 2 - Vols programmés
-  // ============================================
-
-  /**
-   * Suggérer des programmes pour un vol
-   * GET /api/vols/:id/suggerer-programmes
-   * Retourne: { suggestions: Programme[] }
-   */
-  suggererProgrammes: (id) => api.get(`/vols/${id}/suggerer-programmes`),
-
-  /**
-   * Lister les vols d'un programme
-   * GET /api/vols/programme/:programmeVolId
-   * Query: { page, limit }
-   */
-  getByProgramme: (programmeId, params) => api.get(`/vols/programme/${programmeId}`, { params }),
-
-  /**
-   * Lister les vols hors programme
-   * GET /api/vols/hors-programme
-   * Query: { dateDebut, dateFin, typeVol, page, limit }
-   */
-  getHorsProgramme: (params) => api.get('/vols/hors-programme', { params }),
-
-  /**
-   * Statistiques des programmes de vols
-   * GET /api/vols/statistiques/programmes
-   * Query: { dateDebut, dateFin }
-   */
-  getStatistiquesProgrammes: (params) => api.get('/vols/statistiques/programmes', { params })
+  update: (id, data) => api.patch(`/vols/${id}`, data)
 }
 
 // ============================================
-// 8. PROGRAMMES VOL API (10 routes) - inclut Extension 1
+// 8. PROGRAMMES VOL API - Routes existantes dans le backend
 // ============================================
 
 export const programmesVolAPI = {
@@ -700,62 +642,6 @@ export const programmesVolAPI = {
   suspendre: (id, raison = '') => api.post(`/programmes-vol/${id}/suspendre`, { raison }),
 
   /**
-   * Importer un programme depuis Excel (legacy - FormData)
-   * POST /api/programmes-vol/import
-   * Body: FormData avec fichier
-   */
-  import: (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/programmes-vol/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-
-  /**
-   * Import en masse de programmes (JSON)
-   * POST /api/programmes-vol/import
-   * Body: { programmes: ProgrammeVolSaisonnier[] }
-   * @param {Array} programmes - Tableau de programmes à importer
-   */
-  importBulk: (programmes) => api.post('/programmes-vol/import', { programmes }),
-
-  /**
-   * Programmes applicables à une date (Extension 1)
-   * GET /api/programmes-vol/applicables/:date
-   * Query: { compagnieAerienne?, categorieVol? }
-   */
-  getApplicables: (date, params = {}) => api.get(`/programmes-vol/applicables/${date}`, { params }),
-
-  /**
-   * Recherche par route
-   * GET /api/programmes-vol/par-route
-   * Query: { provenance?, destination?, categorieVol? }
-   */
-  getParRoute: (params) => api.get('/programmes-vol/par-route', { params }),
-
-  /**
-   * Résumé global des programmes
-   * GET /api/programmes-vol/resume
-   * Retourne: { totalProgrammesActifs, totalVolsHebdomadaires, parCategorie, parJour }
-   */
-  getResume: () => api.get('/programmes-vol/resume'),
-
-  /**
-   * Statistiques par catégorie
-   * GET /api/programmes-vol/statistiques/categories
-   * Retourne: [{ _id: 'PASSAGER', count, compagnies }]
-   */
-  getStatistiquesCategories: () => api.get('/programmes-vol/statistiques/categories'),
-
-  /**
-   * Statistiques par jour de la semaine
-   * GET /api/programmes-vol/statistiques/jours
-   * Retourne: { Lundi: { total, passagers, cargo, domestiques }, ... }
-   */
-  getStatistiquesJours: () => api.get('/programmes-vol/statistiques/jours'),
-
-  /**
    * Obtenir le programme actif
    * GET /api/programmes-vol/actif
    */
@@ -768,10 +654,16 @@ export const programmesVolAPI = {
   dupliquer: (id) => api.post(`/programmes-vol/${id}/dupliquer`),
 
   /**
-   * Obtenir les statistiques d'un programme
+   * Obtenir les statistiques d'un programme spécifique
    * GET /api/programmes-vol/:id/statistiques
    */
   getStatistiques: (id) => api.get(`/programmes-vol/${id}/statistiques`),
+
+  /**
+   * Obtenir le résumé d'un programme spécifique
+   * GET /api/programmes-vol/:id/resume
+   */
+  getResumeById: (id) => api.get(`/programmes-vol/${id}/resume`),
 
   // ============================================
   // VOLS D'UN PROGRAMME (architecture 2 niveaux)
@@ -1220,7 +1112,7 @@ export const slaAPI = {
 }
 
 // ============================================
-// 13. VALIDATION API (4 routes)
+// 13. VALIDATION API (3 routes)
 // ============================================
 
 export const validationAPI = {
@@ -1235,17 +1127,6 @@ export const validationAPI = {
     console.log('[VALIDATION API] valider() - CRV ID:', id, '- Commentaires:', commentaires)
     const body = commentaires ? { commentaires } : {}
     return api.post(`/validation/${id}/valider`, body)
-  },
-
-  /**
-   * Rejeter un CRV (tous sauf QUALITE)
-   * POST /api/validation/:id/rejeter
-   * Body: { commentaires } (obligatoire)
-   * Résultat: CRV retourne à EN_COURS pour correction
-   */
-  rejeter: (id, commentaires) => {
-    console.log('[VALIDATION API] rejeter() - CRV ID:', id, '- Commentaires:', commentaires)
-    return api.post(`/validation/${id}/rejeter`, { commentaires })
   },
 
   /**
@@ -1264,6 +1145,7 @@ export const validationAPI = {
    * POST /api/validation/:id/deverrouiller
    * Body: { raison } (obligatoire)
    * Résultat: CRV retourne à VALIDE
+   * Note: Utilisé aussi pour rejeter un CRV en fournissant une raison
    */
   deverrouiller: (id, raison) => {
     console.log('[VALIDATION API] deverrouiller() - CRV ID:', id, '- Raison:', raison)

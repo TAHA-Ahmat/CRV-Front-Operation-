@@ -1,7 +1,7 @@
 /**
  * STORE PROGRAMMES VOL - GESTION DES PROGRAMMES SAISONNIERS
  *
- * Utilise programmesVolAPI (9 routes)
+ * Utilise programmesVolAPI (routes existantes backend)
  */
 
 import { defineStore } from 'pinia'
@@ -18,19 +18,10 @@ export const useProgrammesStore = defineStore('programmes', {
     programmesPage: 1,
     programmesPages: 1,
 
-    // Programmes applicables (pour sélection CRV)
-    programmesApplicables: [],
-
-    // Statistiques
-    resume: null,
-    statistiquesCategories: [],
-    statistiquesJours: null,
-
     // États
     loading: false,
     error: null,
-    saving: false,
-    importing: false
+    saving: false
   }),
 
   getters: {
@@ -46,14 +37,6 @@ export const useProgrammesStore = defineStore('programmes', {
     getProgrammesPassager: (state) => state.programmesList.filter(p => p.categorieVol === 'PASSAGER'),
     getProgrammesCargo: (state) => state.programmesList.filter(p => p.categorieVol === 'CARGO'),
     getProgrammesDomestique: (state) => state.programmesList.filter(p => p.categorieVol === 'DOMESTIQUE'),
-
-    // Applicables
-    getProgrammesApplicables: (state) => state.programmesApplicables,
-
-    // Statistiques
-    getResume: (state) => state.resume,
-    getStatistiquesCategories: (state) => state.statistiquesCategories,
-    getStatistiquesJours: (state) => state.statistiquesJours,
 
     getPagination: (state) => ({
       page: state.programmesPage,
@@ -248,151 +231,8 @@ export const useProgrammesStore = defineStore('programmes', {
       }
     },
 
-    /**
-     * Importer un programme depuis Excel
-     * @param {File} file - Fichier Excel
-     */
-    async importerProgramme(file) {
-      this.importing = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.import(file)
-        // Recharger la liste après import
-        await this.listProgrammes()
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors de l\'import'
-        throw error
-      } finally {
-        this.importing = false
-      }
-    },
-
-    /**
-     * Obtenir les programmes applicables à une date (Extension 1)
-     * @param {string} date - Date au format YYYY-MM-DD
-     * @param {Object} params - { compagnieAerienne?, categorieVol? }
-     */
-    async loadProgrammesApplicables(date, params = {}) {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.getApplicables(date, params)
-        this.programmesApplicables = response.data.data || response.data || []
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors de la recherche'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Rechercher par route
-     * @param {Object} params - { provenance?, destination?, categorieVol? }
-     */
-    async searchParRoute(params) {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.getParRoute(params)
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors de la recherche'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Charger le résumé global
-     */
-    async loadResume() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.getResume()
-        this.resume = response.data.data || response.data
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors du chargement du résumé'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Charger les statistiques par catégorie
-     */
-    async loadStatistiquesCategories() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.getStatistiquesCategories()
-        this.statistiquesCategories = response.data.data || response.data || []
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors du chargement des stats'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Charger les statistiques par jour
-     */
-    async loadStatistiquesJours() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.getStatistiquesJours()
-        this.statistiquesJours = response.data.data || response.data
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors du chargement des stats'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Import en masse (JSON)
-     * @param {Array} programmes - Tableau de programmes
-     */
-    async importerProgrammesBulk(programmes) {
-      this.importing = true
-      this.error = null
-
-      try {
-        const response = await programmesVolAPI.importBulk(programmes)
-        // Recharger la liste après import
-        await this.listProgrammes()
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erreur lors de l\'import'
-        throw error
-      } finally {
-        this.importing = false
-      }
-    },
-
     resetCurrentProgramme() {
       this.currentProgramme = null
-    },
-
-    resetProgrammesApplicables() {
-      this.programmesApplicables = []
     },
 
     clearError() {

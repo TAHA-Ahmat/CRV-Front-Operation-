@@ -125,22 +125,6 @@ export const volsAPI = {
   }),
   update: (id, data) => Promise.resolve({
     data: { success: true, data: { vol: { id, ...data } } }
-  }),
-  delete: (id) => Promise.resolve({ data: { success: true } }),
-  lierProgramme: () => Promise.resolve({ data: { success: true } }),
-  marquerHorsProgramme: () => Promise.resolve({ data: { success: true } }),
-  detacherProgramme: () => Promise.resolve({ data: { success: true } }),
-  suggererProgrammes: () => Promise.resolve({
-    data: { success: true, data: { suggestions: [] } }
-  }),
-  getByProgramme: () => Promise.resolve({
-    data: { success: true, data: { vols: [] } }
-  }),
-  getHorsProgramme: () => Promise.resolve({
-    data: { success: true, data: { vols: [] } }
-  }),
-  getStatistiquesProgrammes: () => Promise.resolve({
-    data: { success: true, data: {} }
   })
 }
 
@@ -243,10 +227,10 @@ export const programmesVolAPI = {
   valider: () => Promise.resolve({ data: { success: true } }),
   activer: () => Promise.resolve({ data: { success: true } }),
   suspendre: () => Promise.resolve({ data: { success: true } }),
-  import: () => Promise.resolve({ data: { success: true } }),
-  getApplicables: () => Promise.resolve({
-    data: { success: true, data: { programmes: [] } }
-  })
+  getActif: () => Promise.resolve({ data: { success: true, data: null } }),
+  dupliquer: () => Promise.resolve({ data: { success: true } }),
+  getStatistiques: (id) => Promise.resolve({ data: { success: true, data: {} } }),
+  getResumeById: (id) => Promise.resolve({ data: { success: true, data: {} } })
 }
 
 // ============================================

@@ -617,8 +617,9 @@ async function handleReject() {
   saving.value = true
   try {
     const crvId = crvToAction.value.id || crvToAction.value._id
-    await validationAPI.rejeter(crvId, actionComment.value)
-    showToast('CRV rejeté - renvoyé pour correction', 'warning')
+    // Utilisation de deverrouiller avec la raison du rejet
+    await validationAPI.deverrouiller(crvId, actionComment.value)
+    showToast('CRV renvoyé pour correction', 'warning')
     closeRejectModal()
     closeCRVDetail()
     loadCRVList()
