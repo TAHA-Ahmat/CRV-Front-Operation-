@@ -1421,7 +1421,7 @@ onMounted(() => {
 <style scoped>
 .programmes-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .main-content {
@@ -1440,7 +1440,7 @@ onMounted(() => {
 .page-header-bar h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1455,11 +1455,11 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 20px;
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
 }
 
 .workflow-step {
@@ -1472,8 +1472,8 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--border-color);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1483,21 +1483,21 @@ onMounted(() => {
 .step-label {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .workflow-arrow {
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 20px;
 }
 
 /* Filters */
 .filters-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
 }
 
 .filters-row {
@@ -1516,16 +1516,18 @@ onMounted(() => {
 .filter-group label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .filter-group select,
 .filter-group input {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   min-width: 150px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 /* Programmes grid */
@@ -1536,11 +1538,11 @@ onMounted(() => {
 }
 
 .programme-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  border-left: 4px solid #e5e7eb;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--border-color);
 }
 
 .programme-card.card-brouillon { border-left-color: #9ca3af; }
@@ -1559,13 +1561,13 @@ onMounted(() => {
 .programme-title h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
 .edition-badge {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .status-container {
@@ -1610,12 +1612,12 @@ onMounted(() => {
 }
 
 .info-row .label {
-  color: #6b7280;
+  color: var(--text-secondary);
   min-width: 90px;
 }
 
 .info-row .value {
-  color: #374151;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -1628,8 +1630,8 @@ onMounted(() => {
 
 .compagnie-tag {
   display: inline-block;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-input);
+  color: var(--text-primary);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 12px;
@@ -1641,7 +1643,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 15px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-action {
@@ -1667,7 +1669,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
 }
 
@@ -1678,12 +1680,12 @@ onMounted(() => {
 
 .empty-state h3 {
   font-size: 20px;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 .empty-state p {
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 20px;
 }
 
@@ -1706,7 +1708,7 @@ onMounted(() => {
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
@@ -1738,13 +1740,14 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h2 {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+  color: var(--text-primary);
 }
 
 .modal-header-info {
@@ -1766,8 +1769,8 @@ onMounted(() => {
 
 .edition-tag {
   font-size: 12px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-secondary);
+  background: var(--bg-input);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -1779,7 +1782,7 @@ onMounted(() => {
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -1789,14 +1792,14 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 /* Detail summary */
 .detail-summary {
   display: flex;
   gap: 30px;
-  background: #f9fafb;
+  background: var(--bg-body);
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 20px;
@@ -1811,13 +1814,13 @@ onMounted(() => {
 
 .summary-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
 .summary-value {
   font-size: 14px;
-  color: #374151;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -1835,7 +1838,7 @@ onMounted(() => {
 
 .summary-sub {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -1894,7 +1897,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 12px;
   padding-bottom: 15px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .vols-header-left {
@@ -1907,7 +1910,7 @@ onMounted(() => {
 .vols-header h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1932,7 +1935,7 @@ onMounted(() => {
 /* Toggle vue calendrier/liste */
 .view-toggle {
   display: flex;
-  background: #f3f4f6;
+  background: var(--bg-input);
   border-radius: 8px;
   padding: 3px;
 }
@@ -1947,17 +1950,17 @@ onMounted(() => {
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .toggle-btn:hover {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .toggle-btn.active {
-  background: white;
+  background: var(--bg-card);
   color: #1e40af;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -1981,9 +1984,11 @@ onMounted(() => {
 
 .filter-jour select {
   padding: 6px 10px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 13px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .btn-sm {
@@ -2012,12 +2017,12 @@ onMounted(() => {
 }
 
 .calendar-column {
-  background: #f9fafb;
+  background: var(--bg-body);
   border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   min-width: 0;
 }
 
@@ -2143,11 +2148,11 @@ onMounted(() => {
 
 /* Carte vol dans calendrier */
 .calendar-vol-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 14px;
   border-left: 4px solid #2563eb;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -2172,13 +2177,13 @@ onMounted(() => {
 .vol-numero {
   font-weight: 700;
   font-size: 16px;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .vol-avion {
   font-size: 12px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-secondary);
+  background: var(--bg-input);
   padding: 3px 8px;
   border-radius: 4px;
 }
@@ -2216,12 +2221,12 @@ onMounted(() => {
   font-family: 'Courier New', monospace;
   font-weight: 700;
   font-size: 15px;
-  color: #1f2937;
+  color: var(--text-primary);
   min-width: 50px;
 }
 
 .horaire-lieu {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 500;
 }
@@ -2241,13 +2246,13 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding-top: 10px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
 }
 
 .vol-categorie {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -2275,7 +2280,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 30px 10px;
-  color: #9ca3af;
+  color: var(--text-secondary);
   flex: 1;
 }
 
@@ -2352,19 +2357,19 @@ onMounted(() => {
 .vols-table td {
   padding: 10px 8px;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .vols-table th {
-  background: #f9fafb;
+  background: var(--bg-body);
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .vols-table tr:hover {
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .jours-cell {
@@ -2389,12 +2394,12 @@ onMounted(() => {
 
 .numero-vol {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .heure-cell {
   font-family: monospace;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .j1-badge {
@@ -2439,12 +2444,12 @@ onMounted(() => {
 .empty-vols {
   text-align: center;
   padding: 40px;
-  background: #f9fafb;
+  background: var(--bg-body);
   border-radius: 8px;
 }
 
 .empty-vols p {
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
@@ -2475,7 +2480,7 @@ onMounted(() => {
 .form-group label {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .required { color: #ef4444; }
@@ -2484,9 +2489,11 @@ onMounted(() => {
 .form-group select,
 .form-group textarea {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 /* Jours selector */
@@ -2508,11 +2515,11 @@ onMounted(() => {
 .jour-label {
   display: inline-block;
   padding: 8px 12px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   transition: all 0.2s;
 }
 
@@ -2523,8 +2530,8 @@ onMounted(() => {
 }
 
 .btn-select-all {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-input);
+  color: var(--text-primary);
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
@@ -2548,7 +2555,7 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -2577,8 +2584,8 @@ onMounted(() => {
 .btn-primary { background: #2563eb; color: white; }
 .btn-primary:hover { background: #1d4ed8; }
 
-.btn-secondary { background: #f3f4f6; color: #374151; }
-.btn-secondary:hover { background: #e5e7eb; }
+.btn-secondary { background: var(--bg-input); color: var(--text-primary); }
+.btn-secondary:hover { background: var(--border-color); }
 
 .btn-success { background: #10b981; color: white; }
 .btn-warning { background: #f59e0b; color: white; }
@@ -2622,7 +2629,7 @@ onMounted(() => {
 }
 
 .pdf-programme-info {
-  background: #f9fafb;
+  background: var(--bg-body);
   border-radius: 8px;
   padding: 16px;
   text-align: center;
@@ -2631,13 +2638,13 @@ onMounted(() => {
 .pdf-programme-info h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .pdf-periode {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 4px 0;
 }
 

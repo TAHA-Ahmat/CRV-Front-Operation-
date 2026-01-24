@@ -235,7 +235,7 @@ onMounted(() => {
 <style scoped>
 .bulletins-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .bulletins-main {
@@ -257,16 +257,16 @@ onMounted(() => {
 .page-header-bar h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 /* Filtres */
 .filters-section {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .filters-row {
@@ -285,16 +285,18 @@ onMounted(() => {
 .filter-group label {
   font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .filter-input,
 .filter-select {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   min-width: 120px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .filter-input:focus,
@@ -326,10 +328,10 @@ onMounted(() => {
 }
 
 .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-input);
+  color: var(--text-primary);
   padding: 8px 16px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
@@ -337,19 +339,19 @@ onMounted(() => {
 }
 
 .btn-secondary:hover {
-  background: #e5e7eb;
+  background: var(--border-color);
 }
 
 .btn-text {
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 14px;
 }
 
 .btn-text:hover {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 /* États */
@@ -358,14 +360,14 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
+  border: 3px solid var(--border-color);
   border-top-color: #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -383,12 +385,12 @@ onMounted(() => {
 
 .empty-state h3 {
   font-size: 18px;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .empty-state p {
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 20px;
 }
 
@@ -400,8 +402,8 @@ onMounted(() => {
 }
 
 .bulletin-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -436,8 +438,8 @@ onMounted(() => {
 }
 
 .semaine-badge {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-input);
+  color: var(--text-primary);
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
@@ -454,13 +456,13 @@ onMounted(() => {
 .card-body h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .period {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .card-stats {
@@ -468,7 +470,7 @@ onMounted(() => {
   gap: 24px;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-color);
 }
 
 .stat {
@@ -479,23 +481,23 @@ onMounted(() => {
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .card-footer {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-color);
 }
 
 .date-info {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-secondary);
 }
 
 /* Pagination */
@@ -508,16 +510,17 @@ onMounted(() => {
 }
 
 .btn-pagination {
-  background: white;
-  border: 1px solid #d1d5db;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  color: var(--text-primary);
 }
 
 .btn-pagination:hover:not(:disabled) {
-  background: #f3f4f6;
+  background: var(--bg-input);
 }
 
 .btn-pagination:disabled {
@@ -526,7 +529,7 @@ onMounted(() => {
 }
 
 .page-info {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 </style>
