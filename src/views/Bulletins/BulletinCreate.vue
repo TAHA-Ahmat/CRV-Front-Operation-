@@ -107,24 +107,32 @@
 
             <!-- Programme (si mode programme) -->
             <div v-if="mode === 'programme'" class="form-group">
-              <label for="programme">Programme source</label>
-              <div v-if="loadingProgramme" class="loading-inline">
-                Chargement du programme actif...
+              <label for="programme">Programme source <span class="required">*</span></label>
+              <div v-if="loadingProgrammes" class="loading-inline">
+                Chargement des programmes...
               </div>
-              <div v-else-if="programmeActif" class="programme-info">
-                <div class="programme-card">
-                  <strong>{{ programmeActif.nom }}</strong>
-                  <span class="programme-period">
-                    {{ formatDate(programmeActif.dateDebut) }} - {{ formatDate(programmeActif.dateFin) }}
-                  </span>
-                  <span class="programme-status">{{ programmeActif.statut }}</span>
-                </div>
+              <template v-else-if="programmes.length > 0">
+                <select
+                  id="programme"
+                  v-model="selectedProgrammeId"
+                  class="form-input"
+                  required
+                >
+                  <option value="" disabled>-- Sélectionner un programme --</option>
+                  <option
+                    v-for="prog in programmes"
+                    :key="prog._id || prog.id"
+                    :value="prog._id || prog.id"
+                  >
+                    {{ prog.nom }} - {{ formatDate(prog.dateDebut) }} au {{ formatDate(prog.dateFin) }} ({{ prog.statut }})
+                  </option>
+                </select>
                 <p class="form-hint">
                   Les vols du programme seront automatiquement importés pour la période sélectionnée.
                 </p>
-              </div>
+              </template>
               <div v-else class="no-programme">
-                <p>Aucun programme actif trouvé. Veuillez d'abord activer un programme ou créer un bulletin vide.</p>
+                <p>Aucun programme disponible. Veuillez d'abord créer un programme dans la section Manager.</p>
               </div>
             </div>
 
@@ -177,8 +185,9 @@ const bulletinStore = useBulletinStore()
 
 // État
 const mode = ref('programme')
-const loadingProgramme = ref(false)
-const programmeActif = ref(null)
+const loadingProgrammes = ref(false)
+const programmes = ref([])
+const selectedProgrammeId = ref('')
 
 const form = ref({
   escale: '',
@@ -212,7 +221,7 @@ const canSubmit = computed(() => {
   const validPeriod = new Date(form.value.dateFin) >= new Date(form.value.dateDebut)
 
   if (mode.value === 'programme') {
-    return hasRequired && validPeriod && programmeActif.value
+    return hasRequired && validPeriod && selectedProgrammeId.value
   }
   return hasRequired && validPeriod
 })
@@ -236,16 +245,32 @@ const formatDate = (dateStr) => {
 }
 
 // Actions
-const loadProgrammeActif = async () => {
-  loadingProgramme.value = true
+const loadProgrammes = async () => {
+  loadingProgrammes.value = true
   try {
-    const response = await programmesVolAPI.getActif()
-    programmeActif.value = response.data?.data || response.data?.programme || response.data
+    const response = await programmesVolAPI.getAll({})
+    console.log('[BulletinCreate] Réponse getAll:', response.data)
+
+    // Extraire la liste des programmes
+    const result = response.data
+    const data = result?.data || result
+    programmes.value = Array.isArray(data) ? data : (data?.programmes || [])
+
+    console.log('[BulletinCreate] Programmes chargés:', programmes.value.length)
+
+    // Pré-sélectionner le premier programme ACTIF s'il existe
+    const actif = programmes.value.find(p => p.statut === 'ACTIF')
+    if (actif) {
+      selectedProgrammeId.value = actif._id || actif.id
+    } else if (programmes.value.length > 0) {
+      // Sinon pré-sélectionner le premier programme
+      selectedProgrammeId.value = programmes.value[0]._id || programmes.value[0].id
+    }
   } catch (e) {
-    console.log('Pas de programme actif:', e.message)
-    programmeActif.value = null
+    console.error('Erreur chargement programmes:', e)
+    programmes.value = []
   } finally {
-    loadingProgramme.value = false
+    loadingProgrammes.value = false
   }
 }
 
@@ -255,12 +280,12 @@ const handleSubmit = async () => {
   try {
     let bulletin
 
-    if (mode.value === 'programme' && programmeActif.value) {
+    if (mode.value === 'programme' && selectedProgrammeId.value) {
       bulletin = await bulletinStore.creerBulletinDepuisProgramme({
         escale: form.value.escale,
         dateDebut: form.value.dateDebut,
         dateFin: form.value.dateFin,
-        programmeId: programmeActif.value._id || programmeActif.value.id,
+        programmeId: selectedProgrammeId.value,
         titre: form.value.titre || titreSuggere.value,
         remarques: form.value.remarques
       })
@@ -299,13 +324,13 @@ const setDefaultDates = () => {
 // Lifecycle
 onMounted(() => {
   setDefaultDates()
-  loadProgrammeActif()
+  loadProgrammes()
 })
 
-// Watcher pour recharger le programme si on change de mode
+// Watcher pour recharger les programmes si on change de mode
 watch(mode, (newMode) => {
-  if (newMode === 'programme' && !programmeActif.value) {
-    loadProgrammeActif()
+  if (newMode === 'programme' && programmes.value.length === 0) {
+    loadProgrammes()
   }
 })
 </script>
