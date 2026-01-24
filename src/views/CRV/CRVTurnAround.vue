@@ -402,12 +402,12 @@ const handleLogout = async () => {
 <style scoped>
 .crv-turnaround-container {
   min-height: 100vh;
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -429,8 +429,8 @@ const handleLogout = async () => {
 }
 
 .btn-back {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-badge);
+  color: var(--text-primary);
   padding: 8px 15px;
   border-radius: 6px;
   font-size: 14px;
@@ -439,13 +439,13 @@ const handleLogout = async () => {
 }
 
 .btn-back:hover {
-  background: #e5e7eb;
+  background: var(--bg-card-hover);
 }
 
 .app-header h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .user-info {
@@ -455,7 +455,7 @@ const handleLogout = async () => {
 }
 
 .user-info span {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -464,11 +464,12 @@ const handleLogout = async () => {
 }
 
 .crv-progress {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 .progress-steps {
@@ -484,7 +485,7 @@ const handleLogout = async () => {
   left: 40px;
   right: 40px;
   height: 2px;
-  background: #e5e7eb;
+  background: var(--border-color);
   z-index: 0;
 }
 
@@ -501,8 +502,8 @@ const handleLogout = async () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--bg-badge);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -522,7 +523,7 @@ const handleLogout = async () => {
 
 .step-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-align: center;
   max-width: 80px;
 }
@@ -542,7 +543,7 @@ const handleLogout = async () => {
   justify-content: center;
   margin-top: 30px;
   padding-top: 30px;
-  border-top: 2px solid #e5e7eb;
+  border-top: 2px solid var(--border-color);
 }
 
 .step-actions .btn {

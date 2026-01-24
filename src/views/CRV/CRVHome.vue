@@ -77,7 +77,7 @@ const selectType = async (type) => {
 <style scoped>
 .crv-home-container {
   min-height: calc(100vh - 64px);
-  background: #f9fafb;
+  background: var(--bg-body);
 }
 
 .crv-main {
@@ -97,12 +97,12 @@ const selectType = async (type) => {
 .page-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 .subtitle {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -115,8 +115,8 @@ const selectType = async (type) => {
 }
 
 .crv-type-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 30px;
   cursor: pointer;
@@ -125,7 +125,7 @@ const selectType = async (type) => {
 }
 
 .crv-type-card:hover {
-  border-color: #2563eb;
+  border-color: var(--color-primary);
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.15);
   transform: translateY(-5px);
 }
@@ -138,12 +138,12 @@ const selectType = async (type) => {
 .crv-type-card h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 .crv-type-card p {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 20px;
 }
