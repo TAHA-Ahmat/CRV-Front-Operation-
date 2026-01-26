@@ -283,10 +283,22 @@ const loadUsers = async () => {
     const params = {};
     if (filters.search) params.search = filters.search;
     if (filters.fonction) params.fonction = filters.fonction;
-    if (filters.actif !== '') params.actif = filters.actif;
+    if (filters.actif !== '') params.statut = filters.actif === 'true' ? 'ACTIF' : 'INACTIF';
 
     const response = await personnesAPI.getAll(params);
-    users.value = response.data.data || response.data || [];
+    const rawUsers = response.data.data || response.data || [];
+
+    // DEBUG: Voir la structure exacte du backend
+    console.log('[UserManagement] Réponse API brute:', response.data);
+    console.log('[UserManagement] Premier utilisateur:', rawUsers[0]);
+
+    // Normaliser les données backend → frontend
+    users.value = rawUsers.map(user => ({
+      ...user,
+      id: user.id || user._id,
+      // actif = compte utilisable (statutCompte VALIDE ou statut ACTIF)
+      actif: user.statutCompte === 'VALIDE' || user.statut === 'ACTIF' || user.actif === true
+    }));
   } catch (err) {
     console.error('[UserManagement] Erreur chargement:', err);
     error.value = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs';

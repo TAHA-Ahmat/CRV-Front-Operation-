@@ -131,6 +131,42 @@
             </div>
           </div>
 
+          <!-- Modification du mot de passe (optionnel) -->
+          <div class="border-t pt-4 mt-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-3">Modifier le mot de passe (optionnel)</h3>
+            <p class="text-xs text-gray-500 mb-4">Laissez vide pour conserver le mot de passe actuel.</p>
+
+            <!-- Nouveau mot de passe -->
+            <div class="mb-4">
+              <label for="newPassword" class="form-label">Nouveau mot de passe</label>
+              <input
+                id="newPassword"
+                v-model="form.newPassword"
+                type="password"
+                class="form-input w-full"
+                :class="{ 'border-red-500': errors.newPassword }"
+                placeholder="Minimum 6 caractères"
+                autocomplete="new-password"
+              />
+              <p v-if="errors.newPassword" class="text-red-600 text-sm mt-1">{{ errors.newPassword }}</p>
+            </div>
+
+            <!-- Confirmer mot de passe -->
+            <div>
+              <label for="confirmPassword" class="form-label">Confirmer le mot de passe</label>
+              <input
+                id="confirmPassword"
+                v-model="form.confirmPassword"
+                type="password"
+                class="form-input w-full"
+                :class="{ 'border-red-500': errors.confirmPassword }"
+                placeholder="Confirmez le nouveau mot de passe"
+                autocomplete="new-password"
+              />
+              <p v-if="errors.confirmPassword" class="text-red-600 text-sm mt-1">{{ errors.confirmPassword }}</p>
+            </div>
+          </div>
+
           <!-- Informations complémentaires -->
           <div class="border-t pt-4 mt-4">
             <h3 class="text-sm font-medium text-gray-700 mb-2">Informations</h3>
@@ -194,7 +230,9 @@ const form = reactive({
   email: '',
   fonction: '',
   actif: true,
-  raisonDesactivation: ''
+  raisonDesactivation: '',
+  newPassword: '',
+  confirmPassword: ''
 });
 
 // Erreurs
@@ -202,7 +240,9 @@ const errors = reactive({
   prenom: '',
   nom: '',
   email: '',
-  fonction: ''
+  fonction: '',
+  newPassword: '',
+  confirmPassword: ''
 });
 
 // Rôles disponibles
@@ -214,7 +254,8 @@ const hasChanges = computed(() => {
          form.nom !== originalUser.value.nom ||
          form.email !== originalUser.value.email ||
          form.fonction !== originalFonction.value ||
-         form.actif !== originalActif.value;
+         form.actif !== originalActif.value ||
+         form.newPassword.length > 0;
 });
 
 // Charger l'utilisateur
@@ -287,6 +328,22 @@ const validateForm = () => {
     isValid = false;
   }
 
+  // Validation du mot de passe (uniquement si rempli)
+  if (form.newPassword) {
+    if (form.newPassword.length < 6) {
+      errors.newPassword = 'Le mot de passe doit contenir au moins 6 caractères';
+      isValid = false;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      errors.confirmPassword = 'Les mots de passe ne correspondent pas';
+      isValid = false;
+    }
+  } else if (form.confirmPassword) {
+    // Si confirmation remplie mais pas le nouveau mot de passe
+    errors.newPassword = 'Veuillez saisir le nouveau mot de passe';
+    isValid = false;
+  }
+
   return isValid;
 };
 
@@ -311,9 +368,20 @@ const handleSubmit = async () => {
       updateData.raisonDesactivation = form.raisonDesactivation;
     }
 
+    // Ajouter le mot de passe si rempli
+    const passwordChanged = form.newPassword && form.newPassword.length >= 6;
+    if (passwordChanged) {
+      updateData.password = form.newPassword;
+    }
+
     await personnesAPI.update(userId.value, updateData);
 
-    toast.success('Utilisateur modifié avec succès');
+    // Message de succès adapté
+    if (passwordChanged) {
+      toast.success('Utilisateur modifié et mot de passe mis à jour avec succès');
+    } else {
+      toast.success('Utilisateur modifié avec succès');
+    }
     router.push('/users');
   } catch (err) {
     const errorCode = err.response?.data?.code;

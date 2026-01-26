@@ -151,6 +151,32 @@
             <span class="form-hint">Minimum 6 caractères</span>
           </div>
 
+          <!-- Modification mot de passe (optionnel en édition) -->
+          <div class="form-group" v-if="editingUser">
+            <label class="form-label">Nouveau mot de passe (optionnel)</label>
+            <input
+              v-model="userForm.newPassword"
+              type="password"
+              class="form-input"
+              placeholder="Laisser vide pour ne pas modifier"
+              minlength="6"
+            />
+            <span class="form-hint">Minimum 6 caractères. Laissez vide pour conserver l'actuel.</span>
+          </div>
+
+          <div class="form-group" v-if="editingUser && userForm.newPassword">
+            <label class="form-label">Confirmer le mot de passe *</label>
+            <input
+              v-model="userForm.confirmPassword"
+              type="password"
+              class="form-input"
+              placeholder="Confirmez le nouveau mot de passe"
+            />
+            <span v-if="userForm.newPassword && userForm.confirmPassword && userForm.newPassword !== userForm.confirmPassword" class="form-error">
+              Les mots de passe ne correspondent pas
+            </span>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Fonction *</label>
@@ -320,7 +346,9 @@ const userForm = ref({
   fonction: '',
   matricule: '',
   telephone: '',
-  statut: 'ACTIF'
+  statut: 'ACTIF',
+  newPassword: '',
+  confirmPassword: ''
 })
 
 // Suppression
@@ -389,7 +417,8 @@ const loadUsers = async () => {
   loading.value = true
   try {
     const response = await personnesAPI.getAll()
-    users.value = response.data?.personnes || response.data || []
+    // Backend retourne { success, data: [...], pagination }
+    users.value = response.data?.data || response.data?.personnes || []
   } catch (error) {
     console.error('[GestionUtilisateurs] Erreur chargement:', error)
     showToast('Erreur lors du chargement des utilisateurs', 'error')
@@ -409,7 +438,9 @@ const openCreateModal = () => {
     fonction: '',
     matricule: '',
     telephone: '',
-    statut: 'ACTIF'
+    statut: 'ACTIF',
+    newPassword: '',
+    confirmPassword: ''
   }
   showUserModal.value = true
 }
@@ -424,7 +455,9 @@ const openEditModal = (user) => {
     fonction: user.fonction || '',
     matricule: user.matricule || '',
     telephone: user.telephone || '',
-    statut: user.statut || 'ACTIF'
+    statut: user.statut || 'ACTIF',
+    newPassword: '',
+    confirmPassword: ''
   }
   showUserModal.value = true
 }
@@ -439,6 +472,27 @@ const saveUser = async () => {
       delete data.password
     }
 
+    // Gestion du nouveau mot de passe en édition
+    let passwordChanged = false
+    if (editingUser.value && data.newPassword) {
+      // Validation
+      if (data.newPassword.length < 6) {
+        showToast('Le mot de passe doit contenir au moins 6 caractères', 'error')
+        return
+      }
+      if (data.newPassword !== data.confirmPassword) {
+        showToast('Les mots de passe ne correspondent pas', 'error')
+        return
+      }
+      // Envoyer le nouveau mot de passe
+      data.password = data.newPassword
+      passwordChanged = true
+    }
+
+    // Nettoyer les champs internes
+    delete data.newPassword
+    delete data.confirmPassword
+
     // Ne pas envoyer matricule vide (auto-génération backend)
     if (!data.matricule) {
       delete data.matricule
@@ -446,7 +500,11 @@ const saveUser = async () => {
 
     if (editingUser.value) {
       await personnesAPI.update(editingUser.value.id || editingUser.value._id, data)
-      showToast('Utilisateur modifié avec succès', 'success')
+      if (passwordChanged) {
+        showToast('Utilisateur modifié et mot de passe mis à jour avec succès', 'success')
+      } else {
+        showToast('Utilisateur modifié avec succès', 'success')
+      }
     } else {
       await personnesAPI.create(data)
       showToast('Utilisateur créé avec succès', 'success')
@@ -744,6 +802,13 @@ const showToast = (message, type = 'success') => {
   display: block;
   font-size: 12px;
   color: #6b7280;
+  margin-top: 4px;
+}
+
+.form-error {
+  display: block;
+  font-size: 12px;
+  color: #dc2626;
   margin-top: 4px;
 }
 
