@@ -40,13 +40,13 @@
           <div class="source-tabs">
             <button
               :class="['tab-btn', { active: sourceType === 'bulletin' }]"
-              @click="sourceType = 'bulletin'; loadBulletinMouvements()"
+              @click="sourceType = 'bulletin'; volsList = []; selectedVol = null"
             >
               Bulletin de Mouvement
             </button>
             <button
               :class="['tab-btn', { active: sourceType === 'programme' }]"
-              @click="sourceType = 'programme'; loadProgrammeVols()"
+              @click="sourceType = 'programme'; volsList = []; selectedVol = null"
             >
               Programme de Vol
             </button>
@@ -60,12 +60,23 @@
                 <input
                   type="date"
                   v-model="filters.date"
-                  @change="sourceType === 'bulletin' ? loadBulletinMouvements() : loadProgrammeVols()"
+                  @change="onDateChange"
                 />
               </div>
               <div class="filter-group">
+                <label>Escale</label>
+                <select v-model="filters.escale" :disabled="escalesDisponibles.length === 0">
+                  <option value="" disabled>
+                    {{ loadingEscales ? 'Chargement...' : (escalesDisponibles.length === 0 ? 'Aucune escale' : 'Selectionner') }}
+                  </option>
+                  <option v-for="esc in escalesDisponibles" :key="esc" :value="esc">
+                    {{ esc }}
+                  </option>
+                </select>
+              </div>
+              <div class="filter-group">
                 <label>Type d'operation</label>
-                <select v-model="filters.typeOperation" @change="filterVols">
+                <select v-model="filters.typeOperation">
                   <option value="">Tous</option>
                   <option value="ARRIVEE">Arrivee</option>
                   <option value="DEPART">Depart</option>
@@ -74,12 +85,22 @@
               </div>
               <div class="filter-group">
                 <label>Statut CRV</label>
-                <select v-model="filters.statutCRV" @change="filterVols">
+                <select v-model="filters.statutCRV">
                   <option value="">Tous</option>
                   <option value="sans_crv">Sans CRV</option>
                   <option value="avec_crv">Avec CRV</option>
                 </select>
               </div>
+            </div>
+            <div class="filter-actions">
+              <button
+                class="btn btn-primary btn-search"
+                :disabled="!filters.escale || loading"
+                @click="rechercher"
+              >
+                <span v-if="loading">Chargement...</span>
+                <span v-else>Rechercher</span>
+              </button>
             </div>
           </div>
 
@@ -167,7 +188,7 @@
         </div>
 
         <!-- ============================================ -->
-        <!-- MODE 2: VOL HORS PROGRAMME                  -->
+        <!-- MODE 2: VOL HORS PROGRAMME (PATH 2)         -->
         <!-- ============================================ -->
         <div v-if="mode === 'hors_programme'" class="creation-card">
           <h2>Vol Hors Programme</h2>
@@ -181,8 +202,8 @@
                 <button
                   v-for="t in typeOptions"
                   :key="t.value"
-                  :class="['type-btn', { selected: horsProgForm.type === t.value }]"
-                  @click="horsProgForm.type = t.value"
+                  :class="['type-btn', { selected: horsProgForm.typeOperation === t.value }]"
+                  @click="horsProgForm.typeOperation = t.value"
                 >
                   <span class="type-icon">{{ t.icon }}</span>
                   <span class="type-name">{{ t.label }}</span>
@@ -193,40 +214,86 @@
             <!-- Informations vol -->
             <div class="form-row">
               <div class="form-group">
-                <label>Numero de vol</label>
+                <label>Numero de vol *</label>
                 <input
                   type="text"
                   v-model="horsProgForm.numeroVol"
-                  placeholder="Ex: AF123"
+                  placeholder="Ex: AH1234"
                   @input="horsProgForm.numeroVol = horsProgForm.numeroVol.toUpperCase()"
                 />
               </div>
               <div class="form-group">
-                <label>Compagnie (Code IATA)</label>
+                <label>Compagnie aerienne *</label>
                 <input
                   type="text"
-                  v-model="horsProgForm.compagnie"
-                  placeholder="Ex: AF"
-                  maxlength="3"
-                  @input="horsProgForm.compagnie = horsProgForm.compagnie.toUpperCase()"
+                  v-model="horsProgForm.compagnieAerienne"
+                  placeholder="Ex: Air Algerie"
                 />
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label>Date et heure du vol *</label>
+                <label>Code IATA *</label>
+                <input
+                  type="text"
+                  v-model="horsProgForm.codeIATA"
+                  placeholder="Ex: AH"
+                  maxlength="2"
+                  @input="horsProgForm.codeIATA = horsProgForm.codeIATA.toUpperCase()"
+                />
+              </div>
+              <div class="form-group">
+                <label>Date du vol *</label>
                 <input
                   type="datetime-local"
                   v-model="horsProgForm.dateVol"
                 />
+              </div>
+            </div>
+
+            <!-- Aeroports conditionnels -->
+            <div class="form-row" v-if="horsProgForm.typeOperation === 'ARRIVEE' || horsProgForm.typeOperation === 'TURN_AROUND'">
+              <div class="form-group">
+                <label>Aeroport d'origine *</label>
+                <input
+                  type="text"
+                  v-model="horsProgForm.aeroportOrigine"
+                  placeholder="Ex: ALG"
+                  maxlength="4"
+                  @input="horsProgForm.aeroportOrigine = horsProgForm.aeroportOrigine.toUpperCase()"
+                />
+              </div>
+            </div>
+            <div class="form-row" v-if="horsProgForm.typeOperation === 'DEPART' || horsProgForm.typeOperation === 'TURN_AROUND'">
+              <div class="form-group">
+                <label>Aeroport de destination *</label>
+                <input
+                  type="text"
+                  v-model="horsProgForm.aeroportDestination"
+                  placeholder="Ex: TLS"
+                  maxlength="4"
+                  @input="horsProgForm.aeroportDestination = horsProgForm.aeroportDestination.toUpperCase()"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Type de vol hors programme *</label>
+                <select v-model="horsProgForm.typeVolHorsProgramme">
+                  <option value="">Selectionner...</option>
+                  <option v-for="opt in typeVolHPOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
               </div>
               <div class="form-group">
                 <label>Escale</label>
                 <input
                   type="text"
                   v-model="horsProgForm.escale"
-                  placeholder="Ex: NDJ"
+                  placeholder="Ex: TLS"
                   maxlength="4"
                   @input="horsProgForm.escale = horsProgForm.escale.toUpperCase()"
                 />
@@ -235,29 +302,17 @@
 
             <!-- Raison hors programme -->
             <div class="form-group">
-              <label>Raison du vol hors programme</label>
-              <select v-model="horsProgForm.raison">
-                <option value="">Selectionner...</option>
-                <option value="CHARTER">Vol charter</option>
-                <option value="DEROUTEMENT">Deroutement</option>
-                <option value="VOL_SPECIAL">Vol special</option>
-                <option value="RETARD_PROGRAMME">Retard sur programme</option>
-                <option value="AUTRE">Autre</option>
-              </select>
-            </div>
-
-            <div v-if="horsProgForm.raison === 'AUTRE'" class="form-group">
-              <label>Preciser la raison</label>
+              <label>Raison du vol hors programme *</label>
               <textarea
-                v-model="horsProgForm.raisonAutre"
+                v-model="horsProgForm.raisonHorsProgramme"
                 rows="2"
-                placeholder="Decrivez la raison..."
+                placeholder="Decrivez la raison (ex: Vol charter ponctuel)..."
               ></textarea>
             </div>
 
             <button
               @click="createCRVHorsProgramme"
-              :disabled="creating || !horsProgForm.type || !horsProgForm.dateVol"
+              :disabled="creating || !isHorsProgValid"
               class="btn btn-primary btn-create"
             >
               <span v-if="creating">Creation en cours...</span>
@@ -266,22 +321,49 @@
           </div>
         </div>
 
+        <!-- Lien creation exceptionnelle (PATH LEGACY) -->
+        <div class="legacy-link">
+          <button class="btn-legacy" @click="showLegacyModal = true">
+            &#9888;&#65039; Creation exceptionnelle (sans vol associe)
+          </button>
+        </div>
+
         <!-- Message d'erreur -->
         <div v-if="error" class="error-message">
           {{ error }}
         </div>
       </div>
     </main>
+
+    <!-- Modale doublon -->
+    <ConfirmationDoublonModal
+      :visible="showDoublonModal"
+      :crv-existant-id="doublonInfo.crvExistantId"
+      :numero-c-r-v="doublonInfo.numeroCRV"
+      @confirm="onDoublonConfirm"
+      @cancel="showDoublonModal = false"
+    />
+
+    <!-- Modale creation exceptionnelle -->
+    <CreationLegacyModal
+      :visible="showLegacyModal"
+      :creating="creating"
+      @submit="createCRVLegacy"
+      @cancel="showLegacyModal = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore } from '@/stores/crvStore'
 import { useBulletinStore } from '@/stores/bulletinStore'
 import { programmesVolAPI, bulletinsAPI } from '@/services/api'
+import { TYPE_VOL_HORS_PROGRAMME, TYPE_VOL_HORS_PROGRAMME_LABELS, getEnumOptions } from '@/config/crvEnums'
+import ConfirmationDoublonModal from '@/components/crv/ConfirmationDoublonModal.vue'
+import CreationLegacyModal from '@/components/crv/CreationLegacyModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -300,12 +382,26 @@ const creating = ref(false)
 const error = ref(null)
 const selectedVol = ref(null)
 
+// Modales
+const showDoublonModal = ref(false)
+const showLegacyModal = ref(false)
+const doublonInfo = reactive({
+  crvExistantId: '',
+  numeroCRV: '',
+  originalPayload: null
+})
+
 // Listes de vols
 const volsList = ref([])
+
+// Escales disponibles (alimentees par GET /api/bulletins/escales-actives)
+const escalesDisponibles = ref([])
+const loadingEscales = ref(false)
 
 // Filtres
 const filters = reactive({
   date: new Date().toISOString().split('T')[0],
+  escale: '',
   typeOperation: '',
   statutCRV: 'sans_crv' // Par defaut, montrer ceux sans CRV
 })
@@ -317,15 +413,32 @@ const typeOptions = [
   { value: 'TURN_AROUND', label: 'Turn Around', icon: '🔄' }
 ]
 
-// Formulaire hors programme
+// Options type vol hors programme (depuis enums contrat v2)
+const typeVolHPOptions = getEnumOptions(TYPE_VOL_HORS_PROGRAMME)
+
+// Formulaire hors programme — conforme contrat v2 PATH 2
 const horsProgForm = reactive({
-  type: '',
+  typeOperation: '',
   numeroVol: '',
-  compagnie: '',
+  compagnieAerienne: '',
+  codeIATA: '',
   dateVol: new Date().toISOString().slice(0, 16),
-  escale: '',
-  raison: '',
-  raisonAutre: ''
+  aeroportOrigine: '',
+  aeroportDestination: '',
+  typeVolHorsProgramme: '',
+  raisonHorsProgramme: '',
+  escale: ''
+})
+
+// Validation formulaire hors programme
+const isHorsProgValid = computed(() => {
+  if (!horsProgForm.typeOperation || !horsProgForm.numeroVol || !horsProgForm.compagnieAerienne) return false
+  if (!horsProgForm.codeIATA || !horsProgForm.dateVol) return false
+  if (!horsProgForm.typeVolHorsProgramme || !horsProgForm.raisonHorsProgramme) return false
+  // Validation conditionnelle aeroports
+  if ((horsProgForm.typeOperation === 'ARRIVEE' || horsProgForm.typeOperation === 'TURN_AROUND') && !horsProgForm.aeroportOrigine) return false
+  if ((horsProgForm.typeOperation === 'DEPART' || horsProgForm.typeOperation === 'TURN_AROUND') && !horsProgForm.aeroportDestination) return false
+  return true
 })
 
 // Computed: vols filtres
@@ -345,7 +458,58 @@ const filteredVols = computed(() => {
   return result
 })
 
-// Charger les mouvements du bulletin en cours
+// ============================================
+// CHARGEMENT DES ESCALES DISPONIBLES PAR DATE
+// ============================================
+
+/**
+ * Quand la date change :
+ * GET /api/bulletins/escales-actives?date=YYYY-MM-DD
+ * Reponse : { success, escales: ["NDJ", "DSS"], date }
+ */
+const onDateChange = async () => {
+  escalesDisponibles.value = []
+  filters.escale = ''
+  volsList.value = []
+  selectedVol.value = null
+  error.value = null
+
+  if (!filters.date) return
+
+  loadingEscales.value = true
+  try {
+    const response = await bulletinsAPI.getEscalesActives(filters.date)
+    const escales = response.data?.escales || []
+
+    console.log('[CRVNouveau] Escales actives:', escales, 'pour', filters.date)
+
+    if (escales.length === 0) {
+      error.value = `Aucun bulletin publie ne couvre le ${new Date(filters.date + 'T00:00:00').toLocaleDateString('fr-FR')}`
+      return
+    }
+
+    escalesDisponibles.value = escales
+
+    // Si une seule escale, la pre-selectionner
+    if (escales.length === 1) {
+      filters.escale = escales[0]
+    }
+  } catch (err) {
+    console.error('[CRVNouveau] Erreur chargement escales:', err)
+    if (err.response?.status === 400) {
+      error.value = err.response.data?.message || 'Date invalide'
+    } else {
+      error.value = 'Erreur lors de la recherche des escales actives'
+    }
+  } finally {
+    loadingEscales.value = false
+  }
+}
+
+// ============================================
+// CHARGEMENT DES MOUVEMENTS DU BULLETIN
+// ============================================
+
 const loadBulletinMouvements = async () => {
   loading.value = true
   error.value = null
@@ -353,37 +517,59 @@ const loadBulletinMouvements = async () => {
   selectedVol.value = null
 
   try {
-    // Recuperer l'escale de l'utilisateur ou utiliser une valeur par defaut
-    const escale = authStore.currentUser?.escale || 'NDJ'
+    const escale = filters.escale
+    if (!escale) {
+      error.value = 'Veuillez selectionner une escale'
+      loading.value = false
+      return
+    }
 
-    // Recuperer le bulletin en cours pour cette escale
+    // GET /api/bulletins/en-cours/:escale
+    // Reponse : { success: true, data: { _id, escale, mouvements: [...] } }
     const response = await bulletinsAPI.getEnCours(escale)
-    const bulletin = response.data?.bulletin || response.data
+    const bulletin = response.data?.data
 
-    if (bulletin && bulletin.mouvements) {
-      // Transformer les mouvements en format vol
+    if (!bulletin || !Array.isArray(bulletin.mouvements)) {
+      throw new Error('Bulletin invalide ou mouvements absents')
+    }
+
+    console.log('[CRVNouveau] Bulletin charge', {
+      id: bulletin._id,
+      escale: bulletin.escale,
+      statut: bulletin.statut,
+      nbMouvements: bulletin.mouvements.length,
+      nbSansCRV: bulletin.mouvements.filter(m => !m.crvId).length
+    })
+
+    if (bulletin.mouvements.length > 0) {
       volsList.value = bulletin.mouvements.map(m => ({
-        id: m._id || m.id,
-        _id: m._id || m.id,
+        id: m._id,
+        _id: m._id,
         numeroVol: m.numeroVol,
         typeOperation: m.typeOperation,
-        compagnie: m.compagnie,
-        compagnieAerienne: m.compagnie,
-        dateVol: m.date || m.dateVol,
-        date: m.date || m.dateVol,
+        compagnie: m.compagnie || m.codeCompagnie,
+        compagnieAerienne: m.compagnie || m.codeCompagnie,
+        dateVol: m.dateMouvement || m.date || m.dateVol,
+        date: m.dateMouvement || m.date || m.dateVol,
         escale: bulletin.escale,
         origine: m.origine || 'BULLETIN',
-        hasCRV: m.crvId ? true : false,
+        hasCRV: !!m.crvId,
         crv: m.crvId,
-        mouvementId: m._id || m.id,
-        bulletinId: bulletin._id || bulletin.id
+        mouvementId: m._id,
+        bulletinId: bulletin._id
       }))
+      console.log('[CRVNouveau] Vols mappes:', volsList.value.length, 'dont sans CRV:', volsList.value.filter(v => !v.hasCRV).length)
+    } else {
+      error.value = `Bulletin trouve pour ${escale} mais il ne contient aucun mouvement.`
     }
   } catch (err) {
     console.error('[CRVNouveau] Erreur chargement bulletin:', err)
-    // Pas d'erreur affichee si pas de bulletin - c'est normal
-    if (err.response?.status !== 404) {
-      error.value = 'Erreur lors du chargement du bulletin'
+    if (err.response?.status === 404) {
+      error.value = `Aucun bulletin en cours pour "${filters.escale}". Verifiez qu'il est publie.`
+    } else if (err.message?.includes('Bulletin invalide')) {
+      error.value = `Reponse inattendue du serveur pour "${filters.escale}".`
+    } else {
+      error.value = err.response?.data?.message || 'Erreur lors du chargement du bulletin'
     }
   } finally {
     loading.value = false
@@ -398,17 +584,29 @@ const loadProgrammeVols = async () => {
   selectedVol.value = null
 
   try {
-    // Recuperer les programmes actifs
-    const response = await programmesVolAPI.getAll({ statut: 'ACTIF', limit: 1 })
-    const programmes = response.data?.programmes || response.data || []
+    // Recuperer le programme actif
+    let programme = null
+    try {
+      const actifResponse = await programmesVolAPI.getActif()
+      programme = actifResponse.data?.programme || actifResponse.data
+    } catch (e) {
+      // Fallback : chercher le premier programme actif
+      const response = await programmesVolAPI.getAll({ statut: 'ACTIF', limit: 1 })
+      const programmes = response.data?.programmes || response.data || []
+      if (programmes.length > 0) programme = programmes[0]
+    }
 
-    if (programmes.length > 0) {
-      const programme = programmes[0]
+    if (programme) {
+      const programmeId = programme._id || programme.id
 
-      // Recuperer les vols du jour selectionne
+      // Convertir la date selectionnee en numero de jour (0=Dim...6=Sam)
+      const selectedDate = new Date(filters.date + 'T00:00:00')
+      const jourSemaine = selectedDate.getDay()
+
+      // Recuperer les vols du jour de la semaine correspondant
       const volsResponse = await programmesVolAPI.getVolsParJour(
-        programme._id || programme.id,
-        filters.date
+        programmeId,
+        jourSemaine
       )
 
       const vols = volsResponse.data?.vols || volsResponse.data || []
@@ -426,7 +624,7 @@ const loadProgrammeVols = async () => {
         origine: 'PROGRAMME',
         hasCRV: v.crvId ? true : false,
         crv: v.crvId,
-        programmeId: programme._id || programme.id
+        volId: v._id || v.id
       }))
     }
   } catch (err) {
@@ -439,18 +637,38 @@ const loadProgrammeVols = async () => {
   }
 }
 
-// Filtrer les vols (appele quand les filtres changent)
-const filterVols = () => {
-  // Le filtrage est fait via computed filteredVols
-  // Cette fonction peut etre utilisee pour des actions supplementaires
-}
-
 // Selectionner un vol
 const selectVol = (vol) => {
   selectedVol.value = vol
 }
 
-// Creer CRV depuis un vol planifie
+// ============================================
+// CREATION CRV — SEPARATION STRICTE DES PATHs
+// ============================================
+
+/**
+ * Gestion commune du resultat de creation :
+ * - Si doublon detecte (409) → ouvre la modale doublon
+ * - Si succes → redirige vers la page CRV
+ */
+const handleCreateResult = (result, typeOperation) => {
+  if (result && result.doublon) {
+    // 409 CRV_DOUBLON — ouvrir la modale de confirmation
+    doublonInfo.crvExistantId = result.crvExistantId || ''
+    doublonInfo.numeroCRV = result.numeroCRV || ''
+    doublonInfo.originalPayload = result.originalPayload
+    showDoublonModal.value = true
+    return
+  }
+
+  // Succes — rediriger
+  redirectToCRV(typeOperation, result)
+}
+
+/**
+ * PATH 1 (bulletin) ou PATH 3 (vol existant)
+ * Determinisme par la presence de bulletinId+mouvementId
+ */
 const createCRVFromVol = async () => {
   if (!selectedVol.value || selectedVol.value.hasCRV || selectedVol.value.crv) return
 
@@ -459,18 +677,25 @@ const createCRVFromVol = async () => {
 
   try {
     const vol = selectedVol.value
+    let payload
 
-    // Creer le CRV avec reference au vol
-    const result = await crvStore.createCRV({
-      volId: vol.id || vol._id,
-      type: vol.typeOperation?.toLowerCase() || 'arrivee',
-      mouvementId: vol.mouvementId,
-      bulletinId: vol.bulletinId,
-      programmeId: vol.programmeId
-    })
+    if (vol.bulletinId && vol.mouvementId) {
+      // PATH 1 — Depuis bulletin de mouvement
+      payload = {
+        bulletinId: vol.bulletinId,
+        mouvementId: vol.mouvementId
+      }
+      if (vol.escale) payload.escale = vol.escale
+    } else {
+      // PATH 3 — Vol existant (backward compat)
+      payload = {
+        volId: vol.volId || vol.id || vol._id
+      }
+      if (vol.escale) payload.escale = vol.escale
+    }
 
-    // Rediriger vers la page CRV appropriee
-    redirectToCRV(vol.typeOperation, result)
+    const result = await crvStore.createCRV(payload)
+    handleCreateResult(result, vol.typeOperation)
   } catch (err) {
     error.value = err.response?.data?.message || err.message || 'Erreur lors de la creation'
   } finally {
@@ -478,30 +703,89 @@ const createCRVFromVol = async () => {
   }
 }
 
-// Creer CRV hors programme
+/**
+ * PATH 2 — Vol hors programme
+ * Payload conforme contrat v2 : { vol: { ... }, escale? }
+ */
 const createCRVHorsProgramme = async () => {
-  if (!horsProgForm.type || !horsProgForm.dateVol) return
+  if (!isHorsProgValid.value) return
 
   creating.value = true
   error.value = null
 
   try {
-    const result = await crvStore.createCRV({
-      type: horsProgForm.type.toLowerCase(),
-      date: new Date(horsProgForm.dateVol).toISOString(),
-      numeroVol: horsProgForm.numeroVol || undefined,
-      compagnie: horsProgForm.compagnie || undefined,
-      escale: horsProgForm.escale || undefined,
-      horseProgramme: true,
-      raisonHorsProgramme: horsProgForm.raison === 'AUTRE'
-        ? horsProgForm.raisonAutre
-        : horsProgForm.raison
-    })
+    const volData = {
+      numeroVol: horsProgForm.numeroVol,
+      compagnieAerienne: horsProgForm.compagnieAerienne,
+      codeIATA: horsProgForm.codeIATA,
+      dateVol: new Date(horsProgForm.dateVol).toISOString(),
+      typeOperation: horsProgForm.typeOperation,
+      typeVolHorsProgramme: horsProgForm.typeVolHorsProgramme,
+      raisonHorsProgramme: horsProgForm.raisonHorsProgramme
+    }
 
-    // Rediriger vers la page CRV appropriee
-    redirectToCRV(horsProgForm.type, result)
+    // Aeroports conditionnels
+    if (horsProgForm.typeOperation === 'ARRIVEE' || horsProgForm.typeOperation === 'TURN_AROUND') {
+      volData.aeroportOrigine = horsProgForm.aeroportOrigine
+    }
+    if (horsProgForm.typeOperation === 'DEPART' || horsProgForm.typeOperation === 'TURN_AROUND') {
+      volData.aeroportDestination = horsProgForm.aeroportDestination
+    }
+
+    const payload = { vol: volData }
+    if (horsProgForm.escale) payload.escale = horsProgForm.escale
+
+    const result = await crvStore.createCRV(payload)
+    handleCreateResult(result, horsProgForm.typeOperation)
   } catch (err) {
     error.value = err.response?.data?.message || err.message || 'Erreur lors de la creation'
+  } finally {
+    creating.value = false
+  }
+}
+
+/**
+ * PATH LEGACY — Creation exceptionnelle via modale
+ * Payload : { type, date?, escale? } strictement
+ */
+const createCRVLegacy = async (legacyPayload) => {
+  creating.value = true
+  error.value = null
+
+  try {
+    const result = await crvStore.createCRV(legacyPayload)
+    showLegacyModal.value = false
+
+    // PATH LEGACY : typeOperation deduit par le backend, utiliser le type envoye
+    const typeOp = (legacyPayload.type || 'depart').toUpperCase()
+    handleCreateResult(result, typeOp)
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Erreur lors de la creation'
+  } finally {
+    creating.value = false
+  }
+}
+
+/**
+ * Confirmation doublon — retry avec forceDoublon + confirmationLevel=2
+ */
+const onDoublonConfirm = async () => {
+  showDoublonModal.value = false
+  if (!doublonInfo.originalPayload) return
+
+  creating.value = true
+  error.value = null
+
+  try {
+    const result = await crvStore.createCRVForceDoublon(doublonInfo.originalPayload)
+    // Determiner le typeOperation pour la redirection
+    const typeOp = doublonInfo.originalPayload.vol?.typeOperation
+      || selectedVol.value?.typeOperation
+      || horsProgForm.typeOperation
+      || 'DEPART'
+    handleCreateResult(result, typeOp)
+  } catch (err) {
+    error.value = err.response?.data?.message || err.message || 'Erreur lors de la creation du doublon'
   } finally {
     creating.value = false
   }
@@ -561,23 +845,19 @@ const getTypeClass = (type) => {
   }
 }
 
-// Charger au montage
+// Charger les escales au montage (date du jour par defaut)
 onMounted(() => {
-  if (mode.value === 'planifie') {
-    loadBulletinMouvements()
-  }
+  onDateChange()
 })
 
-// Watcher pour changement de mode
-watch(mode, (newMode) => {
-  if (newMode === 'planifie') {
-    if (sourceType.value === 'bulletin') {
-      loadBulletinMouvements()
-    } else {
-      loadProgrammeVols()
-    }
+// Rechercher : action explicite de l'agent
+const rechercher = () => {
+  if (sourceType.value === 'bulletin') {
+    loadBulletinMouvements()
+  } else {
+    loadProgrammeVols()
   }
-})
+}
 </script>
 
 <style scoped>
@@ -754,6 +1034,19 @@ watch(mode, (newMode) => {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Filter actions */
+.filter-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-search {
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 /* Loading */
@@ -1032,6 +1325,30 @@ watch(mode, (newMode) => {
   font-size: 14px;
   font-weight: 600;
   color: #1f2937;
+}
+
+/* Legacy link */
+.legacy-link {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px dashed var(--border-color, #e5e7eb);
+}
+
+.btn-legacy {
+  background: none;
+  border: 1px dashed #d97706;
+  color: #92400e;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-legacy:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
 }
 
 /* Buttons */

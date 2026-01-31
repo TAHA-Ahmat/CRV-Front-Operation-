@@ -114,7 +114,7 @@ Mot de passe: Admin2024!
 
 ---
 
-## 2. PROFIL AGENT D'ESCALE - Création CRV
+## 2. PROFIL AGENT D'ESCALE - Création CRV (API v2)
 
 ### 2.1 Données de Test
 
@@ -124,26 +124,36 @@ Email: amadou.diallo@airport.sn
 Mot de passe: [mot de passe temporaire ou changé]
 ```
 
-**Vol de test ARRIVÉE:**
+**Vol de test ARRIVÉE (Bulletin):**
 ```
 Numéro: AF123
 Compagnie: Air France
 Type: ARRIVÉE
 Origine: Paris CDG
 Destination: Dakar DSS
-Avion: Boeing 737-800 (F-GZHA)
-Heure prévue: 14:30
+Source: Bulletin de Mouvement (PATH 1)
 ```
 
-**Vol de test DÉPART:**
+**Vol de test DÉPART (Programme):**
 ```
 Numéro: SN205
 Compagnie: Brussels Airlines
 Type: DÉPART
 Origine: Dakar DSS
 Destination: Bruxelles BRU
-Avion: Airbus A330-300 (OO-SFC)
-Heure prévue: 23:45
+Source: Programme de Vol (PATH 3)
+```
+
+**Vol de test HORS PROGRAMME:**
+```
+Numéro: HP999
+Compagnie: Air Algérie
+Code IATA: AH
+Type: ARRIVÉE
+Aéroport origine: ALG
+Type HP: CHARTER
+Raison: Vol charter ponctuel
+Source: Saisie manuelle (PATH 2)
 ```
 
 **Vol de test TURN AROUND:**
@@ -154,7 +164,6 @@ Type: TURN_AROUND
 Origine: Addis Abeba ADD
 Escale: Dakar DSS
 Destination: New York JFK
-Avion: Boeing 787-8 (ET-AOP)
 Arrivée: 08:30 | Départ: 11:00
 ```
 
@@ -174,18 +183,23 @@ Arrivée: 08:30 | Départ: 11:00
 
 ---
 
-### 2.3 Scénario: CRV ARRIVÉE Complet (AF123)
+### 2.3 Scénario: PATH 1 — CRV depuis Bulletin de Mouvement (AF123)
+
+> **Payload attendu:** `{ bulletinId, mouvementId, escale? }`
+> **Aucun** `volId`, `type`, `vol` dans le payload
 
 #### Phase 1: Création du CRV
 
 | Étape | Action | Résultat Attendu | Complétude | ✓ |
 |-------|--------|------------------|------------|---|
-| 1 | Cliquer "Nouveau CRV" | Formulaire de sélection vol | - | ☐ |
-| 2 | Rechercher "AF123" | Vol AF123 trouvé | - | ☐ |
-| 3 | Sélectionner le vol | Détails du vol affichés | - | ☐ |
-| 4 | Vérifier type = ARRIVÉE | Type correct | - | ☐ |
-| 5 | Cliquer "Créer CRV" | CRV créé, numéro affiché (ex: CRV-2024-0001) | **0%** | ☐ |
-| 6 | Vérifier les phases | 5 phases listées (non démarrées) | 0% | ☐ |
+| 1 | Cliquer "Nouveau CRV" | Page création, mode "Vol Planifié" actif | - | ☐ |
+| 2 | Onglet "Bulletin de Mouvement" actif | Liste des mouvements du bulletin en cours | - | ☐ |
+| 3 | Sélectionner AF123 (badge "Disponible") | Vol surligné, résumé affiché en bas | - | ☐ |
+| 4 | Vérifier source = BULLETIN | Badge "BULLETIN" visible | - | ☐ |
+| 5 | Cliquer "Créer le CRV" | CRV créé, redirection /crv/arrivee?id=... | **0%** | ☐ |
+| 6 | **DevTools** → Network → POST /api/crv | Body = `{ bulletinId: "...", mouvementId: "..." }` | - | ☐ |
+| 7 | **Vérifier absence** dans body | Pas de `volId`, `type`, `vol`, `programmeId` | - | ☐ |
+| 8 | Vérifier les phases | Phases d'arrivée listées (non démarrées) | 0% | ☐ |
 
 #### Phase 2: Positionnement Passerelle
 
@@ -276,23 +290,34 @@ Arrivée: 08:30 | Départ: 11:00
 
 ---
 
-### 2.4 Scénario: CRV DÉPART (SN205)
+### 2.4 Scénario: PATH 3 — CRV depuis Programme de Vol (SN205)
 
-#### Résumé des Étapes
+> **Payload attendu:** `{ volId, escale? }`
+> **Aucun** `bulletinId`, `mouvementId`, `type`, `vol` dans le payload
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Page "Nouveau CRV", mode "Vol Planifié" | Page affichée | ☐ |
+| 2 | Cliquer onglet **"Programme de Vol"** | Liste des vols du programme actif | ☐ |
+| 3 | Sélectionner SN205 (type DEPART, badge "Disponible") | Vol surligné | ☐ |
+| 4 | Cliquer **"Créer le CRV"** | Redirection /crv/depart?id=... | ☐ |
+| 5 | **DevTools** → Network → POST /api/crv | Body = `{ volId: "..." }` | ☐ |
+| 6 | **Vérifier absence** dans body | Pas de `bulletinId`, `mouvementId`, `type`, `vol` | ☐ |
+
+#### Résumé des Phases (DÉPART)
 
 | Phase | Action | Complétude Cible | ✓ |
 |-------|--------|------------------|---|
-| 1 | Créer CRV DÉPART SN205 | 0% | ☐ |
-| 2 | Phase "Préparation cabine" | 10% | ☐ |
-| 3 | Phase "Embarquement passagers" (30 min) | 25% | ☐ |
-| 4 | Phase "Chargement bagages" | 35% | ☐ |
-| 5 | Phase "Chargement fret" | 45% | ☐ |
-| 6 | Saisie Passagers embarqués (265) | 60% | ☐ |
-| 7 | Saisie Bagages chargés (320) | 72% | ☐ |
-| 8 | Saisie Fret (1200 kg) | **82%** (seuil atteint) | ☐ |
-| 9 | Phase "Fermeture soutes" | 85% | ☐ |
-| 10 | Phase "Push-back" | 88% | ☐ |
-| 11 | Observation de clôture | **95%** | ☐ |
+| 1 | Phase "Préparation cabine" | 10% | ☐ |
+| 2 | Phase "Embarquement passagers" (30 min) | 25% | ☐ |
+| 3 | Phase "Chargement bagages" | 35% | ☐ |
+| 4 | Phase "Chargement fret" | 45% | ☐ |
+| 5 | Saisie Passagers embarqués (265) | 60% | ☐ |
+| 6 | Saisie Bagages chargés (320) | 72% | ☐ |
+| 7 | Saisie Fret (1200 kg) | **82%** (seuil atteint) | ☐ |
+| 8 | Phase "Fermeture soutes" | 85% | ☐ |
+| 9 | Phase "Push-back" | 88% | ☐ |
+| 10 | Observation de clôture | **95%** | ☐ |
 
 #### Charges à Saisir (DÉPART)
 
@@ -320,7 +345,107 @@ Poids: 1200 kg (1.2 tonnes)
 
 ---
 
-### 2.5 Scénario: CRV TURN AROUND (ET908)
+### 2.5 Scénario: PATH 2 — Vol Hors Programme (HP999)
+
+> **Payload attendu:** `{ vol: { numeroVol, compagnieAerienne, codeIATA, dateVol, typeOperation, typeVolHorsProgramme, raisonHorsProgramme, aeroportOrigine? }, escale? }`
+> Champs vol **encapsulés dans `vol:{}`**, jamais à la racine
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Page "Nouveau CRV", cliquer **"Vol Hors Programme"** | Formulaire hors programme affiché | ☐ |
+| 2 | Type d'opération = **ARRIVEE** | Bouton ARRIVEE surligné | ☐ |
+| 3 | Numéro de vol = `HP999` | Auto-uppercase | ☐ |
+| 4 | Compagnie aérienne = `Air Algérie` | Saisi | ☐ |
+| 5 | Code IATA = `AH` | Auto-uppercase, max 2 car | ☐ |
+| 6 | Date du vol = date/heure du jour | Datetime-local rempli | ☐ |
+| 7 | **Aéroport d'origine** visible (ARRIVEE) = `ALG` | Champ affiché, auto-uppercase | ☐ |
+| 8 | **Aéroport destination** masqué (ARRIVEE) | Champ ABSENT | ☐ |
+| 9 | Type vol hors programme = `CHARTER` | Sélectionné dans dropdown | ☐ |
+| 10 | Raison = `Vol charter ponctuel` | Textarea rempli | ☐ |
+| 11 | Escale = `NDJ` | Optionnel, auto-uppercase | ☐ |
+| 12 | Cliquer **"Créer le CRV"** | Redirection /crv/arrivee?id=... | ☐ |
+| 13 | **DevTools** → POST /api/crv body | `{ vol: { numeroVol: "HP999", compagnieAerienne: "Air Algérie", codeIATA: "AH", ... }, escale: "NDJ" }` | ☐ |
+| 14 | **Vérifier absence** dans body racine | Pas de `bulletinId`, `volId`, `type`, `numeroVol` à la racine | ☐ |
+
+#### Test validation formulaire HP
+
+| Test | Action | Résultat | ✓ |
+|------|--------|----------|---|
+| Champs vides | Laisser numéro vol vide | Bouton "Créer" **désactivé** | ☐ |
+| Code IATA manquant | Remplir tout sauf codeIATA | Bouton **désactivé** | ☐ |
+| Type HP manquant | Remplir tout sauf typeVolHorsProgramme | Bouton **désactivé** | ☐ |
+| Raison manquante | Remplir tout sauf raison | Bouton **désactivé** | ☐ |
+
+#### Test aéroports conditionnels
+
+| Type sélectionné | aeroportOrigine | aeroportDestination | ✓ |
+|-----------------|-----------------|---------------------|---|
+| ARRIVEE | **Affiché** (requis) | Masqué | ☐ |
+| DEPART | Masqué | **Affiché** (requis) | ☐ |
+| TURN_AROUND | **Affiché** (requis) | **Affiché** (requis) | ☐ |
+
+---
+
+### 2.6 Scénario: PATH LEGACY — Création Exceptionnelle
+
+> **Payload attendu:** `{ type, date?, escale? }` — strictement 3 champs max
+> **Aucun** `vol`, `volId`, `bulletinId` dans le payload
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | En bas de la page, cliquer **"Création exceptionnelle (sans vol associé)"** | Modale avec bandeau jaune d'avertissement | ☐ |
+| 2 | Lire l'avertissement | "Les données vol seront générées automatiquement par le backend" | ☐ |
+| 3 | Type d'opération = `Depart` | Sélectionné | ☐ |
+| 4 | Date = date du jour | Rempli automatiquement | ☐ |
+| 5 | Escale = `NDJ` | Saisi | ☐ |
+| 6 | Cliquer **"Créer le CRV"** | Modale se ferme, redirection /crv/depart?id=... | ☐ |
+| 7 | **DevTools** → POST /api/crv body | `{ type: "depart", date: "2024-...", escale: "NDJ" }` | ☐ |
+| 8 | **Vérifier absence** dans body | Pas de `vol`, `volId`, `bulletinId`, `mouvementId` | ☐ |
+
+#### Test sans champs optionnels
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Ouvrir modale, vider date et escale | Champs vides | ☐ |
+| 2 | Type = `Arrivee`, cliquer "Créer" | Payload = `{ type: "arrivee" }` uniquement | ☐ |
+
+#### Test annulation modale
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Ouvrir modale, cliquer **"Annuler"** | Modale se ferme, rien créé | ☐ |
+| 2 | Cliquer en dehors de la modale | Modale se ferme, rien créé | ☐ |
+
+---
+
+### 2.7 Scénario: Doublon 409 — Confirmation en 2 Étapes
+
+> **Prérequis:** Un CRV existe déjà pour le vol à tester
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Sélectionner un vol qui a DEJA un CRV | Vol sélectionné (ou forcer via API) | ☐ |
+| 2 | Créer le CRV (n'importe quel PATH) | Backend retourne 409 `CRV_DOUBLON` | ☐ |
+| 3 | **Modale Étape 1** s'affiche | Titre "CRV doublon détecté" | ☐ |
+| 4 | Numéro CRV existant affiché | Ex: `CRV-2024-EXIST` visible | ☐ |
+| 5 | Cliquer **"Continuer"** | Passage à étape 2 | ☐ |
+| 6 | **Modale Étape 2** affichée | "Confirmation requise — Cette action est tracée" | ☐ |
+| 7 | Cliquer **"Confirmer la création"** | Modale se ferme, nouveau CRV créé | ☐ |
+| 8 | **DevTools** → 2ème POST /api/crv | Body = payload original + `{ forceDoublon: true, confirmationLevel: 2 }` | ☐ |
+| 9 | Redirection vers page CRV | CRV doublon créé avec succès | ☐ |
+
+#### Test annulation doublon
+
+| Étape | Action | Résultat Attendu | ✓ |
+|-------|--------|------------------|---|
+| 1 | Doublon détecté, modale étape 1 | Modale ouverte | ☐ |
+| 2 | Cliquer **"Annuler"** | Modale se ferme, rien créé | ☐ |
+| 3 | Doublon détecté, passer à étape 2 | Étape 2 affichée | ☐ |
+| 4 | Cliquer **"Annuler"** | Modale se ferme, rien créé | ☐ |
+
+---
+
+### 2.8 Scénario: CRV TURN AROUND (ET908)
 
 #### Particularité Turn Around
 - Combine ARRIVÉE + ESCALE + DÉPART
@@ -351,7 +476,7 @@ Poids: 1200 kg (1.2 tonnes)
 
 ---
 
-### 2.6 Scénario: Ajout Événement Imprévu
+### 2.9 Scénario: Ajout Événement Imprévu
 
 | Étape | Action | Résultat Attendu | ✓ |
 |-------|--------|------------------|---|
@@ -364,7 +489,16 @@ Poids: 1200 kg (1.2 tonnes)
 
 ---
 
-### 2.7 Vérifications Agent
+### 2.10 Vérifications Agent — Matrice Payloads API v2
+
+| PATH | Clés autorisées dans payload | Clés INTERDITES | ✓ |
+|------|------------------------------|-----------------|---|
+| PATH 1 (Bulletin) | `bulletinId`, `mouvementId`, `escale?` | `volId`, `type`, `vol` | ☐ |
+| PATH 2 (Hors Programme) | `vol: { ... }`, `escale?` | `bulletinId`, `mouvementId`, `volId`, `type` | ☐ |
+| PATH 3 (Programme) | `volId`, `escale?` | `bulletinId`, `mouvementId`, `type`, `vol` | ☐ |
+| PATH LEGACY (Exceptionnel) | `type`, `date?`, `escale?` | `bulletinId`, `mouvementId`, `volId`, `vol` | ☐ |
+
+### 2.11 Vérifications Agent — Permissions
 
 | Vérification | Attendu | ✓ |
 |--------------|---------|---|

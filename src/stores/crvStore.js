@@ -263,6 +263,11 @@ export const useCRVStore = defineStore('crv', {
     // CRUD CRV
     // ============================================
 
+    /**
+     * Créer un CRV — Contrat API v2
+     * Gère le 409 CRV_DOUBLON en remontant un objet structuré au lieu de throw générique.
+     * L'appelant doit vérifier si le résultat contient { doublon: true } pour ouvrir la modale.
+     */
     async createCRV(data) {
       console.log('[CRV][LOAD]', { action: 'createCRV', data })
       this.loading = true
@@ -280,15 +285,66 @@ export const useCRVStore = defineStore('crv', {
         this.observations = []
         this.transitionsPossibles = []
 
-        if (result.id || result._id) {
-          await this.loadCRV(result.id || result._id)
-        }
+        // Pas de loadCRV ici — la réponse du POST contient déjà les données complètes.
+        // Le composant destination (CRVArrivee, etc.) fera loadCRV si nécessaire.
 
         return result
       } catch (error) {
+        // Gestion spécifique du doublon 409
+        if (error.response?.status === 409 && error.response?.data?.code === ERROR_CODES.CRV_DOUBLON) {
+          console.log('[CRV][DOUBLON]', { action: 'createCRV', doublon: error.response.data })
+          const doublonInfo = {
+            doublon: true,
+            crvExistantId: error.response.data.crvExistantId,
+            numeroCRV: error.response.data.numeroCRV,
+            message: error.response.data.message,
+            originalPayload: data
+          }
+          this.loading = false
+          return doublonInfo
+        }
+
         console.log('[CRV][API_ERROR]', { action: 'createCRV', error: error.message })
         this._handleError(error, 'Erreur lors de la création du CRV')
         throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Forcer la création d'un CRV doublon après confirmation utilisateur (2 étapes)
+     * Renvoie le payload original avec forceDoublon=true et confirmationLevel=2
+     */
+    async createCRVForceDoublon(originalPayload) {
+      console.log('[CRV][LOAD]', { action: 'createCRVForceDoublon', originalPayload })
+      const payload = {
+        ...originalPayload,
+        forceDoublon: true,
+        confirmationLevel: 2
+      }
+      // Réutilise createCRV avec le payload enrichi — le doublon ne sera plus détecté
+      return this.createCRV(payload)
+    },
+
+    /**
+     * Récupérer les vols du jour sans CRV (issus de bulletins)
+     * GET /api/crv/vols-sans-crv?date=YYYY-MM-DD
+     */
+    async fetchVolsSansCrv(date) {
+      console.log('[CRV][LOAD]', { action: 'fetchVolsSansCrv', date })
+      this.loading = true
+      this.clearError()
+
+      try {
+        const response = await crvAPI.volsSansCrv(date)
+        const result = this._extractData(response)
+        console.log('[CRV][LOAD]', { action: 'fetchVolsSansCrv', count: result?.length || 0 })
+        return Array.isArray(result) ? result : result?.data || []
+      } catch (error) {
+        console.log('[CRV][API_ERROR]', { action: 'fetchVolsSansCrv', error: error.message })
+        this._handleError(error, 'Erreur lors du chargement des vols sans CRV')
+        return []
       } finally {
         this.loading = false
       }
@@ -441,7 +497,6 @@ export const useCRVStore = defineStore('crv', {
         console.log('[CRV][TRANSITION]', { action: 'demarrer', result: 'success', nouveauStatut: 'EN_COURS' })
         this.currentCRV = { ...this.currentCRV, ...result, statut: STATUT_CRV.EN_COURS }
 
-        await this.loadCRV(crvId)
         return result
       } catch (error) {
         console.log('[CRV][API_ERROR]', { action: 'demarrer', error: error.message })

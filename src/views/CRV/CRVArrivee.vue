@@ -379,10 +379,19 @@ onMounted(async () => {
     const crvId = route.query.id
 
     if (crvId) {
-      // Charger le CRV existant
-      console.log('[CRVArrivee] Chargement CRV existant:', crvId)
-      await crvStore.loadCRV(crvId)
-      console.log('[CRVArrivee] CRV chargé:', crvStore.currentCRV?.numeroCRV)
+      // Charger le CRV seulement si le store n'a pas déjà le bon
+      const storeId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+      if (storeId !== crvId) {
+        console.log('[CRVArrivee] Chargement CRV existant:', crvId)
+        await crvStore.loadCRV(crvId)
+        console.log('[CRVArrivee] CRV chargé:', crvStore.currentCRV?.numeroCRV)
+      } else {
+        console.log('[CRVArrivee] CRV déjà en store, skip loadCRV:', crvStore.currentCRV?.numeroCRV)
+        // Charger les transitions en parallèle si pas encore faites
+        if (crvStore.transitionsPossibles.length === 0) {
+          crvStore.fetchTransitionsPossibles()
+        }
+      }
     } else if (!crvStore.currentCRV) {
       // Créer un nouveau CRV
       console.log('[CRVArrivee] Création du CRV...')
@@ -401,7 +410,6 @@ onMounted(async () => {
         console.log('[CRVArrivee] CRV démarré, nouveau statut:', crvStore.currentCRV?.statut)
       } catch (e) {
         console.warn('[CRVArrivee] Impossible de démarrer le CRV:', e.message)
-        // Continuer quand même - le backend n'a peut-être pas cette route
       }
     }
 

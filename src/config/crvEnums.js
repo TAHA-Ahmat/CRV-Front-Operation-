@@ -88,7 +88,8 @@ export const CATEGORIE_PHASE = Object.freeze({
   TECHNIQUE: 'TECHNIQUE',
   AVITAILLEMENT: 'AVITAILLEMENT',
   NETTOYAGE: 'NETTOYAGE',
-  SECURITE: 'SECURITE'
+  SECURITE: 'SECURITE',
+  BRIEFING: 'BRIEFING'
 })
 
 // ============================================
@@ -97,33 +98,42 @@ export const CATEGORIE_PHASE = Object.freeze({
 // ============================================
 
 export const ROLE_PERSONNEL = Object.freeze({
-  CHEF_AVION: 'CHEF_AVION',
+  CHEF_ESCALE: 'CHEF_ESCALE',
   AGENT_TRAFIC: 'AGENT_TRAFIC',
   AGENT_PISTE: 'AGENT_PISTE',
-  AGENT_BAGAGES: 'AGENT_BAGAGES',
-  AGENT_FRET: 'AGENT_FRET',
+  AGENT_PASSAGE: 'AGENT_PASSAGE',
+  MANUTENTIONNAIRE: 'MANUTENTIONNAIRE',
+  CHAUFFEUR: 'CHAUFFEUR',
+  AGENT_SECURITE: 'AGENT_SECURITE',
+  TECHNICIEN: 'TECHNICIEN',
   SUPERVISEUR: 'SUPERVISEUR',
   COORDINATEUR: 'COORDINATEUR',
   AUTRE: 'AUTRE'
 })
 
 export const ROLE_PERSONNEL_LABELS = Object.freeze({
-  [ROLE_PERSONNEL.CHEF_AVION]: 'Chef avion',
-  [ROLE_PERSONNEL.AGENT_TRAFIC]: 'Agent trafic',
-  [ROLE_PERSONNEL.AGENT_PISTE]: 'Agent piste',
-  [ROLE_PERSONNEL.AGENT_BAGAGES]: 'Agent bagages',
-  [ROLE_PERSONNEL.AGENT_FRET]: 'Agent fret',
+  [ROLE_PERSONNEL.CHEF_ESCALE]: 'Chef d\'escale',
+  [ROLE_PERSONNEL.AGENT_TRAFIC]: 'Agent de trafic',
+  [ROLE_PERSONNEL.AGENT_PISTE]: 'Agent de piste',
+  [ROLE_PERSONNEL.AGENT_PASSAGE]: 'Agent de passage',
+  [ROLE_PERSONNEL.MANUTENTIONNAIRE]: 'Manutentionnaire',
+  [ROLE_PERSONNEL.CHAUFFEUR]: 'Chauffeur',
+  [ROLE_PERSONNEL.AGENT_SECURITE]: 'Agent de sécurité',
+  [ROLE_PERSONNEL.TECHNICIEN]: 'Technicien',
   [ROLE_PERSONNEL.SUPERVISEUR]: 'Superviseur',
   [ROLE_PERSONNEL.COORDINATEUR]: 'Coordinateur',
   [ROLE_PERSONNEL.AUTRE]: 'Autre'
 })
 
 export const ROLE_PERSONNEL_DESCRIPTIONS = Object.freeze({
-  [ROLE_PERSONNEL.CHEF_AVION]: 'Responsable de la coordination des opérations autour de l\'avion',
+  [ROLE_PERSONNEL.CHEF_ESCALE]: 'Responsable de la coordination des opérations d\'escale',
   [ROLE_PERSONNEL.AGENT_TRAFIC]: 'Gère le trafic passagers et les formalités',
   [ROLE_PERSONNEL.AGENT_PISTE]: 'Intervient sur les opérations piste',
-  [ROLE_PERSONNEL.AGENT_BAGAGES]: 'Gère le chargement/déchargement des bagages',
-  [ROLE_PERSONNEL.AGENT_FRET]: 'Gère le chargement/déchargement du fret',
+  [ROLE_PERSONNEL.AGENT_PASSAGE]: 'Gère l\'embarquement et le débarquement passagers',
+  [ROLE_PERSONNEL.MANUTENTIONNAIRE]: 'Chargement et déchargement bagages et fret',
+  [ROLE_PERSONNEL.CHAUFFEUR]: 'Conduite des engins de piste',
+  [ROLE_PERSONNEL.AGENT_SECURITE]: 'Assure la sécurité sur le périmètre avion',
+  [ROLE_PERSONNEL.TECHNICIEN]: 'Maintenance et interventions techniques',
   [ROLE_PERSONNEL.SUPERVISEUR]: 'Supervise les équipes au sol',
   [ROLE_PERSONNEL.COORDINATEUR]: 'Coordonne entre différents services',
   [ROLE_PERSONNEL.AUTRE]: 'Autre rôle (précisez)'
@@ -359,7 +369,7 @@ export const TYPE_ENGIN = Object.freeze({
   CAMION_AVITAILLEMENT: 'CAMION_AVITAILLEMENT',
   CAMION_VIDANGE: 'CAMION_VIDANGE',
   CAMION_EAU: 'CAMION_EAU',
-  NACELLE_ELEVATRICE: 'NACELLE_ELEVATRICE',
+  ELEVATEUR: 'ELEVATEUR',
   CHARIOT_BAGAGES: 'CHARIOT_BAGAGES',
   CONTENEUR_ULD: 'CONTENEUR_ULD',
   DOLLY: 'DOLLY',
@@ -377,7 +387,7 @@ export const TYPE_ENGIN_LABELS = Object.freeze({
   [TYPE_ENGIN.CAMION_AVITAILLEMENT]: 'Camion avitaillement',
   [TYPE_ENGIN.CAMION_VIDANGE]: 'Camion vidange',
   [TYPE_ENGIN.CAMION_EAU]: 'Camion eau',
-  [TYPE_ENGIN.NACELLE_ELEVATRICE]: 'Nacelle élévatrice',
+  [TYPE_ENGIN.ELEVATEUR]: 'Élévateur',
   [TYPE_ENGIN.CHARIOT_BAGAGES]: 'Chariot bagages',
   [TYPE_ENGIN.CONTENEUR_ULD]: 'Conteneur ULD',
   [TYPE_ENGIN.DOLLY]: 'Dolly',
@@ -449,6 +459,29 @@ export const TYPE_OPERATION_LABELS = Object.freeze({
 })
 
 // ============================================
+// TYPE VOL HORS PROGRAMME
+// Référence : Contrat API CRV v2 - PATH 2
+// ============================================
+
+export const TYPE_VOL_HORS_PROGRAMME = Object.freeze({
+  CHARTER: 'CHARTER',
+  MEDICAL: 'MEDICAL',
+  TECHNIQUE: 'TECHNIQUE',
+  COMMERCIAL: 'COMMERCIAL',
+  CARGO: 'CARGO',
+  AUTRE: 'AUTRE'
+})
+
+export const TYPE_VOL_HORS_PROGRAMME_LABELS = Object.freeze({
+  [TYPE_VOL_HORS_PROGRAMME.CHARTER]: 'Charter',
+  [TYPE_VOL_HORS_PROGRAMME.MEDICAL]: 'Médical',
+  [TYPE_VOL_HORS_PROGRAMME.TECHNIQUE]: 'Technique',
+  [TYPE_VOL_HORS_PROGRAMME.COMMERCIAL]: 'Commercial',
+  [TYPE_VOL_HORS_PROGRAMME.CARGO]: 'Cargo',
+  [TYPE_VOL_HORS_PROGRAMME.AUTRE]: 'Autre'
+})
+
+// ============================================
 // SEUILS DE COMPLÉTUDE
 // Référence : DOCUMENTATION_FRONTEND_CRV.md - Section 4.3
 // ============================================
@@ -464,6 +497,7 @@ export const SEUILS_COMPLETUDE = Object.freeze({
 // ============================================
 
 export const ERROR_CODES = Object.freeze({
+  CRV_DOUBLON: 'CRV_DOUBLON',
   CRV_VERROUILLE: 'CRV_VERROUILLE',
   COMPLETUDE_INSUFFISANTE: 'COMPLETUDE_INSUFFISANTE',
   CONDITIONS_TERMINAISON_NON_SATISFAITES: 'CONDITIONS_TERMINAISON_NON_SATISFAITES',
@@ -540,7 +574,9 @@ const ENUM_LABELS_MAP = new Map([
   [MOTIF_NON_REALISATION, MOTIF_NON_REALISATION_LABELS],
   [USAGE_ENGIN, USAGE_ENGIN_LABELS],
   // MVS-9: Nouveaux enums
-  [ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS]
+  [ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS],
+  // Contrat API v2
+  [TYPE_VOL_HORS_PROGRAMME, TYPE_VOL_HORS_PROGRAMME_LABELS]
 ])
 
 /**
@@ -587,6 +623,8 @@ export default {
   TYPE_ENGIN_LABELS,
   TYPE_OPERATION,
   TYPE_OPERATION_LABELS,
+  TYPE_VOL_HORS_PROGRAMME,
+  TYPE_VOL_HORS_PROGRAMME_LABELS,
 
   // Autres enums
   GRAVITE_EVENEMENT,

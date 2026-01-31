@@ -134,30 +134,34 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
   })
 
   // =========================================
-  // ÉTAPE 2: CRÉATION CRV
+  // ÉTAPE 2: CRÉATION CRV — API v2 (4 PATHs)
   // =========================================
-  describe('ÉTAPE 2: Création CRV', () => {
+  describe('ÉTAPE 2: Création CRV — API v2', () => {
     beforeEach(() => {
       authStore.user = agentUser
       authStore.token = 'jwt-token'
     })
 
-    describe('CRV Arrivée', () => {
-      it('devrait créer un CRV de type ARRIVEE', async () => {
-        const mockCRV = {
-          id: 'crv-arr-001',
-          numeroCRV: 'CRV-2024-001',
-          statut: 'BROUILLON',
-          completude: 0,
-          vol: {
-            id: 'vol-001',
-            numeroVol: 'AF123',
-            typeOperation: 'ARRIVEE',
-            origine: 'CDG',
-            destination: 'DSS'
-          }
+    // -----------------------------------------
+    // PATH 1: Depuis Bulletin de Mouvement
+    // Payload: { bulletinId, mouvementId, escale? }
+    // -----------------------------------------
+    describe('PATH 1: Bulletin de Mouvement', () => {
+      const mockCRV = {
+        id: 'crv-path1-001',
+        numeroCRV: 'CRV-2024-P1-001',
+        statut: 'BROUILLON',
+        completude: 0,
+        vol: {
+          id: 'vol-001',
+          numeroVol: 'AF123',
+          typeOperation: 'ARRIVEE',
+          origine: 'CDG',
+          destination: 'DSS'
         }
+      }
 
+      it('devrait créer un CRV avec bulletinId + mouvementId', async () => {
         crvAPI.create.mockResolvedValue({ data: mockCRV })
         crvAPI.getById.mockResolvedValue({
           data: {
@@ -173,26 +177,164 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           }
         })
 
-        await crvStore.createCRV({ volId: 'vol-001' })
+        const payload = {
+          bulletinId: 'bulletin-001',
+          mouvementId: 'mouvement-001'
+        }
+        await crvStore.createCRV(payload)
 
-        expect(crvAPI.create).toHaveBeenCalledWith({ volId: 'vol-001' })
+        expect(crvAPI.create).toHaveBeenCalledWith(payload)
+        // Vérifier qu'il n'y a PAS de volId dans le payload
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith).not.toHaveProperty('volId')
+        expect(calledWith).not.toHaveProperty('type')
+        expect(calledWith).not.toHaveProperty('vol')
         expect(crvStore.currentCRV).toBeDefined()
         expect(crvStore.currentCRV.vol.typeOperation).toBe('ARRIVEE')
-        expect(crvStore.phases).toHaveLength(3)
+      })
+
+      it('devrait inclure escale si présente', async () => {
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const payload = {
+          bulletinId: 'bulletin-001',
+          mouvementId: 'mouvement-001',
+          escale: 'NDJ'
+        }
+        await crvStore.createCRV(payload)
+
+        expect(crvAPI.create).toHaveBeenCalledWith(payload)
+        expect(crvAPI.create.mock.calls[0][0].escale).toBe('NDJ')
       })
     })
 
-    describe('CRV Départ', () => {
-      it('devrait créer un CRV de type DEPART', async () => {
+    // -----------------------------------------
+    // PATH 2: Vol Hors Programme
+    // Payload: { vol: { numeroVol, compagnieAerienne, codeIATA, dateVol,
+    //   typeOperation, typeVolHorsProgramme, raisonHorsProgramme,
+    //   aeroportOrigine?, aeroportDestination? }, escale? }
+    // -----------------------------------------
+    describe('PATH 2: Vol Hors Programme', () => {
+      it('devrait créer un CRV hors programme ARRIVEE avec vol encapsulé', async () => {
         const mockCRV = {
-          id: 'crv-dep-001',
-          numeroCRV: 'CRV-2024-002',
+          id: 'crv-hp-001',
+          numeroCRV: 'CRV-2024-HP-001',
           statut: 'BROUILLON',
+          vol: { typeOperation: 'ARRIVEE', numeroVol: 'HP999' }
+        }
+
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const payload = {
           vol: {
+            numeroVol: 'HP999',
+            compagnieAerienne: 'Air France',
+            codeIATA: 'AF',
+            dateVol: '2024-06-15T14:30:00.000Z',
+            typeOperation: 'ARRIVEE',
+            typeVolHorsProgramme: 'CHARTER',
+            raisonHorsProgramme: 'Vol charter exceptionnel',
+            aeroportOrigine: 'CDG'
+          },
+          escale: 'NDJ'
+        }
+        await crvStore.createCRV(payload)
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        // Vérifier structure vol encapsulée
+        expect(calledWith).toHaveProperty('vol')
+        expect(calledWith.vol).toHaveProperty('numeroVol', 'HP999')
+        expect(calledWith.vol).toHaveProperty('compagnieAerienne', 'Air France')
+        expect(calledWith.vol).toHaveProperty('codeIATA', 'AF')
+        expect(calledWith.vol).toHaveProperty('typeVolHorsProgramme', 'CHARTER')
+        expect(calledWith.vol).toHaveProperty('aeroportOrigine', 'CDG')
+        // PAS de champs plats à la racine
+        expect(calledWith).not.toHaveProperty('bulletinId')
+        expect(calledWith).not.toHaveProperty('volId')
+        expect(calledWith).not.toHaveProperty('type')
+        expect(calledWith).not.toHaveProperty('numeroVol')
+        expect(calledWith.escale).toBe('NDJ')
+      })
+
+      it('devrait inclure aeroportDestination pour DEPART, pas aeroportOrigine', async () => {
+        const mockCRV = {
+          id: 'crv-hp-002',
+          statut: 'BROUILLON',
+          vol: { typeOperation: 'DEPART' }
+        }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const payload = {
+          vol: {
+            numeroVol: 'HP100',
+            compagnieAerienne: 'Test Air',
+            codeIATA: 'TA',
+            dateVol: '2024-06-15T10:00:00.000Z',
             typeOperation: 'DEPART',
-            origine: 'DSS',
-            destination: 'CDG'
+            typeVolHorsProgramme: 'TECHNIQUE',
+            raisonHorsProgramme: 'Vol technique',
+            aeroportDestination: 'CDG'
           }
+        }
+        await crvStore.createCRV(payload)
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith.vol).toHaveProperty('aeroportDestination', 'CDG')
+        expect(calledWith.vol).not.toHaveProperty('aeroportOrigine')
+      })
+
+      it('devrait inclure les deux aéroports pour TURN_AROUND', async () => {
+        const mockCRV = {
+          id: 'crv-hp-003',
+          statut: 'BROUILLON',
+          vol: { typeOperation: 'TURN_AROUND' }
+        }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const payload = {
+          vol: {
+            numeroVol: 'HP200',
+            compagnieAerienne: 'Test Air',
+            codeIATA: 'TA',
+            dateVol: '2024-06-15T08:00:00.000Z',
+            typeOperation: 'TURN_AROUND',
+            typeVolHorsProgramme: 'COMMERCIAL',
+            raisonHorsProgramme: 'Vol commercial additionnel',
+            aeroportOrigine: 'CDG',
+            aeroportDestination: 'JFK'
+          }
+        }
+        await crvStore.createCRV(payload)
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith.vol).toHaveProperty('aeroportOrigine', 'CDG')
+        expect(calledWith.vol).toHaveProperty('aeroportDestination', 'JFK')
+      })
+    })
+
+    // -----------------------------------------
+    // PATH 3: Vol existant (backward compat)
+    // Payload: { volId, escale? }
+    // -----------------------------------------
+    describe('PATH 3: Vol existant (programme)', () => {
+      it('devrait créer un CRV avec volId uniquement', async () => {
+        const mockCRV = {
+          id: 'crv-p3-001',
+          numeroCRV: 'CRV-2024-P3-001',
+          statut: 'BROUILLON',
+          vol: { typeOperation: 'DEPART' }
         }
 
         crvAPI.create.mockResolvedValue({ data: mockCRV })
@@ -201,8 +343,7 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
             crv: mockCRV,
             phases: [
               { id: 'p1', nom: 'Embarquement passagers', statut: 'NON_DEMARRE' },
-              { id: 'p2', nom: 'Chargement bagages', statut: 'NON_DEMARRE' },
-              { id: 'p3', nom: 'Push-back', statut: 'NON_DEMARRE' }
+              { id: 'p2', nom: 'Push-back', statut: 'NON_DEMARRE' }
             ],
             charges: [],
             evenements: [],
@@ -210,43 +351,173 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           }
         })
 
-        await crvStore.createCRV({ volId: 'vol-002' })
+        const payload = { volId: 'vol-prog-001' }
+        await crvStore.createCRV(payload)
 
-        expect(crvStore.currentCRV.vol.typeOperation).toBe('DEPART')
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith).toEqual({ volId: 'vol-prog-001' })
+        expect(calledWith).not.toHaveProperty('bulletinId')
+        expect(calledWith).not.toHaveProperty('vol')
+        expect(calledWith).not.toHaveProperty('type')
+      })
+
+      it('devrait inclure escale si présente', async () => {
+        const mockCRV = { id: 'crv-p3-002', statut: 'BROUILLON', vol: { typeOperation: 'ARRIVEE' } }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        await crvStore.createCRV({ volId: 'vol-prog-002', escale: 'DSS' })
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith.volId).toBe('vol-prog-002')
+        expect(calledWith.escale).toBe('DSS')
       })
     })
 
-    describe('CRV Turn Around', () => {
-      it('devrait créer un CRV de type TURN_AROUND', async () => {
+    // -----------------------------------------
+    // PATH LEGACY: Création exceptionnelle
+    // Payload: { type, date?, escale? }
+    // -----------------------------------------
+    describe('PATH LEGACY: Création exceptionnelle', () => {
+      it('devrait créer un CRV legacy avec type seul', async () => {
         const mockCRV = {
-          id: 'crv-ta-001',
-          numeroCRV: 'CRV-2024-003',
+          id: 'crv-leg-001',
           statut: 'BROUILLON',
-          vol: {
-            typeOperation: 'TURN_AROUND'
-          }
+          vol: { typeOperation: 'DEPART' }
         }
-
         crvAPI.create.mockResolvedValue({ data: mockCRV })
         crvAPI.getById.mockResolvedValue({
-          data: {
-            crv: mockCRV,
-            phases: [
-              { id: 'p1', nom: 'Débarquement', statut: 'NON_DEMARRE' },
-              { id: 'p2', nom: 'Nettoyage cabine', statut: 'NON_DEMARRE' },
-              { id: 'p3', nom: 'Avitaillement', statut: 'NON_DEMARRE' },
-              { id: 'p4', nom: 'Embarquement', statut: 'NON_DEMARRE' }
-            ],
-            charges: [],
-            evenements: [],
-            observations: []
-          }
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
         })
 
-        await crvStore.createCRV({ volId: 'vol-003' })
+        const payload = { type: 'depart' }
+        await crvStore.createCRV(payload)
 
-        expect(crvStore.currentCRV.vol.typeOperation).toBe('TURN_AROUND')
-        expect(crvStore.phases.length).toBeGreaterThanOrEqual(4)
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith).toEqual({ type: 'depart' })
+        expect(calledWith).not.toHaveProperty('volId')
+        expect(calledWith).not.toHaveProperty('bulletinId')
+        expect(calledWith).not.toHaveProperty('vol')
+      })
+
+      it('devrait créer un CRV legacy avec type + date + escale', async () => {
+        const mockCRV = { id: 'crv-leg-002', statut: 'BROUILLON', vol: { typeOperation: 'ARRIVEE' } }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const payload = { type: 'arrivee', date: '2024-06-15', escale: 'NDJ' }
+        await crvStore.createCRV(payload)
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith).toEqual({ type: 'arrivee', date: '2024-06-15', escale: 'NDJ' })
+      })
+    })
+
+    // -----------------------------------------
+    // DOUBLON 409 — CRV_DOUBLON handling
+    // -----------------------------------------
+    describe('Gestion Doublon 409 (CRV_DOUBLON)', () => {
+      it('devrait retourner info doublon au lieu de throw sur 409', async () => {
+        const error409 = {
+          response: {
+            status: 409,
+            data: {
+              code: 'CRV_DOUBLON',
+              message: 'Un CRV existe déjà pour ce vol',
+              crvExistantId: 'crv-exist-001',
+              numeroCRV: 'CRV-2024-EXIST'
+            }
+          }
+        }
+        crvAPI.create.mockRejectedValue(error409)
+
+        const result = await crvStore.createCRV({ volId: 'vol-doublon' })
+
+        expect(result).toBeDefined()
+        expect(result.doublon).toBe(true)
+        expect(result.crvExistantId).toBe('crv-exist-001')
+        expect(result.numeroCRV).toBe('CRV-2024-EXIST')
+        expect(result.originalPayload).toEqual({ volId: 'vol-doublon' })
+      })
+
+      it('devrait forcer la création doublon avec forceDoublon + confirmationLevel=2', async () => {
+        const mockCRV = {
+          id: 'crv-doublon-001',
+          statut: 'BROUILLON',
+          crvDoublon: true,
+          vol: { typeOperation: 'DEPART' }
+        }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+
+        const originalPayload = { volId: 'vol-doublon' }
+        await crvStore.createCRVForceDoublon(originalPayload)
+
+        const calledWith = crvAPI.create.mock.calls[0][0]
+        expect(calledWith).toEqual({
+          volId: 'vol-doublon',
+          forceDoublon: true,
+          confirmationLevel: 2
+        })
+      })
+
+      it('devrait propager les erreurs non-409 normalement', async () => {
+        const error500 = {
+          response: { status: 500, data: { message: 'Erreur serveur' } }
+        }
+        crvAPI.create.mockRejectedValue(error500)
+
+        await expect(crvStore.createCRV({ volId: 'vol-error' })).rejects.toBeDefined()
+      })
+    })
+
+    // -----------------------------------------
+    // Tests de non-contamination entre PATHs
+    // -----------------------------------------
+    describe('Isolation des PATHs (non-contamination)', () => {
+      beforeEach(() => {
+        const mockCRV = { id: 'crv-test', statut: 'BROUILLON', vol: { typeOperation: 'DEPART' } }
+        crvAPI.create.mockResolvedValue({ data: mockCRV })
+        crvAPI.getById.mockResolvedValue({
+          data: { crv: mockCRV, phases: [], charges: [], evenements: [], observations: [] }
+        })
+      })
+
+      it('PATH 1 ne doit PAS contenir volId, vol, type', async () => {
+        await crvStore.createCRV({ bulletinId: 'b1', mouvementId: 'm1' })
+        const p = crvAPI.create.mock.calls[0][0]
+        expect(Object.keys(p).sort()).toEqual(['bulletinId', 'mouvementId'])
+      })
+
+      it('PATH 2 ne doit PAS contenir bulletinId, mouvementId, volId, type', async () => {
+        const payload = { vol: { numeroVol: 'X1', compagnieAerienne: 'T', codeIATA: 'XX', dateVol: '2024-01-01T00:00:00Z', typeOperation: 'DEPART', typeVolHorsProgramme: 'CHARTER', raisonHorsProgramme: 'Test' } }
+        await crvStore.createCRV(payload)
+        const p = crvAPI.create.mock.calls[0][0]
+        expect(p).not.toHaveProperty('bulletinId')
+        expect(p).not.toHaveProperty('volId')
+        expect(p).not.toHaveProperty('type')
+        expect(p).toHaveProperty('vol')
+      })
+
+      it('PATH 3 ne doit PAS contenir bulletinId, mouvementId, vol, type', async () => {
+        await crvStore.createCRV({ volId: 'v1' })
+        const p = crvAPI.create.mock.calls[0][0]
+        expect(Object.keys(p)).toEqual(['volId'])
+      })
+
+      it('PATH LEGACY ne doit PAS contenir bulletinId, mouvementId, volId, vol', async () => {
+        await crvStore.createCRV({ type: 'depart', date: '2024-01-01', escale: 'NDJ' })
+        const p = crvAPI.create.mock.calls[0][0]
+        expect(p).not.toHaveProperty('bulletinId')
+        expect(p).not.toHaveProperty('volId')
+        expect(p).not.toHaveProperty('vol')
+        expect(Object.keys(p).sort()).toEqual(['date', 'escale', 'type'])
       })
     })
   })

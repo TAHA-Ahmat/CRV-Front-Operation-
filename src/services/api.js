@@ -179,14 +179,27 @@ export const personnesAPI = {
 
 export const crvAPI = {
   /**
-   * Créer un CRV
+   * Créer un CRV — Contrat API v2
    * POST /api/crv
-   * Body: { volId?, type?, date?, responsableVolId? }
-   * Middlewares: protect, excludeQualite, verifierPhasesAutoriseesCreationCRV, auditLog
+   * 4 chemins exclusifs déterminés par le body :
+   *   PATH 1 : { bulletinId, mouvementId, escale?, responsableVolId? }
+   *   PATH 2 : { vol: { numeroVol, compagnieAerienne, codeIATA, dateVol, typeOperation, typeVolHorsProgramme, raisonHorsProgramme, ... }, escale?, responsableVolId? }
+   *   PATH 3 : { volId, escale?, responsableVolId? }
+   *   PATH LEGACY : { type, date?, escale? }
+   * Gestion doublon : 409 CRV_DOUBLON → retry avec forceDoublon: true, confirmationLevel: 2
    */
   create: (data) => {
     console.log('[CRV API] create() - Création CRV avec:', data)
     return api.post('/crv', data)
+  },
+
+  /**
+   * Vols du jour sans CRV (issus de bulletins uniquement)
+   * GET /api/crv/vols-sans-crv?date=YYYY-MM-DD
+   */
+  volsSansCrv: (date) => {
+    console.log('[CRV API] volsSansCrv() - Date:', date)
+    return api.get('/crv/vols-sans-crv', { params: { date } })
   },
 
   /**
@@ -1313,6 +1326,16 @@ export const bulletinsAPI = {
   getEnCours: (escale) => {
     console.log('[BULLETINS API] getEnCours() - Escale:', escale)
     return api.get(`/bulletins/en-cours/${escale}`)
+  },
+
+  /**
+   * Escales ayant un bulletin publie couvrant la date
+   * GET /api/bulletins/escales-actives?date=YYYY-MM-DD
+   * @returns { success, escales: string[], date: string }
+   */
+  getEscalesActives: (date) => {
+    console.log('[BULLETINS API] getEscalesActives() - Date:', date)
+    return api.get('/bulletins/escales-actives', { params: { date } })
   },
 
   /**
