@@ -75,6 +75,7 @@ export const useNotificationsStore = defineStore('notifications', {
      * Charger le compteur de notifications non lues
      */
     async loadCountNonLues() {
+      this.loading = true
       try {
         const response = await notificationsAPI.getCountNonLues()
         this.countNonLues = response.data.count || 0
@@ -82,6 +83,8 @@ export const useNotificationsStore = defineStore('notifications', {
       } catch (error) {
         console.error('[Notifications] Erreur compteur:', error)
         return 0
+      } finally {
+        this.loading = false
       }
     },
 
@@ -109,6 +112,8 @@ export const useNotificationsStore = defineStore('notifications', {
      * Charger les statistiques
      */
     async loadStatistiques() {
+      this.loading = true
+      this.error = null
       try {
         const response = await notificationsAPI.getStatistiques()
         this.statistiques = response.data.statistiques || response.data
@@ -116,6 +121,8 @@ export const useNotificationsStore = defineStore('notifications', {
       } catch (error) {
         this.error = error.response?.data?.message || 'Erreur lors du chargement'
         throw error
+      } finally {
+        this.loading = false
       }
     },
 
@@ -124,14 +131,16 @@ export const useNotificationsStore = defineStore('notifications', {
      * @param {Object} data - { destinataire, type, titre, message, reference? }
      */
     async createNotification(data) {
+      this.loading = true
       this.error = null
-
       try {
         const response = await notificationsAPI.create(data)
         return response.data
       } catch (error) {
         this.error = error.response?.data?.message || 'Erreur lors de la création'
         throw error
+      } finally {
+        this.loading = false
       }
     },
 
@@ -140,6 +149,7 @@ export const useNotificationsStore = defineStore('notifications', {
      * @param {string} id - ID de la notification
      */
     async marquerLue(id) {
+      this.loading = true
       try {
         await notificationsAPI.marquerLue(id)
         // Mettre à jour localement
@@ -151,6 +161,8 @@ export const useNotificationsStore = defineStore('notifications', {
       } catch (error) {
         this.error = error.response?.data?.message || 'Erreur lors du marquage'
         throw error
+      } finally {
+        this.loading = false
       }
     },
 
