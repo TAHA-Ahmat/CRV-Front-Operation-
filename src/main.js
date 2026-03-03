@@ -10,9 +10,6 @@ import './assets/main.css'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 
-// Directives personnalisées - CONTRAT BACKEND
-import permissionsDirectives from './directives/vCan'
-
 const app = createApp(App)
 
 // Configuration Vue Toastification (copiée depuis Stock THS)
@@ -32,9 +29,6 @@ const toastOptions = {
 app.use(createPinia())
 app.use(router)
 app.use(Toast, toastOptions)
-
-// Enregistrer les directives de permissions (v-can, v-readonly)
-app.use(permissionsDirectives)
 
 console.log('[CRV] Application démarrée - Contrat backend intégré')
 
