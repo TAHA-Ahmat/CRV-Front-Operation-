@@ -178,13 +178,6 @@ function getRedirectPathForRole(role) {
     case ROLES.CHEF_EQUIPE:
     case ROLES.AGENT_ESCALE:
       return '/services'; // Page d'accueil
-    // Compatibilité anciens rôles (à supprimer après migration)
-    case 'admin':
-      return '/dashboard-admin';
-    case 'manager':
-      return '/dashboard-manager';
-    case 'agent_ops':
-      return '/services';
     default:
       return '/services';
   }
