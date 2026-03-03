@@ -6,12 +6,12 @@
 
 import { ROLES } from '@/config/roles'
 
-const ROLES_OPERATIONNELS_ET_ADMIN = [
+// DOCTRINE 2026-03-03 : Opérationnels uniquement (ADMIN = infrastructure)
+const ROLES_OPERATIONNELS = [
   ROLES.AGENT_ESCALE,
   ROLES.CHEF_EQUIPE,
   ROLES.SUPERVISEUR,
-  ROLES.MANAGER,
-  ROLES.ADMIN
+  ROLES.MANAGER
 ]
 
 export default [
@@ -21,7 +21,7 @@ export default [
     component: () => import('@/views/Bulletins/BulletinsList.vue'),
     meta: {
       requiresAuth: true,
-      allowedRoles: [...ROLES_OPERATIONNELS_ET_ADMIN, ROLES.QUALITE]
+      allowedRoles: [...ROLES_OPERATIONNELS, ROLES.QUALITE]
     }
   },
   {
@@ -30,7 +30,7 @@ export default [
     component: () => import('@/views/Bulletins/BulletinCreate.vue'),
     meta: {
       requiresAuth: true,
-      allowedRoles: ROLES_OPERATIONNELS_ET_ADMIN
+      allowedRoles: ROLES_OPERATIONNELS
     }
   },
   {
@@ -39,7 +39,7 @@ export default [
     component: () => import('@/views/Bulletins/BulletinDetail.vue'),
     meta: {
       requiresAuth: true,
-      allowedRoles: [...ROLES_OPERATIONNELS_ET_ADMIN, ROLES.QUALITE]
+      allowedRoles: [...ROLES_OPERATIONNELS, ROLES.QUALITE]
     }
   }
 ]

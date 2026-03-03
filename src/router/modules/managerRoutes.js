@@ -1,9 +1,9 @@
 /**
  * ROUTES MANAGER / SUPERVISEUR - CONTRAT BACKEND
  *
- * Alignement Backend 2026-01-23 (excludeQualite):
- * - Tous les opérationnels + ADMIN peuvent tout faire sur les CRV
- * - QUALITE: lecture seule absolue (pas d'accès aux pages de modification)
+ * DOCTRINE 2026-03-03 :
+ * - Opérationnels uniquement (ADMIN = infrastructure, pas d'accès métier)
+ * - QUALITE : lecture seule absolue (pas d'accès aux pages de modification)
  */
 
 import { ROLES } from '@/config/roles';
@@ -24,8 +24,8 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ValidationCRV.vue'),
     meta: {
       requiresAuth: true,
-      // Tous les opérationnels + ADMIN (sauf QUALITE)
-      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN]
+      // Opérationnels uniquement (ADMIN = infrastructure, QUALITE = lecture seule)
+      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER]
     }
   },
   {
@@ -48,9 +48,9 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ProgrammesVol.vue'),
     meta: {
       requiresAuth: true,
-      // Programmes de vol accessibles à tous les rôles (lecture)
+      // Programmes de vol : opérationnels + QUALITE (lecture)
       // Actions selon permissions : CREER/MODIFIER (opérationnels), VALIDER/ACTIVER (superviseurs+), SUPPRIMER (manager)
-      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN]
+      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE]
     }
   },
   {
@@ -60,8 +60,8 @@ const managerRoutes = [
     meta: {
       requiresAuth: true,
       // MVS-8: Gestion avions et versioning configuration
-      // Consultation pour tous, modification config SUPERVISEUR+, stats MANAGER+
-      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN]
+      // Consultation : opérationnels + QUALITE, modification config SUPERVISEUR+
+      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE]
     }
   }
 ];
