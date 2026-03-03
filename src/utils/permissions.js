@@ -126,14 +126,13 @@ const PERMISSION_MATRIX = {
   [ACTIONS.CRV_ARCHIVER]: ROLES_OPERATIONNELS_ET_ADMIN,
   [ACTIONS.CRV_DEMARRER]: ROLES_OPERATIONNELS_ET_ADMIN,
   [ACTIONS.CRV_TERMINER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_VALIDER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_REJETER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_VERROUILLER]: ROLES_OPERATIONNELS_ET_ADMIN,
-
-  [ACTIONS.CRV_DEVERROUILLER]: ROLES_OPERATIONNELS_ET_ADMIN,
-
-  [ACTIONS.CRV_ANNULER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_REACTIVER]: ROLES_OPERATIONNELS_ET_ADMIN,
+  // Sprint 1: Validation/verrouillage/annulation restreints à SUPERVISEUR/MANAGER/ADMIN
+  [ACTIONS.CRV_VALIDER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  [ACTIONS.CRV_REJETER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  [ACTIONS.CRV_VERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  [ACTIONS.CRV_DEVERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  [ACTIONS.CRV_ANNULER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  [ACTIONS.CRV_REACTIVER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
 
   // Charges
   [ACTIONS.CHARGE_AJOUTER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
@@ -200,7 +199,7 @@ const PERMISSION_MATRIX = {
 }
 
 // ============================================
-// FONCTIONS DE VÉRIFICATION AVEC LOGS
+// FONCTIONS DE VÉRIFICATION
 // ============================================
 
 /**
@@ -212,7 +211,6 @@ const PERMISSION_MATRIX = {
  */
 export function hasPermission(role, action) {
   if (!role || !action) {
-    console.log('[CRV][PERMISSION_CHECK] Vérification permission avec paramètre manquant:', { role, action })
     return false
   }
 
@@ -225,10 +223,7 @@ export function hasPermission(role, action) {
     return false
   }
 
-  const hasAccess = allowedRoles.includes(normalizedRole)
-  console.log(`[CRV][PERMISSION_CHECK] ${normalizedRole} pour ${action}: ${hasAccess ? 'AUTORISÉ' : 'REFUSÉ'}`)
-
-  return hasAccess
+  return allowedRoles.includes(normalizedRole)
 }
 
 /**
@@ -240,17 +235,13 @@ export function hasPermission(role, action) {
  */
 export function hasAnyPermission(role, actions) {
   if (!role || !actions || !Array.isArray(actions)) {
-    console.log('[CRV][PERMISSION_CHECK] hasAnyPermission avec paramètres invalides:', { role, actions })
     return false
   }
 
-  const result = actions.some(action => {
+  return actions.some(action => {
     const allowedRoles = PERMISSION_MATRIX[action]
     return allowedRoles && allowedRoles.includes(role)
   })
-
-  console.log(`[CRV][PERMISSION_CHECK] ${role} hasAny [${actions.join(', ')}]: ${result}`)
-  return result
 }
 
 /**
@@ -262,17 +253,13 @@ export function hasAnyPermission(role, actions) {
  */
 export function hasAllPermissions(role, actions) {
   if (!role || !actions || !Array.isArray(actions)) {
-    console.log('[CRV][PERMISSION_CHECK] hasAllPermissions avec paramètres invalides:', { role, actions })
     return false
   }
 
-  const result = actions.every(action => {
+  return actions.every(action => {
     const allowedRoles = PERMISSION_MATRIX[action]
     return allowedRoles && allowedRoles.includes(role)
   })
-
-  console.log(`[CRV][PERMISSION_CHECK] ${role} hasAll [${actions.join(', ')}]: ${result}`)
-  return result
 }
 
 /**
@@ -283,16 +270,12 @@ export function hasAllPermissions(role, actions) {
  */
 export function getPermissionsForRole(role) {
   if (!role) {
-    console.log('[CRV][PERMISSION_CHECK] getPermissionsForRole sans rôle')
     return []
   }
 
-  const permissions = Object.entries(PERMISSION_MATRIX)
+  return Object.entries(PERMISSION_MATRIX)
     .filter(([, allowedRoles]) => allowedRoles.includes(role))
     .map(([action]) => action)
-
-  console.log(`[CRV][PERMISSION_CHECK] Permissions pour ${role}: ${permissions.length} actions`)
-  return permissions
 }
 
 /**
@@ -302,9 +285,7 @@ export function getPermissionsForRole(role) {
  * @returns {Array<string>}
  */
 export function getRolesForAction(action) {
-  const roles = PERMISSION_MATRIX[action] || []
-  console.log(`[CRV][PERMISSION_CHECK] Rôles pour ${action}:`, roles)
-  return roles
+  return PERMISSION_MATRIX[action] || []
 }
 
 // ============================================
@@ -318,9 +299,7 @@ export function getRolesForAction(action) {
  * @returns {boolean}
  */
 export function canOperateCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_CREER)
-  console.log(`[CRV][PERMISSION_CRV] canOperateCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_CREER)
 }
 
 /**
@@ -329,9 +308,7 @@ export function canOperateCRV(role) {
  * @returns {boolean}
  */
 export function canViewCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_LIRE)
-  console.log(`[CRV][PERMISSION_CRV] canViewCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_LIRE)
 }
 
 /**
@@ -340,9 +317,7 @@ export function canViewCRV(role) {
  * @returns {boolean}
  */
 export function canDeleteCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_SUPPRIMER)
-  console.log(`[CRV][PERMISSION_CRV] canDeleteCRV(${role}): ${result} [SUPERVISEUR/MANAGER only]`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_SUPPRIMER)
 }
 
 /**
@@ -351,9 +326,7 @@ export function canDeleteCRV(role) {
  * @returns {boolean}
  */
 export function canManageUsers(role) {
-  const result = hasPermission(role, ACTIONS.USER_CREER)
-  console.log(`[CRV][PERMISSION_ADMIN] canManageUsers(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.USER_CREER)
 }
 
 /**
@@ -362,9 +335,7 @@ export function canManageUsers(role) {
  * @returns {boolean}
  */
 export function canValidateProgramme(role) {
-  const result = hasPermission(role, ACTIONS.PROGRAMME_VALIDER)
-  console.log(`[CRV][PERMISSION_PROGRAMME] canValidateProgramme(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.PROGRAMME_VALIDER)
 }
 
 /**
@@ -373,9 +344,7 @@ export function canValidateProgramme(role) {
  * @returns {boolean}
  */
 export function canDeleteProgramme(role) {
-  const result = hasPermission(role, ACTIONS.PROGRAMME_SUPPRIMER)
-  console.log(`[CRV][PERMISSION_PROGRAMME] canDeleteProgramme(${role}): ${result} [Opérationnels]`)
-  return result
+  return hasPermission(role, ACTIONS.PROGRAMME_SUPPRIMER)
 }
 
 /**
@@ -384,53 +353,43 @@ export function canDeleteProgramme(role) {
  * @returns {boolean}
  */
 export function isReadOnlyRole(role) {
-  const isReadOnly = role === ROLES.QUALITE
-  console.log(`[CRV][READ_ONLY] isReadOnlyRole(${role}): ${isReadOnly}`)
-  return isReadOnly
+  return role === ROLES.QUALITE
 }
 
 /**
- * Validation CRV - Tous sauf QUALITE
+ * Validation CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canValidateCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_VALIDER)
-  console.log(`[CRV][PERMISSION_CRV] canValidateCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_VALIDER)
 }
 
 /**
- * Rejet CRV - Tous sauf QUALITE
+ * Rejet CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canRejectCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_REJETER)
-  console.log(`[CRV][PERMISSION_CRV] canRejectCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_REJETER)
 }
 
 /**
- * Verrouillage CRV - Tous sauf QUALITE
+ * Verrouillage CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canLockCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_VERROUILLER)
-  console.log(`[CRV][PERMISSION_CRV] canLockCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_VERROUILLER)
 }
 
 /**
- * Déverrouillage CRV - Tous sauf QUALITE
+ * Déverrouillage CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canUnlockCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_DEVERROUILLER)
-  console.log(`[CRV][PERMISSION_CRV] canUnlockCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_DEVERROUILLER)
 }
 
 /**
@@ -439,9 +398,7 @@ export function canUnlockCRV(role) {
  * @returns {boolean}
  */
 export function canCancelCRV(role) {
-  const result = hasPermission(role, ACTIONS.CRV_ANNULER)
-  console.log(`[CRV][PERMISSION_CRV] canCancelCRV(${role}): ${result}`)
-  return result
+  return hasPermission(role, ACTIONS.CRV_ANNULER)
 }
 
 /**
@@ -451,9 +408,7 @@ export function canCancelCRV(role) {
  * @returns {boolean}
  */
 export function canEdit(role) {
-  const result = role !== ROLES.QUALITE
-  console.log(`[CRV][PERMISSION_CRV] canEdit(${role}): ${result} [QUALITE=false]`)
-  return result
+  return role !== ROLES.QUALITE
 }
 
 /**
@@ -462,9 +417,7 @@ export function canEdit(role) {
  * @returns {boolean}
  */
 export function isAdminRole(role) {
-  const isAdmin = role === ROLES.ADMIN
-  console.log(`[CRV][PERMISSION_ADMIN] isAdminRole(${role}): ${isAdmin}`)
-  return isAdmin
+  return role === ROLES.ADMIN
 }
 
 // ============================================
@@ -474,10 +427,10 @@ export function isAdminRole(role) {
 export const PERMISSION_MESSAGES = Object.freeze({
   QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule. Seuls les opérationnels et ADMIN peuvent agir sur les CRV.',
   INSUFFICIENT_PERMISSIONS: 'Vous n\'avez pas les permissions nécessaires pour cette action.',
-  VALIDATION_RESERVED: 'Validation CRV réservée aux rôles opérationnels et ADMIN.',
-  REJET_RESERVED: 'Rejet CRV réservé aux rôles opérationnels et ADMIN.',
-  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux rôles opérationnels et ADMIN.',
-  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux rôles opérationnels et ADMIN.',
+  VALIDATION_RESERVED: 'Validation CRV réservée aux SUPERVISEUR, MANAGER et ADMIN.',
+  REJET_RESERVED: 'Rejet CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
+  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
+  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
   SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux rôles opérationnels et ADMIN.',
   SUPPRESSION_PROGRAMME_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
   ADMIN_ONLY: 'Accès refusé. Cette action est réservée aux administrateurs.',
@@ -494,8 +447,6 @@ export const PERMISSION_MESSAGES = Object.freeze({
  * @returns {string}
  */
 export function getPermissionDeniedMessage(role, action) {
-  console.log(`[CRV][PERMISSION_DENIED] ${role} tentative: ${action}`)
-
   // QUALITE est en lecture seule absolue pour toutes les actions CRV
   if (role === ROLES.QUALITE) {
     return PERMISSION_MESSAGES.QUALITE_READ_ONLY
@@ -533,16 +484,12 @@ export function getPermissionDeniedMessage(role, action) {
  * @returns {{allowed: boolean, message: string}}
  */
 export function canTransitionCRV(role, fromStatus, toStatus) {
-  console.log(`[CRV][TRANSITION_CHECK] ${role}: ${fromStatus} → ${toStatus}`)
-
   // QUALITE ne peut faire aucune transition (lecture seule absolue)
   if (role === ROLES.QUALITE) {
-    console.log(`[CRV][TRANSITION_DENIED] QUALITE est en lecture seule`)
     return { allowed: false, message: PERMISSION_MESSAGES.QUALITE_READ_ONLY }
   }
 
   // Tous les autres rôles (opérationnels + ADMIN) peuvent faire toutes les transitions
-  console.log(`[CRV][TRANSITION_ALLOWED] ${role}: ${fromStatus} → ${toStatus}`)
   return { allowed: true, message: '' }
 }
 
