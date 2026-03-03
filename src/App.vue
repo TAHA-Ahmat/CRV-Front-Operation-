@@ -22,10 +22,9 @@
 </template>
 
 <script>
-// COPIE ET ADAPTE DEPUIS STOCK THS POUR CRV
-import { ref, onMounted, computed } from 'vue';
-import { getToken, getUserRole, getUserData, logoutUser } from '@/services/auth/authService';
+import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import AppHeader from '@/components/Common/AppHeader.vue';
 import AppFooter from '@/components/Common/AppFooter.vue';
@@ -39,11 +38,13 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
+    const authStore = useAuthStore();
     const themeStore = useThemeStore();
 
-    const isAuthenticated = ref(!!getToken());
-    const userRole = ref(getUserRole());
-    const userName = ref(getUserData()?.name || getUserData()?.email || '');
+    // État réactif depuis authStore (source de vérité unique)
+    const isAuthenticated = computed(() => authStore.isAuthenticated);
+    const userRole = computed(() => authStore.getUserRole);
+    const userName = computed(() => authStore.getUserFullName || authStore.currentUser?.email || '');
 
     // Theme
     const isDark = computed(() => themeStore.isDark);
@@ -51,30 +52,17 @@ export default {
     // Liste des chemins de pages accessibles sans authentification
     const publicPages = ['/login', '/'];
 
-    // Verifie l'authentification au chargement de la page
     onMounted(() => {
-      // Initialiser le theme
       themeStore.initTheme();
 
-      if (!isAuthenticated.value && !publicPages.includes(route.path)) {
+      if (!authStore.isAuthenticated && !publicPages.includes(route.path)) {
         router.push('/login');
       }
     });
 
-    // Mettre a jour l'etat d'authentification lors de la navigation
-    router.beforeEach((to, from, next) => {
-      isAuthenticated.value = !!getToken();
-      userRole.value = getUserRole();
-      const userData = getUserData();
-      userName.value = userData?.name || userData?.email || '';
-      next();
-    });
-
-    // Fonction de deconnexion complete
     const logout = async () => {
       try {
-        await logoutUser();
-        isAuthenticated.value = false;
+        await authStore.logout();
         router.push('/login');
       } catch (error) {
         console.error('[CRV App] Erreur lors de la deconnexion:', error);

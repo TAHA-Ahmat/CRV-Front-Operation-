@@ -151,7 +151,7 @@ import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 const route = useRoute();
-const { updatePassword, isLoading, mustChangePassword, userRole, getRedirectPathForRole } = useAuth();
+const { updatePassword, isLoading, mustChangePassword, userRole, getRedirectPathForRole, isAuthenticated } = useAuth();
 
 // Formulaire
 const form = ref({
@@ -282,9 +282,7 @@ const handleCancel = () => {
 
 // Vérification au montage
 onMounted(() => {
-  // Si l'utilisateur arrive sur cette page sans être connecté, rediriger vers login
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
+  if (!isAuthenticated.value) {
     router.push('/login');
   }
 });

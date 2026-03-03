@@ -86,8 +86,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 
 const route = useRoute();
+const authStore = useAuthStore();
 const { login, isLoading, error } = useAuth();
 
 const credentials = ref({
@@ -117,11 +119,10 @@ const handleLogin = async () => {
   }
 };
 
-// Nettoyer le localStorage au montage si on arrive avec un paramètre d'expiration
+// Nettoyer la session si on arrive avec un paramètre d'expiration/désactivation
 onMounted(() => {
   if (route.query.expired === 'true' || route.query.disabled === 'true') {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('userData');
+    authStore.clearSession();
   }
 });
 </script>

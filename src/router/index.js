@@ -23,8 +23,8 @@ import Login from '@/views/Login.vue';
 import Services from '@/views/Services.vue';
 import ChangePassword from '@/views/ChangePassword.vue';
 
-// Services d'authentification
-import { getToken, getUserRole, doitChangerMotDePasse } from '@/services/auth/authService';
+// Authentification (accès lazy via useAuthStore dans les guards)
+import { useAuthStore } from '@/stores/authStore';
 import { ROLES, hasAccessCRV, isAdmin } from '@/config/roles';
 
 const routes = [
@@ -39,12 +39,10 @@ const routes = [
     component: Login,
     meta: { isPublic: true },
     beforeEnter: (to, from, next) => {
-      const token = getToken();
-      const userRole = getUserRole();
+      const authStore = useAuthStore();
 
-      if (token) {
-        // Redirection des utilisateurs connectés selon leur rôle
-        next(getRedirectPathForRole(userRole));
+      if (authStore.token) {
+        next(getRedirectPathForRole(authStore.getUserRole));
       } else {
         next();
       }
@@ -90,9 +88,10 @@ const router = createRouter({
 // Source : TRANSMISSION_BACKEND_FRONTEND.md
 // ============================================
 router.beforeEach((to, from, next) => {
-  const token = getToken();
-  const userRole = getUserRole();
-  const mustChangePassword = doitChangerMotDePasse();
+  const authStore = useAuthStore();
+  const token = authStore.token;
+  const userRole = authStore.getUserRole;
+  const mustChangePassword = authStore.mustChangePassword;
 
   // ============================================
   // 1. VÉRIFICATION AUTHENTIFICATION
