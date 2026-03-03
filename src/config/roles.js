@@ -147,8 +147,8 @@ export function normalizeRole(backendRole) {
 /**
  * Construit un objet utilisateur normalisé à partir d'une réponse backend.
  *
- * Centralise la construction de l'objet user pour éviter
- * la duplication dans authService.js et authStore.js.
+ * Centralise la construction de l'objet user normalisé.
+ * Utilisé par authStore (source de vérité unique).
  *
  * @param {object} utilisateur - Objet utilisateur brut du backend
  * @returns {object} Objet utilisateur normalisé
