@@ -1,14 +1,13 @@
 /**
  * MATRICE DES PERMISSIONS - CONTRAT BACKEND
  *
- * Source de vérité : Backend (excludeQualite middleware)
+ * Source de vérité unique pour les permissions frontend.
  *
- * RÈGLE ABSOLUE : Cette matrice reflète EXACTEMENT les permissions backend.
- * Le frontend ne DÉCIDE pas, il AFFICHE ce que le backend autorise.
- *
- * CORRECTION 2026-01-23 - Alignement Backend (excludeQualite):
- * - Tous les opérationnels + ADMIN peuvent TOUT faire sur les CRV
- * - QUALITE: LECTURE SEULE ABSOLUE (ne peut RIEN faire sauf lire)
+ * DOCTRINE STRICTE 2026-03-03 :
+ * - ADMIN = infrastructure uniquement (comptes, rôles, paramètres, logs)
+ * - ADMIN ne peut PAS intervenir dans le métier opérationnel (CRV, Programme, Bulletin)
+ * - QUALITE = lecture seule absolue (ne peut RIEN faire sauf lire)
+ * - OPÉRATIONNELS (AGENT_ESCALE, CHEF_EQUIPE, SUPERVISEUR, MANAGER) = métier CRV
  */
 
 import { ROLES } from '@/config/roles'
@@ -99,40 +98,40 @@ export const ACTIONS = Object.freeze({
 
 // ============================================
 // MATRICE DES PERMISSIONS - DOCTRINE STRICTE
-// Source : DOCUMENTATION_FRONTEND_CRV.md
 // ============================================
 
 /**
- * Alignement Backend 2026-01-23:
- * - excludeQualite = tous les rôles sauf QUALITE peuvent agir
- * - QUALITE: LECTURE SEULE ABSOLUE
+ * DOCTRINE 2026-03-03 :
+ * - ADMIN = périmètre infrastructure (comptes, paramètres, logs)
+ * - ADMIN n'a AUCUN accès opérationnel (CRV, Programme, Bulletin, Avion)
+ * - QUALITE = LECTURE SEULE ABSOLUE
+ * - OPÉRATIONNELS = seuls rôles avec accès métier CRV
  */
 
-// Tous les rôles qui peuvent agir sur les CRV (backend excludeQualite)
-const ROLES_OPERATIONNELS_ET_ADMIN = [
+// Rôles opérationnels : peuvent agir sur le métier (CRV, Programme, Bulletin)
+const ROLES_OPERATIONNELS = [
   ROLES.AGENT_ESCALE,
   ROLES.CHEF_EQUIPE,
   ROLES.SUPERVISEUR,
-  ROLES.MANAGER,
-  ROLES.ADMIN
+  ROLES.MANAGER
 ]
 
 const PERMISSION_MATRIX = {
-  // CRV - Tous les opérationnels + ADMIN peuvent tout faire (sauf QUALITE)
-  [ACTIONS.CRV_CREER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_MODIFIER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_LIRE]: [...ROLES_OPERATIONNELS_ET_ADMIN, ROLES.QUALITE],
-  [ACTIONS.CRV_SUPPRIMER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_ARCHIVER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_DEMARRER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.CRV_TERMINER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  // Sprint 1: Validation/verrouillage/annulation restreints à SUPERVISEUR/MANAGER/ADMIN
-  [ACTIONS.CRV_VALIDER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
-  [ACTIONS.CRV_REJETER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
-  [ACTIONS.CRV_VERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
-  [ACTIONS.CRV_DEVERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
-  [ACTIONS.CRV_ANNULER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
-  [ACTIONS.CRV_REACTIVER]: [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.ADMIN],
+  // CRV - Opérationnels uniquement (ADMIN = infrastructure, QUALITE = lecture seule)
+  [ACTIONS.CRV_CREER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_MODIFIER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_LIRE]: [...ROLES_OPERATIONNELS, ROLES.QUALITE],
+  [ACTIONS.CRV_SUPPRIMER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_ARCHIVER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_DEMARRER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_TERMINER]: ROLES_OPERATIONNELS,
+  // Validation/verrouillage/annulation restreints à SUPERVISEUR/MANAGER
+  [ACTIONS.CRV_VALIDER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_REJETER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_VERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_DEVERROUILLER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_ANNULER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.CRV_REACTIVER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
 
   // Charges
   [ACTIONS.CHARGE_AJOUTER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
@@ -158,7 +157,7 @@ const PERMISSION_MATRIX = {
   [ACTIONS.VOL_LIER_PROGRAMME]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.VOL_MARQUER_HORS_PROGRAMME]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
 
-  // Programmes vol - Tous les opérationnels peuvent tout faire (sauf QUALITE et ADMIN)
+  // Programmes vol - Opérationnels uniquement (sauf QUALITE et ADMIN)
   [ACTIONS.PROGRAMME_CREER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.PROGRAMME_MODIFIER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.PROGRAMME_LIRE]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE],
@@ -189,13 +188,13 @@ const PERMISSION_MATRIX = {
   [ACTIONS.PROFIL_LIRE]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN],
   [ACTIONS.PROFIL_CHANGER_MDP]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE, ROLES.ADMIN],
 
-  // Bulletins de Mouvement - Tous sauf QUALITE peuvent agir
-  [ACTIONS.BULLETIN_CREER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.BULLETIN_MODIFIER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.BULLETIN_LIRE]: [...ROLES_OPERATIONNELS_ET_ADMIN, ROLES.QUALITE],
-  [ACTIONS.BULLETIN_SUPPRIMER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.BULLETIN_PUBLIER]: ROLES_OPERATIONNELS_ET_ADMIN,
-  [ACTIONS.BULLETIN_ARCHIVER]: ROLES_OPERATIONNELS_ET_ADMIN
+  // Bulletins de Mouvement - Opérationnels uniquement (ADMIN = infrastructure)
+  [ACTIONS.BULLETIN_CREER]: ROLES_OPERATIONNELS,
+  [ACTIONS.BULLETIN_MODIFIER]: ROLES_OPERATIONNELS,
+  [ACTIONS.BULLETIN_LIRE]: [...ROLES_OPERATIONNELS, ROLES.QUALITE],
+  [ACTIONS.BULLETIN_SUPPRIMER]: ROLES_OPERATIONNELS,
+  [ACTIONS.BULLETIN_PUBLIER]: ROLES_OPERATIONNELS,
+  [ACTIONS.BULLETIN_ARCHIVER]: ROLES_OPERATIONNELS
 }
 
 // ============================================
@@ -312,7 +311,7 @@ export function canViewCRV(role) {
 }
 
 /**
- * CORRECTION AUDIT: Suppression réservée SUPERVISEUR et MANAGER
+ * Suppression CRV - Opérationnels uniquement
  * @param {string} role
  * @returns {boolean}
  */
@@ -357,7 +356,7 @@ export function isReadOnlyRole(role) {
 }
 
 /**
- * Validation CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
+ * Validation CRV - SUPERVISEUR/MANAGER uniquement
  * @param {string} role
  * @returns {boolean}
  */
@@ -366,7 +365,7 @@ export function canValidateCRV(role) {
 }
 
 /**
- * Rejet CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
+ * Rejet CRV - SUPERVISEUR/MANAGER uniquement
  * @param {string} role
  * @returns {boolean}
  */
@@ -375,7 +374,7 @@ export function canRejectCRV(role) {
 }
 
 /**
- * Verrouillage CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
+ * Verrouillage CRV - SUPERVISEUR/MANAGER uniquement
  * @param {string} role
  * @returns {boolean}
  */
@@ -384,7 +383,7 @@ export function canLockCRV(role) {
 }
 
 /**
- * Déverrouillage CRV - SUPERVISEUR/MANAGER/ADMIN uniquement
+ * Déverrouillage CRV - SUPERVISEUR/MANAGER uniquement
  * @param {string} role
  * @returns {boolean}
  */
@@ -402,13 +401,13 @@ export function canCancelCRV(role) {
 }
 
 /**
- * Vérifie si un rôle peut éditer (tous sauf QUALITE)
- * DOCTRINE: QUALITE = lecture seule absolue
+ * Vérifie si un rôle peut éditer du contenu opérationnel (CRV, Programme, etc.)
+ * DOCTRINE: QUALITE = lecture seule, ADMIN = infrastructure uniquement
  * @param {string} role
  * @returns {boolean}
  */
 export function canEdit(role) {
-  return role !== ROLES.QUALITE
+  return role !== ROLES.QUALITE && role !== ROLES.ADMIN
 }
 
 /**
@@ -425,15 +424,16 @@ export function isAdminRole(role) {
 // ============================================
 
 export const PERMISSION_MESSAGES = Object.freeze({
-  QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule. Seuls les opérationnels et ADMIN peuvent agir sur les CRV.',
+  QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule. Seuls les opérationnels peuvent agir sur les CRV.',
   INSUFFICIENT_PERMISSIONS: 'Vous n\'avez pas les permissions nécessaires pour cette action.',
-  VALIDATION_RESERVED: 'Validation CRV réservée aux SUPERVISEUR, MANAGER et ADMIN.',
-  REJET_RESERVED: 'Rejet CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
-  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
-  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux SUPERVISEUR, MANAGER et ADMIN.',
-  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux rôles opérationnels et ADMIN.',
+  VALIDATION_RESERVED: 'Validation CRV réservée aux SUPERVISEUR et MANAGER.',
+  REJET_RESERVED: 'Rejet CRV réservé aux SUPERVISEUR et MANAGER.',
+  VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux SUPERVISEUR et MANAGER.',
+  DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux SUPERVISEUR et MANAGER.',
+  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux rôles opérationnels.',
   SUPPRESSION_PROGRAMME_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
   ADMIN_ONLY: 'Accès refusé. Cette action est réservée aux administrateurs.',
+  ADMIN_NO_OPERATIONAL: 'Le profil ADMIN est réservé à l\'infrastructure. Les opérations métier sont réservées aux rôles opérationnels.',
   COMPLETUDE_INSUFFISANTE: 'Complétude insuffisante. Minimum 80% requis pour valider.',
   COMMENTAIRE_OBLIGATOIRE: 'Le commentaire est obligatoire pour rejeter un CRV.',
   RAISON_OBLIGATOIRE: 'La raison est obligatoire pour déverrouiller un CRV.'
@@ -450,6 +450,11 @@ export function getPermissionDeniedMessage(role, action) {
   // QUALITE est en lecture seule absolue pour toutes les actions CRV
   if (role === ROLES.QUALITE) {
     return PERMISSION_MESSAGES.QUALITE_READ_ONLY
+  }
+
+  // ADMIN ne peut pas accéder aux actions opérationnelles
+  if (role === ROLES.ADMIN && !action.startsWith('USER_') && !action.startsWith('PROFIL_')) {
+    return PERMISSION_MESSAGES.ADMIN_NO_OPERATIONAL
   }
 
   // Messages spécifiques par action (pour les autres cas rares)
@@ -489,7 +494,12 @@ export function canTransitionCRV(role, fromStatus, toStatus) {
     return { allowed: false, message: PERMISSION_MESSAGES.QUALITE_READ_ONLY }
   }
 
-  // Tous les autres rôles (opérationnels + ADMIN) peuvent faire toutes les transitions
+  // ADMIN ne peut faire aucune transition (périmètre infrastructure uniquement)
+  if (role === ROLES.ADMIN) {
+    return { allowed: false, message: PERMISSION_MESSAGES.ADMIN_NO_OPERATIONAL }
+  }
+
+  // Rôles opérationnels peuvent faire toutes les transitions
   return { allowed: true, message: '' }
 }
 
