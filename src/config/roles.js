@@ -141,6 +141,36 @@ export function normalizeRole(backendRole) {
 }
 
 // ============================================
+// NORMALISATION OBJET UTILISATEUR
+// ============================================
+
+/**
+ * Construit un objet utilisateur normalisé à partir d'une réponse backend.
+ *
+ * Centralise la construction de l'objet user pour éviter
+ * la duplication dans authService.js et authStore.js.
+ *
+ * @param {object} utilisateur - Objet utilisateur brut du backend
+ * @returns {object} Objet utilisateur normalisé
+ */
+export function normalizeUserData(utilisateur) {
+  if (!utilisateur) return null
+
+  const roleNormalise = normalizeRole(utilisateur)
+
+  return {
+    id: utilisateur.id || utilisateur._id,
+    nom: utilisateur.nom,
+    prenom: utilisateur.prenom,
+    email: utilisateur.email,
+    fonction: roleNormalise,
+    role: roleNormalise,
+    matricule: utilisateur.matricule,
+    telephone: utilisateur.telephone
+  }
+}
+
+// ============================================
 // HELPERS DE VÉRIFICATION
 // ============================================
 
@@ -236,6 +266,7 @@ export default {
   ROLES_SUPPRESSION_PROGRAMME,
   ROLES_LABELS,
   normalizeRole,
+  normalizeUserData,
   isRoleOperationnel,
   hasAccessCRV,
   isReadOnly,
