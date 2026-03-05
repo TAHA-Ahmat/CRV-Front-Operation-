@@ -33,15 +33,15 @@
             <div
               class="completude-fill"
               :class="{
-                'low': crvStore.completude < 50,
-                'medium': crvStore.completude >= 50 && crvStore.completude < 80,
-                'high': crvStore.completude >= 80
+                'low': crvStore.completude < SEUILS_COMPLETUDE.TERMINER,
+                'medium': crvStore.completude >= SEUILS_COMPLETUDE.TERMINER && crvStore.completude < SEUILS_COMPLETUDE.VALIDER,
+                'high': crvStore.completude >= SEUILS_COMPLETUDE.VALIDER
               }"
               :style="{ width: crvStore.completude + '%' }"
             ></div>
           </div>
-          <div v-if="crvStore.completude < 80" class="completude-warning">
-            ⚠️ Minimum 80% requis pour la validation (actuellement {{ crvStore.completude }}%)
+          <div v-if="crvStore.completude < SEUILS_COMPLETUDE.VALIDER" class="completude-warning">
+            ⚠️ Minimum {{ SEUILS_COMPLETUDE.VALIDER }}% requis pour la validation (actuellement {{ crvStore.completude }}%)
           </div>
           <div v-else class="completude-success">
             ✅ CRV prêt pour validation
@@ -233,7 +233,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useCRVStore } from '@/stores/crvStore'
+import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
 
 import CRVHeader from '@/components/crv/CRVHeader.vue'
 import CRVPersonnes from '@/components/crv/CRVPersonnes.vue'
@@ -465,8 +465,8 @@ const handleValidation = async (validationData) => {
 
     // Étape 1 : Si EN_COURS, terminer d'abord (seuil 50%)
     if (statut === 'EN_COURS') {
-      if (completude < 50) {
-        alert(`Complétude insuffisante pour terminer : ${completude}% (minimum 50% requis)`)
+      if (completude < SEUILS_COMPLETUDE.TERMINER) {
+        alert(`Complétude insuffisante pour terminer : ${completude}% (minimum ${SEUILS_COMPLETUDE.TERMINER}% requis)`)
         return
       }
 
@@ -492,8 +492,8 @@ const handleValidation = async (validationData) => {
     if (crvStore.crvStatus === 'TERMINE') {
       const newCompletude = crvStore.completude
 
-      if (newCompletude < 80) {
-        alert(`Complétude insuffisante pour valider : ${newCompletude}% (minimum 80% requis)`)
+      if (newCompletude < SEUILS_COMPLETUDE.VALIDER) {
+        alert(`Complétude insuffisante pour valider : ${newCompletude}% (minimum ${SEUILS_COMPLETUDE.VALIDER}% requis)`)
         return
       }
 
