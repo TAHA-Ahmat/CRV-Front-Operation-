@@ -555,8 +555,8 @@ const canEditCRV = (crv) => {
   const userRole = authStore.currentUser?.role
   if (!canEdit(userRole)) return false
 
-  // Les CRV verrouillés ou annulés ne sont pas modifiables
-  return !['VERROUILLE', 'ANNULE'].includes(crv.statut)
+  // Les CRV validés, verrouillés ou annulés ne sont pas modifiables
+  return !['VALIDE', 'VERROUILLE', 'ANNULE'].includes(crv.statut)
 }
 
 // Formatters
