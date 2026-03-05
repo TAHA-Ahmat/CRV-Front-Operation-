@@ -277,6 +277,7 @@
             <CRVValidation
               v-model="formData.validation"
               :validated="isValidated"
+              :loading="isLoading"
               @validate="handleValidation"
             />
             <div v-if="!isValidated" class="step-actions">
@@ -627,6 +628,7 @@ const handleEvenementAdded = async (evenementData) => {
  * Validation finale du CRV
  */
 const handleValidation = async (validationData) => {
+  if (isLoading.value) return // Guard re-entry — empêche les double-clics
   console.log('[CRVArrivee] handleValidation - Début validation...')
   isLoading.value = true
   errorMessage.value = ''

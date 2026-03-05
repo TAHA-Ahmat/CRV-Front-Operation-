@@ -57,11 +57,11 @@
           @click="handleValidate"
           class="btn btn-success btn-large"
           type="button"
-          :disabled="!canValidate"
+          :disabled="!canValidate || loading"
         >
-          Valider le CRV
+          {{ loading ? 'Validation en cours...' : 'Valider le CRV' }}
         </button>
-        <p v-if="!canValidate" class="validation-warning">
+        <p v-if="!canValidate && !loading" class="validation-warning">
           Veuillez remplir tous les champs requis et certifier les informations
         </p>
       </div>
@@ -100,6 +100,10 @@ const props = defineProps({
   validated: {
     type: Boolean,
     default: false
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -118,7 +122,7 @@ const canValidate = computed(() => {
 })
 
 const handleValidate = () => {
-  if (canValidate.value) {
+  if (canValidate.value && !props.loading) {
     localData.value.dateValidation = new Date().toISOString()
     emit('validate', localData.value)
   }

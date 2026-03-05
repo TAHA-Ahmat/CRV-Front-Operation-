@@ -132,14 +132,14 @@
                   'complete': toutesPhaseTraitees,
                   'incomplete': !toutesPhaseTraitees
                 }">
-                  {{ formData.phases.length - phasesNonTraitees.length }} / {{ formData.phases.length }} traitées
+                  {{ crvStore.phases.length - phasesNonTraitees.length }} / {{ crvStore.phases.length }} traitées
                 </span>
               </div>
               <div class="phases-progress-bar">
                 <div
                   class="phases-progress-fill"
                   :class="{ 'complete': toutesPhaseTraitees }"
-                  :style="{ width: formData.phases.length > 0 ? ((formData.phases.length - phasesNonTraitees.length) / formData.phases.length * 100) + '%' : '0%' }"
+                  :style="{ width: crvStore.phases.length > 0 ? ((crvStore.phases.length - phasesNonTraitees.length) / crvStore.phases.length * 100) + '%' : '0%' }"
                 ></div>
               </div>
               <div v-if="!toutesPhaseTraitees" class="phases-warning-message">
@@ -151,7 +151,7 @@
             </div>
 
             <CRVPhases
-              v-model="formData.phases"
+              :phases="crvStore.phases"
               crv-type="depart"
               :disabled="crvStore.isLocked"
             />
@@ -209,6 +209,7 @@
             <CRVValidation
               v-model="formData.validation"
               :validated="isValidated"
+              :loading="isLoading"
               @validate="handleValidation"
             />
             <div v-if="!isValidated" class="step-actions">
@@ -230,7 +231,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore } from '@/stores/crvStore'
 
@@ -244,21 +245,29 @@ import CRVValidation from '@/components/crv/CRVValidation.vue'
 import CRVLockedBanner from '@/components/CRV/CRVLockedBanner.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const crvStore = useCRVStore()
 
 const currentStep = ref(1)
 const isValidated = ref(false)
+const isLoading = ref(false)
 const stepValidationError = ref('')
 
-// Validation des phases - toutes les phases doivent être traitées
+// Validation des phases - toutes les phases doivent être TERMINE ou NON_REALISE
+// Aligné sur CRVArrivee et CRVTurnAround : utilise crvStore.phases (données backend)
 const phasesNonTraitees = computed(() => {
-  // Pour les données locales, vérifier si realisee ou raisonNonRealisation
-  return formData.value.phases.filter(p => !p.realisee && !p.raisonNonRealisation)
+  return crvStore.phases.filter(p => {
+    const statut = p.statut?.toUpperCase() || ''
+    const estTraitee = statut === 'TERMINE' ||
+                       statut === 'NON_REALISE' ||
+                       statut === 'NON_REALISEE'
+    return !estTraitee
+  })
 })
 
 const toutesPhaseTraitees = computed(() => {
-  if (formData.value.phases.length === 0) return true
+  if (crvStore.phases.length === 0) return true
   return phasesNonTraitees.value.length === 0
 })
 
@@ -273,14 +282,6 @@ const formData = ref({
   },
   personnes: [],
   engins: [],
-  phases: [
-    { nom: 'Enregistrement passagers', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Chargement bagages', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Chargement fret', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Embarquement passagers', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Nettoyage cabine', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' },
-    { nom: 'Repoussage', realisee: false, heureDebut: '', heureFin: '', observations: '', raisonNonRealisation: '' }
-  ],
   charges: {
     passagers: { adultes: 0, enfants: 0, bebes: 0 },
     bagages: { nombre: 0, poids: 0, speciaux: 0 },
@@ -298,20 +299,109 @@ const formData = ref({
 })
 
 onMounted(async () => {
-  // Créer le CRV s'il n'existe pas
-  if (!crvStore.currentCRV) {
-    try {
+  console.log('[CRVDepart] onMounted - Initialisation...')
+
+  try {
+    // Charger le CRV existant si ID en paramètre
+    const crvId = route.query.id
+
+    if (crvId) {
+      const storeId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+      if (storeId !== crvId) {
+        console.log('[CRVDepart] Chargement CRV existant:', crvId)
+        await crvStore.loadCRV(crvId)
+      }
+    } else if (!crvStore.currentCRV) {
+      console.log('[CRVDepart] Création du CRV...')
       await crvStore.createCRV({
         type: 'depart',
         date: formData.value.header.date
       })
-    } catch (error) {
-      console.error('Erreur lors de la création du CRV:', error)
     }
+
+    // Démarrer automatiquement si BROUILLON
+    if (crvStore.currentCRV?.statut === 'BROUILLON') {
+      try {
+        await crvStore.demarrerCRV()
+        console.log('[CRVDepart] CRV démarré:', crvStore.currentCRV?.statut)
+      } catch (e) {
+        console.warn('[CRVDepart] Impossible de démarrer le CRV:', e.message)
+      }
+    }
+
+    // Pré-remplir le formulaire avec les données du CRV
+    if (crvStore.currentCRV) {
+      // Synchroniser les infos du vol
+      if (crvStore.currentCRV.vol) {
+        const vol = crvStore.currentCRV.vol
+        formData.value.header = {
+          numeroVol: vol.numeroVol || '',
+          date: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.date,
+          typeAppareil: vol.avion?.typeAvion || '',
+          immatriculation: vol.avion?.immatriculation || '',
+          route: [vol.aeroportOrigine, vol.aeroportDestination].filter(Boolean).join(' - '),
+          poste: vol.poste || ''
+        }
+      }
+
+      // Synchroniser le personnel
+      if (crvStore.currentCRV.personnelAffecte?.length > 0) {
+        formData.value.personnes = [...crvStore.currentCRV.personnelAffecte]
+      }
+
+      // Synchroniser les engins
+      if (crvStore.engins?.length > 0) {
+        formData.value.engins = [...crvStore.engins]
+      }
+    }
+
+    console.log('[CRVDepart] Initialisation terminée:', {
+      numeroCRV: crvStore.currentCRV?.numeroCRV,
+      statut: crvStore.currentCRV?.statut,
+      completude: crvStore.completude
+    })
+  } catch (error) {
+    console.error('[CRVDepart] Erreur initialisation:', error)
   }
 })
 
-const nextStep = () => {
+/**
+ * Sauvegarder les données de l'étape courante vers le backend
+ * Steps 4 (phases), 5 (charges), 6 (événements) : gérés directement par leurs composants via le store
+ * Steps 2 (personnel), 3 (engins) : sauvegardés ici depuis formData
+ */
+const saveCurrentStepData = async () => {
+  if (crvStore.isLocked) return
+
+  const crvId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+  if (!crvId) return
+
+  try {
+    switch (currentStep.value) {
+      case 2:
+        if (formData.value.personnes.length > 0) {
+          await crvStore.updatePersonnel(formData.value.personnes)
+        }
+        break
+      case 3:
+        if (formData.value.engins.length > 0) {
+          await crvStore.updateEngins(formData.value.engins)
+        }
+        break
+      // Steps 4, 5, 6 : composants CRVPhases, CRVCharges, CRVEvenements
+      // gèrent la sauvegarde directement via le store
+    }
+
+    // Recharger pour mettre à jour la complétude
+    await crvStore.loadCRV(crvId)
+    console.log(`[CRVDepart] Sauvegarde étape ${currentStep.value} OK — Complétude: ${crvStore.completude}%`)
+  } catch (error) {
+    console.error('[CRVDepart] Erreur sauvegarde étape:', error)
+    alert('Attention : la sauvegarde a échoué. Vos données pourraient ne pas être enregistrées.')
+  }
+}
+
+const nextStep = async () => {
   if (currentStep.value < 7) {
     // Réinitialiser l'erreur de validation
     stepValidationError.value = ''
@@ -324,11 +414,11 @@ const nextStep = () => {
         let message = `Impossible de continuer : ${nbNonTraitees} phase(s) non traitée(s).\n\n`
         message += `Phase(s) non traitées :\n`
         phasesNonTraitees.value.forEach(p => {
-          message += `  - ${p.nom}\n`
+          message += `  - ${p.phase?.libelle || p.nomPhase || p.nom || 'Phase sans nom'}\n`
         })
         message += '\nPour chaque phase, vous devez :\n'
-        message += '• Soit la réaliser (remplir heures début/fin)\n'
-        message += '• Soit indiquer la raison de non-réalisation'
+        message += '• Soit la démarrer puis la terminer\n'
+        message += '• Soit la marquer comme "Non réalisée" avec un motif'
 
         stepValidationError.value = message
         alert(message)
@@ -337,6 +427,8 @@ const nextStep = () => {
       }
     }
 
+    // Sauvegarder les données de l'étape courante
+    await saveCurrentStepData()
     currentStep.value++
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -350,26 +442,85 @@ const prevStep = () => {
 }
 
 const handleValidation = async (validationData) => {
+  if (isLoading.value) return // Guard re-entry — empêche les double-clics
+
   try {
-    // Vérifier la complétude minimale
-    if (crvStore.completude < 80) {
-      alert(`La complétude du CRV est insuffisante (${crvStore.completude}%). Minimum requis : 80%`)
-      return
+    isLoading.value = true
+
+    const statut = crvStore.crvStatus
+    const completude = crvStore.completude
+    const crvId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+
+    console.log('[CRVDepart] handleValidation - État actuel:', { completude, statut })
+
+    // Sauvegarder personnel et engins avant la transition
+    if (crvStore.currentCRV) {
+      if (formData.value.personnes.length > 0) {
+        await crvStore.updatePersonnel(formData.value.personnes)
+      }
+      if (formData.value.engins.length > 0) {
+        await crvStore.updateEngins(formData.value.engins)
+      }
     }
 
-    // Sauvegarder toutes les données
-    if (crvStore.currentCRV) {
-      await crvStore.updatePersonnes(formData.value.personnes)
-      await crvStore.updateEngins(formData.value.engins)
-      await crvStore.updatePhases(formData.value.phases)
-      await crvStore.updateCharges(formData.value.charges)
-      await crvStore.updateEvenements(formData.value.evenements)
-      await crvStore.validateCRV()
+    // Étape 1 : Si EN_COURS, terminer d'abord (seuil 50%)
+    if (statut === 'EN_COURS') {
+      if (completude < 50) {
+        alert(`Complétude insuffisante pour terminer : ${completude}% (minimum 50% requis)`)
+        return
+      }
+
+      console.log('[CRVDepart] Terminaison du CRV...')
+      try {
+        await crvStore.terminerCRV()
+        console.log('[CRVDepart] CRV terminé')
+      } catch (e) {
+        console.error('[CRVDepart] Erreur terminaison:', e)
+        if (crvStore.anomalies.length > 0) {
+          alert(`Impossible de terminer :\n${crvStore.anomalies.join('\n')}`)
+        } else {
+          alert(e.message || 'Erreur lors de la terminaison')
+        }
+        return
+      }
     }
-    isValidated.value = true
+
+    // Recharger pour avoir le nouveau statut et la complétude à jour
+    await crvStore.loadCRV(crvId)
+
+    // Étape 2 : Si TERMINÉ, valider (seuil 80%)
+    if (crvStore.crvStatus === 'TERMINE') {
+      const newCompletude = crvStore.completude
+
+      if (newCompletude < 80) {
+        alert(`Complétude insuffisante pour valider : ${newCompletude}% (minimum 80% requis)`)
+        return
+      }
+
+      console.log('[CRVDepart] Validation du CRV...')
+      try {
+        await crvStore.validateCRV(validationData?.commentaires)
+        console.log('[CRVDepart] CRV validé')
+        isValidated.value = true
+      } catch (e) {
+        console.error('[CRVDepart] Erreur validation:', e)
+        if (crvStore.anomalies.length > 0) {
+          alert(`Impossible de valider :\n${crvStore.anomalies.join('\n')}`)
+        } else {
+          alert(e.message || 'Erreur lors de la validation')
+        }
+        return
+      }
+    }
+
+    // Succès
+    console.log('[CRVDepart] Validation complète, statut final:', crvStore.crvStatus)
+
   } catch (error) {
-    console.error('Erreur lors de la validation:', error)
-    alert('Erreur lors de la validation du CRV')
+    console.error('[CRVDepart] Erreur validation:', error)
+    alert(error.message || 'Erreur lors de la validation du CRV')
+  } finally {
+    isLoading.value = false
   }
 }
 

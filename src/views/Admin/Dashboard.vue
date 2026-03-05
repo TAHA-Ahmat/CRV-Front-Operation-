@@ -333,7 +333,7 @@ const loadUserStats = async () => {
   try {
     // Charger tous les utilisateurs pour calculer les stats
     const response = await personnesAPI.getAll({ limit: 1000 })
-    const users = response.data?.personnes || response.data || []
+    const users = response.data?.data || []
 
     // Calculer les statistiques
     const stats = {
@@ -387,19 +387,27 @@ const loadCRVStats = async () => {
   try {
     // Utiliser l'endpoint de stats si disponible
     const response = await crvAPI.getStats({})
-    const data = response.data || {}
+    const stats = response.data?.stats || {}
+
+    const parStatut = {
+      BROUILLON: stats.crvBrouillon || 0,
+      EN_COURS: stats.crvEnCours || 0,
+      TERMINE: stats.crvTermine || 0,
+      VALIDE: stats.crvValide || 0,
+      VERROUILLE: stats.crvVerrouille || 0
+    }
 
     crvStats.value = {
-      total: data.total || 0,
-      valides: data.valides || data.parStatut?.VALIDE || 0,
-      enCours: data.enCours || data.parStatut?.EN_COURS || 0,
-      archives: data.archives || data.parStatut?.VERROUILLE || 0,
-      parStatut: data.parStatut || {}
+      total: stats.totalCRVs || 0,
+      valides: stats.crvValide || 0,
+      enCours: stats.crvEnCours || 0,
+      archives: stats.crvVerrouille || 0,
+      parStatut
     }
 
     // Compter les CRV archives (avec info archivage)
-    archiveStats.value.totalArchives = data.archives || 0
-    archiveStats.value.enAttente = (data.parStatut?.VALIDE || 0) + (data.parStatut?.VERROUILLE || 0) - (data.archives || 0)
+    archiveStats.value.totalArchives = stats.crvVerrouille || 0
+    archiveStats.value.enAttente = (stats.crvValide || 0)
     if (archiveStats.value.enAttente < 0) archiveStats.value.enAttente = 0
 
     console.log('[Dashboard Admin] Stats CRV:', crvStats.value)
@@ -408,7 +416,7 @@ const loadCRVStats = async () => {
     // Fallback: charger la liste et calculer
     try {
       const listResponse = await crvAPI.getAll({ limit: 1000 })
-      const crvList = listResponse.data?.crv || listResponse.data || []
+      const crvList = listResponse.data?.data || []
 
       const stats = {
         total: crvList.length,
@@ -460,7 +468,7 @@ const loadRecentActivity = async () => {
   try {
     // Charger les derniers CRV crees
     const crvResponse = await crvAPI.getAll({ limit: 5, sort: '-dateCreation' })
-    const recentCRV = crvResponse.data?.crv || crvResponse.data || []
+    const recentCRV = crvResponse.data?.data || []
 
     recentCRV.forEach(crv => {
       activities.push({
