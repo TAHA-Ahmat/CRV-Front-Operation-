@@ -212,7 +212,27 @@
               :loading="isLoading"
               @validate="handleValidation"
             />
-            <div v-if="!isValidated" class="step-actions">
+
+            <!-- Bouton Verrouiller — visible quand CRV est VALIDE (Bug #7 Mission 027) -->
+            <div v-if="crvStore.crvStatus === 'VALIDE' && canLockCRV(userRole)" class="verrouiller-section">
+              <div class="verrouiller-info">
+                <span class="verrouiller-icon">&#128274;</span>
+                <div>
+                  <strong>CRV validé — Prêt pour verrouillage</strong>
+                  <p class="verrouiller-desc">Le verrouillage rend le CRV définitif. Aucune modification ne sera possible après.</p>
+                </div>
+              </div>
+              <button
+                @click="handleVerrouiller"
+                class="btn btn-lock"
+                :disabled="lockingCRV"
+                type="button"
+              >
+                {{ lockingCRV ? 'Verrouillage...' : 'Verrouiller le CRV' }}
+              </button>
+            </div>
+
+            <div v-if="!isValidated && crvStore.crvStatus !== 'VALIDE'" class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
               </button>
@@ -243,6 +263,8 @@ import CRVCharges from '@/components/crv/CRVCharges.vue'
 import CRVEvenements from '@/components/crv/CRVEvenements.vue'
 import CRVValidation from '@/components/crv/CRVValidation.vue'
 import CRVLockedBanner from '@/components/CRV/CRVLockedBanner.vue'
+import { validationAPI } from '@/services/api'
+import { canLockCRV } from '@/utils/permissions'
 
 const router = useRouter()
 const route = useRoute()
@@ -252,7 +274,11 @@ const crvStore = useCRVStore()
 const currentStep = ref(1)
 const isValidated = ref(false)
 const isLoading = ref(false)
+const lockingCRV = ref(false)
 const stepValidationError = ref('')
+
+// Rôle utilisateur pour vérification permissions verrouillage (Bug #7)
+const userRole = computed(() => authStore.currentUser?.fonction || authStore.currentUser?.role)
 
 // Validation des phases - toutes les phases doivent être TERMINE ou NON_REALISE
 // Aligné sur CRVArrivee et CRVTurnAround : utilise crvStore.phases (données backend)
@@ -524,6 +550,29 @@ const handleValidation = async (validationData) => {
   }
 }
 
+// Bug #7 Mission 027 — Verrouillage CRV depuis le detail (SUPERVISEUR/MANAGER)
+const handleVerrouiller = async () => {
+  const crvId = crvStore.currentCRV?.id || crvStore.currentCRV?._id
+  if (!crvId) return
+
+  if (!confirm('Le CRV sera définitif. Aucune modification possible après. Continuer ?')) {
+    return
+  }
+
+  lockingCRV.value = true
+  try {
+    await validationAPI.verrouiller(crvId)
+    console.log('[CRVDepart] CRV verrouillé avec succès')
+    await crvStore.loadCRV(crvId)
+    alert('CRV verrouillé définitivement.')
+  } catch (error) {
+    console.error('[CRVDepart] Erreur verrouillage:', error)
+    alert(error.response?.data?.message || 'Erreur lors du verrouillage')
+  } finally {
+    lockingCRV.value = false
+  }
+}
+
 const handleSubmit = () => {
   // Soumission gérée par la validation
 }
@@ -688,6 +737,54 @@ const handleLogout = async () => {
 
 .step-actions .btn {
   min-width: 120px;
+}
+
+/* Bug #7 Mission 027 — Section verrouillage CRV */
+.verrouiller-section {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 2px solid #6366f1;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.verrouiller-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verrouiller-icon {
+  font-size: 28px;
+}
+
+.verrouiller-desc {
+  font-size: 13px;
+  color: #4338ca;
+  margin: 4px 0 0;
+}
+
+.btn-lock {
+  background: #6366f1;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-lock:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.btn-lock:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .status-badge {

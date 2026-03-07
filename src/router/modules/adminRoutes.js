@@ -68,6 +68,24 @@ const adminRoutes = [
       requiresAuth: true,
       allowedRoles: [ROLES.ADMIN]
     }
+  },
+  {
+    path: '/settings/notifications',
+    name: 'NotificationSettings',
+    component: () => import('@/views/Admin/NotificationSettings.vue'),
+    meta: {
+      requiresAuth: true,
+      allowedRoles: [ROLES.ADMIN]
+    }
+  },
+  {
+    path: '/settings/notification-recipients',
+    name: 'NotificationRecipients',
+    component: () => import('@/views/Admin/NotificationRecipients.vue'),
+    meta: {
+      requiresAuth: true,
+      allowedRoles: [ROLES.ADMIN]
+    }
   }
 ];
 

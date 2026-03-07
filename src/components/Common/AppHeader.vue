@@ -64,6 +64,16 @@
           <router-link to="/statistiques" class="nav-link">Stats</router-link>
         </template>
 
+        <!-- OPS CONTROL CENTER : ADMIN, MANAGER, SUPERVISEUR -->
+        <template v-if="canAccessOps">
+          <router-link to="/ops" class="nav-link nav-link-ops">
+            <svg class="ops-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            OPS
+          </router-link>
+        </template>
+
         <!-- ADMIN : Gestion système uniquement (pas de CRV) -->
         <template v-if="isAdmin">
           <router-link to="/dashboard-admin" class="nav-link">Admin</router-link>
@@ -136,6 +146,10 @@
         <router-link to="/programmes-vol" class="mobile-nav-link" @click="closeMobileMenu">Programmes Vol</router-link>
         <router-link to="/archives" class="mobile-nav-link" @click="closeMobileMenu">Archives</router-link>
         <router-link to="/statistiques" class="mobile-nav-link" @click="closeMobileMenu">Statistiques</router-link>
+      </template>
+      <!-- OPS CONTROL CENTER Mobile -->
+      <template v-if="canAccessOps">
+        <router-link to="/ops" class="mobile-nav-link" @click="closeMobileMenu">OPS Control Center</router-link>
       </template>
       <!-- ADMIN -->
       <template v-if="isAdmin">
@@ -220,6 +234,9 @@ export default {
     },
     canValidate() {
       return [ROLES.SUPERVISEUR, ROLES.MANAGER].includes(this.userRole);
+    },
+    canAccessOps() {
+      return [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISEUR].includes(this.userRole);
     },
 
     // Label du rôle pour affichage
@@ -337,6 +354,24 @@ export default {
   right: 0;
   height: 2px;
   background: #2563eb;
+}
+
+/* OPS nav link */
+.nav-link-ops {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.nav-link-ops:hover {
+  color: #4f46e5;
+}
+
+.ops-nav-icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* Mobile menu button */

@@ -334,12 +334,18 @@ const handleAddEvenement = async () => {
       description: newEvenement.value.description.trim()
     }
 
+    // Bug #4 Mission 027 — Mapper heureEvenement → dateHeureDebut (ISO Date, required par le modèle backend)
     if (newEvenement.value.heureEvenement) {
-      evenementData.heureEvenement = newEvenement.value.heureEvenement
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+      evenementData.dateHeureDebut = new Date(`${today}T${newEvenement.value.heureEvenement}:00`).toISOString()
+    } else {
+      // dateHeureDebut est required par le modèle — utiliser l'heure actuelle par défaut
+      evenementData.dateHeureDebut = new Date().toISOString()
     }
 
+    // Bug #4 Mission 027 — Mapper actionsEntreprises → actionsCorrectives (nom backend)
     if (newEvenement.value.actionsEntreprises?.trim()) {
-      evenementData.actionsEntreprises = newEvenement.value.actionsEntreprises.trim()
+      evenementData.actionsCorrectives = newEvenement.value.actionsEntreprises.trim()
     }
 
     if (newEvenement.value.responsableSuivi?.trim()) {

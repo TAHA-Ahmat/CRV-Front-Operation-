@@ -1452,6 +1452,160 @@ export const bulletinsAPI = {
 }
 
 // ============================================
+// 8. NOTIFICATION RULES API (Admin)
+// ============================================
+
+export const notificationRulesAPI = {
+  /**
+   * Matrice complète des règles
+   * GET /api/notification-rules
+   */
+  getMatrix: (filters = {}) => {
+    const params = new URLSearchParams()
+    if (filters.domain) params.append('domain', filters.domain)
+    if (filters.priority) params.append('priority', filters.priority)
+    if (filters.role) params.append('role', filters.role)
+    if (filters.enabled !== undefined && filters.enabled !== '') params.append('enabled', filters.enabled)
+    const qs = params.toString()
+    return api.get(`/notification-rules${qs ? '?' + qs : ''}`)
+  },
+
+  /**
+   * Métadonnées (domaines, priorités, rôles)
+   * GET /api/notification-rules/metadata
+   */
+  getMetadata: () => api.get('/notification-rules/metadata'),
+
+  /**
+   * Statistiques du module
+   * GET /api/notification-rules/stats
+   */
+  getStats: () => api.get('/notification-rules/stats'),
+
+  /**
+   * Règles d'un événement
+   * GET /api/notification-rules/event/:eventName
+   */
+  getRulesForEvent: (eventName) => api.get(`/notification-rules/event/${eventName}`),
+
+  /**
+   * Met à jour une règle individuelle
+   * PUT /api/notification-rules/:id
+   */
+  updateRule: (id, updates) => api.put(`/notification-rules/${id}`, updates),
+
+  /**
+   * Mise à jour en masse des règles d'un événement
+   * PUT /api/notification-rules/event/:eventName/bulk
+   */
+  bulkUpdateEvent: (eventName, rules) => api.put(`/notification-rules/event/${eventName}/bulk`, { rules }),
+
+  /**
+   * Active/Désactive un domaine
+   * PUT /api/notification-rules/domain/:domain/toggle
+   */
+  toggleDomain: (domain, enabled) => api.put(`/notification-rules/domain/${domain}/toggle`, { enabled }),
+
+  /**
+   * Réinitialise aux valeurs par défaut
+   * POST /api/notification-rules/reset
+   */
+  resetToDefaults: () => api.post('/notification-rules/reset')
+}
+
+// ============================================
+// 9. NOTIFICATION RECIPIENTS API (Admin)
+// ============================================
+
+export const notificationRecipientsAPI = {
+  /**
+   * Tous les recipients (6 documents, 1 par rôle)
+   * GET /api/notification-recipients
+   */
+  getAll: () => api.get('/notification-recipients'),
+
+  /**
+   * Contacts d'un rôle
+   * GET /api/notification-recipients/:role
+   */
+  getByRole: (role) => api.get(`/notification-recipients/${role}`),
+
+  /**
+   * Met à jour contacts et mode d'un rôle
+   * PUT /api/notification-recipients/:role
+   */
+  updateByRole: (role, updates) => api.put(`/notification-recipients/${role}`, updates),
+
+  /**
+   * Ajoute un contact email
+   * POST /api/notification-recipients/:role/emails
+   */
+  addEmail: (role, contact) => api.post(`/notification-recipients/${role}/emails`, contact),
+
+  /**
+   * Supprime un contact email
+   * DELETE /api/notification-recipients/:role/emails/:emailId
+   */
+  removeEmail: (role, emailId) => api.delete(`/notification-recipients/${role}/emails/${emailId}`),
+
+  /**
+   * Active/Désactive un contact email
+   * PATCH /api/notification-recipients/:role/emails/:emailId/toggle
+   */
+  toggleEmail: (role, emailId, actif) => api.patch(`/notification-recipients/${role}/emails/${emailId}/toggle`, { actif }),
+
+  /**
+   * Ajoute un contact WhatsApp
+   * POST /api/notification-recipients/:role/whatsapps
+   */
+  addWhatsapp: (role, contact) => api.post(`/notification-recipients/${role}/whatsapps`, contact),
+
+  /**
+   * Supprime un contact WhatsApp
+   * DELETE /api/notification-recipients/:role/whatsapps/:whatsappId
+   */
+  removeWhatsapp: (role, whatsappId) => api.delete(`/notification-recipients/${role}/whatsapps/${whatsappId}`),
+
+  /**
+   * Active/Désactive un contact WhatsApp
+   * PATCH /api/notification-recipients/:role/whatsapps/:whatsappId/toggle
+   */
+  toggleWhatsapp: (role, whatsappId, actif) => api.patch(`/notification-recipients/${role}/whatsapps/${whatsappId}/toggle`, { actif })
+}
+
+// ============================================
+// 16. OPS CONTROL CENTER API (2 routes)
+// ============================================
+
+export const opsAPI = {
+  /**
+   * Dashboard snapshot des opérations
+   * GET /api/ops/dashboard
+   * Rôles: ADMIN, MANAGER, SUPERVISEUR
+   */
+  getDashboard: () => api.get('/ops/dashboard'),
+
+  /**
+   * Stats du service OPS Stream
+   * GET /api/ops/stats
+   * Rôles: ADMIN
+   */
+  getStats: () => api.get('/ops/stats'),
+
+  /**
+   * Retourne l'URL SSE avec token pour EventSource.
+   * EventSource ne supporte pas les headers custom,
+   * le JWT est donc passé en query parameter.
+   * @returns {string} URL SSE complète
+   */
+  getStreamUrl: () => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+    const token = localStorage.getItem('auth_token')
+    return `${baseURL}/ops/stream?token=${token}`
+  }
+}
+
+// ============================================
 // EXPORT PAR DÉFAUT
 // ============================================
 

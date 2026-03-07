@@ -12,8 +12,8 @@
 
         <!-- Grille des services -->
         <div class="services-grid">
-          <!-- Carte 1: Nouveau CRV -->
-          <div class="service-card primary" @click="goToNewCRV">
+          <!-- Carte 1: Nouveau CRV — Masqué pour QUALITE (MISSION 022) -->
+          <div v-if="!isQualite" class="service-card primary" @click="goToNewCRV">
             <div class="service-icon">✈️</div>
             <div class="service-content">
               <h2>Nouveau CRV</h2>
@@ -74,6 +74,9 @@ import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// MISSION 022 — Masquer "Nouveau CRV" pour QUALITE
+const isQualite = computed(() => authStore.isQualite)
 
 const userName = computed(() => {
   const user = authStore.currentUser

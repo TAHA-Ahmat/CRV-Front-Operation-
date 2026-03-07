@@ -10,7 +10,8 @@
             <span class="export-icon">📥</span>
             Exporter Excel
           </button>
-          <button @click="goToNewCRV" class="btn btn-primary">
+          <!-- MISSION 022 — Masquer "+ Nouveau CRV" pour QUALITE (lecture seule) -->
+          <button v-if="!isQualite" @click="goToNewCRV" class="btn btn-primary">
             + Nouveau CRV
           </button>
         </div>
@@ -72,7 +73,8 @@
 
           <div v-else-if="crvList.length === 0" class="empty-state">
             <p>Aucun CRV trouvé</p>
-            <button @click="goToNewCRV" class="btn btn-primary">Créer un CRV</button>
+            <!-- MISSION 022 — Masquer aussi pour QUALITE -->
+            <button v-if="!isQualite" @click="goToNewCRV" class="btn btn-primary">Créer un CRV</button>
           </div>
 
           <table v-else class="crv-table">
@@ -425,7 +427,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCRVStore } from '@/stores/crvStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -436,6 +438,9 @@ import ArchiveButton from '@/components/Common/ArchiveButton.vue'
 const router = useRouter()
 const crvStore = useCRVStore()
 const authStore = useAuthStore()
+
+// MISSION 022 — Détection rôle QUALITE pour masquer les boutons de création
+const isQualite = computed(() => authStore.isQualite)
 
 // États
 const loading = ref(false)
