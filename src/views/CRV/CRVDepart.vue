@@ -262,7 +262,7 @@ import CRVPhases from '@/components/crv/CRVPhases.vue'
 import CRVCharges from '@/components/crv/CRVCharges.vue'
 import CRVEvenements from '@/components/crv/CRVEvenements.vue'
 import CRVValidation from '@/components/crv/CRVValidation.vue'
-import CRVLockedBanner from '@/components/CRV/CRVLockedBanner.vue'
+import CRVLockedBanner from '@/components/crv/CRVLockedBanner.vue'
 import { validationAPI } from '@/services/api'
 import { canLockCRV } from '@/utils/permissions'
 
