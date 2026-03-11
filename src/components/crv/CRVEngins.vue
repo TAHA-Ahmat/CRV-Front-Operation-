@@ -124,13 +124,13 @@
 
 <script setup>
 /**
- * CRVEngins.vue - CORRIGÉ AUDIT 2025-01
+ * CRVEngins.vue - ALIGNÉ BACKEND CERTIFIÉ
  *
  * CORRECTIONS APPLIQUÉES:
- * - CORRIGÉ: 15 types d'engins conformes à la doctrine (TRACTEUR, CHARIOT_BAGAGES, etc.)
- * - AJOUTÉ: Champ usage avec enum USAGE_ENGIN (EN_SERVICE, DISPONIBLE, etc.)
+ * - ALIGNÉ: 10 types d'engins = clés lowercase du backend typeEnginMap
+ * - AJOUTÉ: Champ usage avec enum USAGE_ENGIN (TRACTAGE, BAGAGES, etc.)
  * - AJOUTÉ: Import des enums centralisés
- * - AJOUTÉ: Console.log format [CRV][ENGIN_*]
+ * - CORRIGÉ: Valeur par défaut usage = '' (sélection obligatoire)
  * - AJOUTÉ: Champ remarques
  */
 import { ref, watch } from 'vue'
@@ -185,7 +185,7 @@ const addEngin = () => {
     immatriculation: '',
     heureDebut: '',
     heureFin: '',
-    usage: USAGE_ENGIN.EN_SERVICE, // Valeur par défaut conforme
+    usage: '', // Sélection obligatoire par l'utilisateur
     remarques: ''
   })
   emitUpdate()

@@ -28,7 +28,7 @@ export const usePhasesStore = defineStore('phases', {
     // Phases par statut
     getPhasesEnAttente: (state) => state.phasesList.filter(p => p.statut === 'EN_ATTENTE'),
     getPhasesEnCours: (state) => state.phasesList.filter(p => p.statut === 'EN_COURS'),
-    getPhasesTerminees: (state) => state.phasesList.filter(p => p.statut === 'TERMINEE'),
+    getPhasesTerminees: (state) => state.phasesList.filter(p => p.statut === 'TERMINE'),
     getPhasesNonRealisees: (state) => state.phasesList.filter(p => p.statut === 'NON_REALISE'),
 
     // Progression
@@ -36,7 +36,7 @@ export const usePhasesStore = defineStore('phases', {
       const total = state.phasesList.length
       if (total === 0) return 0
       const terminees = state.phasesList.filter(p =>
-        p.statut === 'TERMINEE' || p.statut === 'NON_REALISE'
+        p.statut === 'TERMINE' || p.statut === 'NON_REALISE'
       ).length
       return Math.round((terminees / total) * 100)
     },
@@ -141,7 +141,7 @@ export const usePhasesStore = defineStore('phases', {
         if (index !== -1) {
           this.phasesList[index] = {
             ...this.phasesList[index],
-            statut: 'TERMINEE',
+            statut: 'TERMINE',
             heureFin: new Date().toISOString()
           }
         }

@@ -12,7 +12,7 @@ import axios from 'axios'
 // ============================================
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   headers: {
     'Content-Type': 'application/json'
   },
@@ -1125,12 +1125,12 @@ export const slaAPI = {
 }
 
 // ============================================
-// 13. VALIDATION API (3 routes)
+// 13. VALIDATION API (5 routes)
 // ============================================
 
 export const validationAPI = {
   /**
-   * Valider un CRV (QUALITE, ADMIN uniquement - MVS-10)
+   * Valider un CRV (SUPERVISEUR, MANAGER uniquement)
    * POST /api/validation/:id/valider
    * Body: { commentaires? }
    * Prérequis: statut=TERMINE, completude >= 80%
@@ -1143,7 +1143,7 @@ export const validationAPI = {
   },
 
   /**
-   * Verrouiller un CRV (QUALITE, ADMIN uniquement - MVS-10)
+   * Verrouiller un CRV (SUPERVISEUR, MANAGER uniquement)
    * POST /api/validation/:id/verrouiller
    * Prérequis: statut=VALIDE
    * Résultat: CRV définitif, aucune modification possible
@@ -1154,11 +1154,22 @@ export const validationAPI = {
   },
 
   /**
-   * Déverrouiller un CRV (ADMIN uniquement - MVS-10)
+   * Rejeter un CRV (SUPERVISEUR, MANAGER uniquement)
+   * POST /api/validation/:id/rejeter
+   * Body: { raison } (obligatoire)
+   * Prérequis: statut=TERMINE
+   * Résultat: CRV retourne à EN_COURS pour correction
+   */
+  rejeter: (id, raison) => {
+    console.log('[VALIDATION API] rejeter() - CRV ID:', id, '- Raison:', raison)
+    return api.post(`/validation/${id}/rejeter`, { raison })
+  },
+
+  /**
+   * Déverrouiller un CRV (SUPERVISEUR, MANAGER uniquement)
    * POST /api/validation/:id/deverrouiller
    * Body: { raison } (obligatoire)
-   * Résultat: CRV retourne à VALIDE
-   * Note: Utilisé aussi pour rejeter un CRV en fournissant une raison
+   * Résultat: CRV retourne à EN_COURS
    */
   deverrouiller: (id, raison) => {
     console.log('[VALIDATION API] deverrouiller() - CRV ID:', id, '- Raison:', raison)

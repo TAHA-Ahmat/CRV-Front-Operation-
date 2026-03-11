@@ -22,9 +22,9 @@
           @change="emitUpdate"
         >
           <option value="">Sélectionner</option>
-          <option value="chef_escale">Chef d'escale</option>
-          <option value="superviseur">Superviseur</option>
-          <option value="responsable_ops">Responsable OPS</option>
+          <option v-for="role in fonctionsValidation" :key="role.value" :value="role.value">
+            {{ role.label }}
+          </option>
         </select>
       </div>
 
@@ -79,12 +79,34 @@
         <strong>Commentaires:</strong>
         <p>{{ localData.commentaires }}</p>
       </div>
+
+      <!-- Téléchargement PDF -->
+      <div v-if="crvId" class="pdf-actions">
+        <button
+          @click="downloadPDF"
+          class="btn btn-primary"
+          type="button"
+          :disabled="pdfLoading"
+        >
+          {{ pdfLoading ? 'Génération en cours...' : 'Télécharger le PDF' }}
+        </button>
+        <p v-if="pdfError" class="pdf-error">{{ pdfError }}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS } from '@/config/crvEnums'
+import { crvAPI } from '@/services/api'
+
+// Fonctions autorisées pour la validation — alignées sur ROLE_PERSONNEL backend
+const fonctionsValidation = [
+  { value: ROLE_PERSONNEL.CHEF_ESCALE, label: ROLE_PERSONNEL_LABELS[ROLE_PERSONNEL.CHEF_ESCALE] },
+  { value: ROLE_PERSONNEL.SUPERVISEUR, label: ROLE_PERSONNEL_LABELS[ROLE_PERSONNEL.SUPERVISEUR] },
+  { value: ROLE_PERSONNEL.COORDINATEUR, label: ROLE_PERSONNEL_LABELS[ROLE_PERSONNEL.COORDINATEUR] }
+]
 
 const props = defineProps({
   modelValue: {
@@ -104,6 +126,10 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  crvId: {
+    type: String,
+    default: null
   }
 })
 
@@ -136,6 +162,43 @@ const formatDate = (dateString) => {
 
 const emitUpdate = () => {
   emit('update:modelValue', localData.value)
+}
+
+// ── PDF Download ──
+const pdfLoading = ref(false)
+const pdfError = ref(null)
+
+const downloadPDF = async () => {
+  if (!props.crvId) return
+  pdfLoading.value = true
+  pdfError.value = null
+
+  try {
+    const response = await crvAPI.getPDFBase64(props.crvId)
+    const data = response.data.data || response.data
+    const { base64, mimeType } = data
+
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: mimeType || 'application/pdf' })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `CRV_${props.crvId}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    pdfError.value = err.response?.data?.message || 'Erreur lors de la génération du PDF'
+  } finally {
+    pdfLoading.value = false
+  }
 }
 </script>
 
@@ -259,6 +322,17 @@ const emitUpdate = () => {
 textarea.form-input {
   resize: vertical;
   min-height: 80px;
+}
+
+.pdf-actions {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pdf-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 /* ============================================ */

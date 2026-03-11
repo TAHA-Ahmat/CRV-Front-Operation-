@@ -278,6 +278,7 @@
               v-model="formData.validation"
               :validated="isValidated"
               :loading="isLoading"
+              :crv-id="crvStore.currentCRV?.id || crvStore.currentCRV?._id"
               @validate="handleValidation"
             />
             <div v-if="!isValidated" class="step-actions">
@@ -357,10 +358,9 @@ const canEdit = computed(() => crvStore.isEditable)
 const phasesNonTraitees = computed(() => {
   return crvStore.phases.filter(p => {
     const statut = p.statut?.toUpperCase() || ''
-    // Phase traitée = TERMINE ou NON_REALISE (ou variantes)
+    // Phase traitée = TERMINE ou NON_REALISE (enum backend)
     const estTraitee = statut === 'TERMINE' ||
-                       statut === 'NON_REALISE' ||
-                       statut === 'NON_REALISEE'
+                       statut === 'NON_REALISE'
     return !estTraitee
   })
 })
@@ -787,7 +787,7 @@ const genererDonneesEtape4 = async () => {
       const phaseNom = phase.phase?.libelle || phase.nomPhase || phase.nom || 'Phase'
 
       // Si la phase est déjà traitée, on passe
-      if (statut === 'TERMINE' || statut === 'NON_REALISE' || statut === 'NON_REALISEE') {
+      if (statut === 'TERMINE' || statut === 'NON_REALISE') {
         console.log(`[CRVArrivee] Phase ${phaseNom} déjà traitée (${statut})`)
         continue
       }

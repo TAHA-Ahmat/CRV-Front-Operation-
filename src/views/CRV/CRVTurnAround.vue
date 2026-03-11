@@ -210,6 +210,7 @@
               v-model="formData.validation"
               :validated="isValidated"
               :loading="isLoading"
+              :crv-id="crvStore.currentCRV?.id || crvStore.currentCRV?._id"
               @validate="handleValidation"
             />
             <div v-if="!isValidated" class="step-actions">
@@ -287,8 +288,7 @@ const phasesNonTraitees = computed(() => {
   return crvStore.phases.filter(p => {
     const statut = p.statut?.toUpperCase() || ''
     const estTraitee = statut === 'TERMINE' ||
-                       statut === 'NON_REALISE' ||
-                       statut === 'NON_REALISEE'
+                       statut === 'NON_REALISE'
     return !estTraitee
   })
 })

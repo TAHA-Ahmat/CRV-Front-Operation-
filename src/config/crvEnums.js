@@ -140,76 +140,60 @@ export const ROLE_PERSONNEL_DESCRIPTIONS = Object.freeze({
 })
 
 // ============================================
-// TYPES ÉVÉNEMENT (MVS-9 #2 - ÉTENDU)
-// Référence : MVS-9-Transversal/05-process-metier.md - 14 types
+// TYPES ÉVÉNEMENT — ALIGNÉ SUR BACKEND CERTIFIÉ
+// Référence : EvenementOperationnel.js (modèle Mongoose)
+// Backend certifié : 88/88 tests PASS — seuls ces 8 types sont acceptés
 // ============================================
 
 export const TYPE_EVENEMENT = Object.freeze({
-  // Types retard détaillés
-  RETARD_PASSAGERS: 'RETARD_PASSAGERS',
-  RETARD_BAGAGES: 'RETARD_BAGAGES',
-  RETARD_FRET: 'RETARD_FRET',
-  RETARD_CARBURANT: 'RETARD_CARBURANT',
-  RETARD_EQUIPAGE: 'RETARD_EQUIPAGE',
-  RETARD_TECHNIQUE: 'RETARD_TECHNIQUE',
-  RETARD_METEO: 'RETARD_METEO',
-  RETARD_ATC: 'RETARD_ATC',
-  // Types incidents
+  PANNE_EQUIPEMENT: 'PANNE_EQUIPEMENT',
+  ABSENCE_PERSONNEL: 'ABSENCE_PERSONNEL',
+  RETARD: 'RETARD',
   INCIDENT_SECURITE: 'INCIDENT_SECURITE',
-  INCIDENT_SURETE: 'INCIDENT_SURETE',
   INCIDENT_TECHNIQUE: 'INCIDENT_TECHNIQUE',
-  // Types changements
-  CHANGEMENT_PORTE: 'CHANGEMENT_PORTE',
-  CHANGEMENT_STAND: 'CHANGEMENT_STAND',
-  // Autre
+  PROBLEME_TECHNIQUE: 'PROBLEME_TECHNIQUE',
+  METEO: 'METEO',
   AUTRE: 'AUTRE'
 })
 
 export const TYPE_EVENEMENT_LABELS = Object.freeze({
-  [TYPE_EVENEMENT.RETARD_PASSAGERS]: 'Retard passagers',
-  [TYPE_EVENEMENT.RETARD_BAGAGES]: 'Retard bagages',
-  [TYPE_EVENEMENT.RETARD_FRET]: 'Retard fret',
-  [TYPE_EVENEMENT.RETARD_CARBURANT]: 'Retard carburant',
-  [TYPE_EVENEMENT.RETARD_EQUIPAGE]: 'Retard équipage',
-  [TYPE_EVENEMENT.RETARD_TECHNIQUE]: 'Retard technique',
-  [TYPE_EVENEMENT.RETARD_METEO]: 'Retard météo',
-  [TYPE_EVENEMENT.RETARD_ATC]: 'Retard ATC',
+  [TYPE_EVENEMENT.PANNE_EQUIPEMENT]: 'Panne équipement',
+  [TYPE_EVENEMENT.ABSENCE_PERSONNEL]: 'Absence personnel',
+  [TYPE_EVENEMENT.RETARD]: 'Retard',
   [TYPE_EVENEMENT.INCIDENT_SECURITE]: 'Incident sécurité',
-  [TYPE_EVENEMENT.INCIDENT_SURETE]: 'Incident sûreté',
   [TYPE_EVENEMENT.INCIDENT_TECHNIQUE]: 'Incident technique',
-  [TYPE_EVENEMENT.CHANGEMENT_PORTE]: 'Changement de porte',
-  [TYPE_EVENEMENT.CHANGEMENT_STAND]: 'Changement de stand',
+  [TYPE_EVENEMENT.PROBLEME_TECHNIQUE]: 'Problème technique',
+  [TYPE_EVENEMENT.METEO]: 'Météo',
   [TYPE_EVENEMENT.AUTRE]: 'Autre'
 })
 
 // Groupes de types événement pour UI simplifiée
 export const TYPE_EVENEMENT_GROUPES = Object.freeze({
+  PANNES_ABSENCES: {
+    label: 'Pannes & Absences',
+    types: [
+      TYPE_EVENEMENT.PANNE_EQUIPEMENT,
+      TYPE_EVENEMENT.ABSENCE_PERSONNEL
+    ]
+  },
   RETARDS: {
     label: 'Retards',
     types: [
-      TYPE_EVENEMENT.RETARD_PASSAGERS,
-      TYPE_EVENEMENT.RETARD_BAGAGES,
-      TYPE_EVENEMENT.RETARD_FRET,
-      TYPE_EVENEMENT.RETARD_CARBURANT,
-      TYPE_EVENEMENT.RETARD_EQUIPAGE,
-      TYPE_EVENEMENT.RETARD_TECHNIQUE,
-      TYPE_EVENEMENT.RETARD_METEO,
-      TYPE_EVENEMENT.RETARD_ATC
+      TYPE_EVENEMENT.RETARD
     ]
   },
   INCIDENTS: {
-    label: 'Incidents',
+    label: 'Incidents & Problèmes',
     types: [
       TYPE_EVENEMENT.INCIDENT_SECURITE,
-      TYPE_EVENEMENT.INCIDENT_SURETE,
-      TYPE_EVENEMENT.INCIDENT_TECHNIQUE
+      TYPE_EVENEMENT.INCIDENT_TECHNIQUE,
+      TYPE_EVENEMENT.PROBLEME_TECHNIQUE
     ]
   },
-  CHANGEMENTS: {
-    label: 'Changements',
+  ENVIRONNEMENT: {
+    label: 'Environnement',
     types: [
-      TYPE_EVENEMENT.CHANGEMENT_PORTE,
-      TYPE_EVENEMENT.CHANGEMENT_STAND
+      TYPE_EVENEMENT.METEO
     ]
   },
   AUTRES: {
@@ -354,43 +338,35 @@ export const VISIBILITE_OBSERVATION_LABELS = Object.freeze({
 })
 
 // ============================================
-// TYPES ENGIN CRV (15 types)
-// Référence : DOCUMENTATION_FRONTEND_CRV.md - Bloc 9.c
+// TYPES ENGIN CRV — ALIGNÉ SUR BACKEND CERTIFIÉ
+// Référence : engin.controller.js typeEnginMap (10 clés lowercase)
+// Backend certifié : PUT /crv/:id/engins n'accepte QUE ces 10 clés
+// Les clés sont lowercase car le backend les mappe vers son enum interne
 // ============================================
 
 export const TYPE_ENGIN = Object.freeze({
-  TRACTEUR_PUSHBACK: 'TRACTEUR_PUSHBACK',
-  PASSERELLE: 'PASSERELLE',
-  TAPIS_BAGAGES: 'TAPIS_BAGAGES',
-  GPU: 'GPU',
-  ASU: 'ASU',
-  ESCALIER: 'ESCALIER',
-  TRANSBORDEUR: 'TRANSBORDEUR',
-  CAMION_AVITAILLEMENT: 'CAMION_AVITAILLEMENT',
-  CAMION_VIDANGE: 'CAMION_VIDANGE',
-  CAMION_EAU: 'CAMION_EAU',
-  ELEVATEUR: 'ELEVATEUR',
-  CHARIOT_BAGAGES: 'CHARIOT_BAGAGES',
-  CONTENEUR_ULD: 'CONTENEUR_ULD',
-  DOLLY: 'DOLLY',
-  AUTRE: 'AUTRE'
+  TRACTEUR: 'tracteur',
+  CHARIOT_BAGAGES: 'chariot_bagages',
+  CHARIOT_FRET: 'chariot_fret',
+  CAMION_FRET: 'camion_fret',
+  PASSERELLE: 'passerelle',
+  GPU: 'gpu',
+  ASU: 'asu',
+  CAMION_AVITAILLEMENT: 'camion_avitaillement',
+  CONVOYEUR: 'convoyeur',
+  AUTRE: 'autre'
 })
 
 export const TYPE_ENGIN_LABELS = Object.freeze({
-  [TYPE_ENGIN.TRACTEUR_PUSHBACK]: 'Tracteur pushback',
-  [TYPE_ENGIN.PASSERELLE]: 'Passerelle',
-  [TYPE_ENGIN.TAPIS_BAGAGES]: 'Tapis bagages',
+  [TYPE_ENGIN.TRACTEUR]: 'Tracteur pushback',
+  [TYPE_ENGIN.CHARIOT_BAGAGES]: 'Chariot bagages',
+  [TYPE_ENGIN.CHARIOT_FRET]: 'Chariot fret',
+  [TYPE_ENGIN.CAMION_FRET]: 'Camion fret',
+  [TYPE_ENGIN.PASSERELLE]: 'Passerelle / Escalier',
   [TYPE_ENGIN.GPU]: 'GPU (Groupe de parc)',
   [TYPE_ENGIN.ASU]: 'ASU (Air Start Unit)',
-  [TYPE_ENGIN.ESCALIER]: 'Escalier',
-  [TYPE_ENGIN.TRANSBORDEUR]: 'Transbordeur',
   [TYPE_ENGIN.CAMION_AVITAILLEMENT]: 'Camion avitaillement',
-  [TYPE_ENGIN.CAMION_VIDANGE]: 'Camion vidange',
-  [TYPE_ENGIN.CAMION_EAU]: 'Camion eau',
-  [TYPE_ENGIN.ELEVATEUR]: 'Élévateur',
-  [TYPE_ENGIN.CHARIOT_BAGAGES]: 'Chariot bagages',
-  [TYPE_ENGIN.CONTENEUR_ULD]: 'Conteneur ULD',
-  [TYPE_ENGIN.DOLLY]: 'Dolly',
+  [TYPE_ENGIN.CONVOYEUR]: 'Convoyeur',
   [TYPE_ENGIN.AUTRE]: 'Autre'
 })
 

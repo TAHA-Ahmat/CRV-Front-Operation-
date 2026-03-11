@@ -134,6 +134,12 @@ export const volsAPI = {
 
 export const validationAPI = {
   valider: (id) => mockAPI.validation.valider(id),
+  verrouiller: (id) => Promise.resolve({
+    data: { success: true, data: { statut: 'VERROUILLE' } }
+  }),
+  rejeter: (id, raison) => Promise.resolve({
+    data: { success: true, data: { statut: 'EN_COURS', raison } }
+  }),
   deverrouiller: (id, raison) => mockAPI.validation.deverrouiller(id, raison),
   getStatus: (id) => Promise.resolve({
     data: { success: true, data: { status: 'EN_ATTENTE' } }

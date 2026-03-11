@@ -52,7 +52,7 @@
           <div class="form-group">
             <label class="form-label">Rôle <span class="required">*</span></label>
             <select
-              v-model="personne.role"
+              v-model="personne.fonction"
               class="form-input"
               :disabled="disabled"
               @change="emitUpdate"
@@ -62,13 +62,13 @@
                 {{ role.label }}
               </option>
             </select>
-            <span v-if="personne.role && roleDescriptions[personne.role]" class="role-description">
-              {{ roleDescriptions[personne.role] }}
+            <span v-if="personne.fonction && roleDescriptions[personne.fonction]" class="role-description">
+              {{ roleDescriptions[personne.fonction] }}
             </span>
           </div>
 
-          <!-- MVS-9: Champ libre si rôle = AUTRE -->
-          <div v-if="personne.role === 'AUTRE'" class="form-group">
+          <!-- MVS-9: Champ libre si fonction = AUTRE -->
+          <div v-if="personne.fonction === 'AUTRE'" class="form-group">
             <label class="form-label">Précision du rôle <span class="required">*</span></label>
             <input
               v-model="personne.fonctionAutre"
@@ -186,8 +186,8 @@ const addPersonne = () => {
   localData.value.push({
     nom: '',
     prenom: '',
-    role: '',        // MVS-9: Utilisation enum ROLE_PERSONNEL
-    fonctionAutre: '', // MVS-9: Champ libre si role = AUTRE
+    fonction: '',    // Aligné sur le champ backend (était 'role')
+    fonctionAutre: '', // Champ libre si fonction = AUTRE
     matricule: '',
     telephone: '',   // CORRECTION AUDIT: Champ manquant
     remarques: ''    // CORRECTION AUDIT: Champ manquant
