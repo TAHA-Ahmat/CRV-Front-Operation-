@@ -326,9 +326,31 @@
 
           <!-- Vue par défaut -->
           <div v-else>
+            <!-- Horaires prévus (lecture seule) -->
+            <div v-if="phase.heureDebutPrevue || phase.heureFinPrevue" class="form-row phase-prevu-row">
+              <div class="form-group">
+                <label class="form-label prevu-label">Début prévu</label>
+                <input
+                  :value="formatDateTime(phase.heureDebutPrevue)"
+                  type="text"
+                  class="form-input prevu-input"
+                  disabled
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label prevu-label">Fin prévue</label>
+                <input
+                  :value="formatDateTime(phase.heureFinPrevue)"
+                  type="text"
+                  class="form-input prevu-input"
+                  disabled
+                />
+              </div>
+            </div>
+            <!-- Horaires réels -->
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Heure de début</label>
+                <label class="form-label">Début réel</label>
                 <input
                   :value="formatTime(phase.heureDebutReelle)"
                   type="time"
@@ -337,7 +359,7 @@
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">Heure de fin</label>
+                <label class="form-label">Fin réelle</label>
                 <input
                   :value="formatTime(phase.heureFinReelle)"
                   type="time"
@@ -354,18 +376,18 @@
                   disabled
                 />
               </div>
-              <!-- MVS-3 #6: Affichage écart SLA -->
-              <div v-if="phase.dureeReelleMinutes && phase.phase?.dureePrevue" class="form-group">
+              <!-- Écart SLA — utilise ecartMinutes du backend -->
+              <div v-if="phase.ecartMinutes !== null && phase.ecartMinutes !== undefined" class="form-group">
                 <label class="form-label">Écart</label>
                 <div
                   class="ecart-sla"
                   :class="{
-                    'ecart-ok': (phase.dureeReelleMinutes - phase.phase.dureePrevue) <= getPhaseSeuil(phase),
-                    'ecart-depassement': (phase.dureeReelleMinutes - phase.phase.dureePrevue) > getPhaseSeuil(phase)
+                    'ecart-ok': Math.abs(phase.ecartMinutes) <= getPhaseSeuil(phase),
+                    'ecart-depassement': Math.abs(phase.ecartMinutes) > getPhaseSeuil(phase)
                   }"
                 >
                   <span class="ecart-valeur">
-                    {{ phase.dureeReelleMinutes - phase.phase.dureePrevue > 0 ? '+' : '' }}{{ phase.dureeReelleMinutes - phase.phase.dureePrevue }} min
+                    {{ phase.ecartMinutes > 0 ? '+' : '' }}{{ phase.ecartMinutes }} min
                   </span>
                   <span class="ecart-seuil">(tolérance: {{ getPhaseSeuil(phase) }} min)</span>
                 </div>
@@ -541,6 +563,12 @@ const formatTime = (datetime) => {
     return datetime.split('T')[1]?.substring(0, 5) || ''
   }
   return datetime.substring(0, 5)
+}
+
+const formatDateTime = (datetime) => {
+  if (!datetime) return '-'
+  const d = new Date(datetime)
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 const formatDuree = (minutes) => {
@@ -1125,6 +1153,26 @@ textarea.form-input {
 
 .non-realise-info-banner p:first-child {
   margin-bottom: 4px;
+}
+
+/* Horaires prévus — ligne lecture seule */
+.phase-prevu-row {
+  background: #f0f4ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+  margin-bottom: 8px;
+}
+
+.prevu-label {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.prevu-input {
+  background: #e8eeff !important;
+  color: #1e40af !important;
+  font-weight: 500;
 }
 
 /* MVS-3 #6: Styles écart SLA */

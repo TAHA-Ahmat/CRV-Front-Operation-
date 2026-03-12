@@ -89,6 +89,20 @@
               title="Informations du vol - Arrivée"
               :disabled="crvStore.isLocked"
             />
+            <!-- Horaires prévus -->
+            <div v-if="crvStore.currentCRV?.horaire" class="horaires-prevus card">
+              <h3 class="section-title">Horaires prévus</h3>
+              <div class="horaires-row">
+                <div class="horaire-item">
+                  <label class="horaire-label">Atterrissage prévu</label>
+                  <span class="horaire-value">{{ formatHoraire(crvStore.currentCRV.horaire.heureAtterrisagePrevue) }}</span>
+                </div>
+                <div v-if="crvStore.currentCRV.horaire.heureDecollagePrevue" class="horaire-item">
+                  <label class="horaire-label">Décollage prévu</label>
+                  <span class="horaire-value">{{ formatHoraire(crvStore.currentCRV.horaire.heureDecollagePrevue) }}</span>
+                </div>
+              </div>
+            </div>
             <div class="step-actions">
               <button
                 v-if="!crvStore.isLocked"
@@ -325,6 +339,11 @@ const errorMessage = ref('')
 const stepValidationError = ref('')
 const generatingPhases = ref(false)
 
+const formatHoraire = (datetime) => {
+  if (!datetime) return '-'
+  return new Date(datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
 // Données locales pour l'affichage du header (infos vol)
 const formData = ref({
   header: {
@@ -426,8 +445,8 @@ onMounted(async () => {
           aeroportOrigine: vol.aeroportOrigine || '',
           aeroportDestination: vol.aeroportDestination || '',
           dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
-          immatriculation: vol.avion?.immatriculation || '',
-          typeAvion: vol.avion?.typeAvion || '',
+          immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
+          typeAvion: vol.typeAvion || vol.avion?.typeAvion || '',
           poste: vol.poste || ''
         }
       }
@@ -1069,6 +1088,45 @@ const handleLogout = async () => {
   background: #e5e7eb;
   color: #374151;
   text-decoration: line-through;
+}
+
+/* Horaires prévus */
+.horaires-prevus {
+  background: #f0f4ff;
+  border: 1px solid #3b82f6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.horaires-prevus .section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 12px;
+}
+
+.horaires-row {
+  display: flex;
+  gap: 30px;
+}
+
+.horaire-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.horaire-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+.horaire-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e40af;
 }
 
 .completude-section {
