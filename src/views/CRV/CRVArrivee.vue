@@ -462,6 +462,11 @@ onMounted(async () => {
       }
     }
 
+    // Si le CRV est déjà validé/verrouillé, marquer comme validé pour afficher "Terminer" à l'étape 7
+    if (['VALIDE', 'VERROUILLE'].includes(crvStore.currentCRV?.statut)) {
+      isValidated.value = true
+    }
+
     console.log('[CRVArrivee] Initialisation terminée:', {
       numeroCRV: crvStore.currentCRV?.numeroCRV,
       statut: crvStore.currentCRV?.statut,
