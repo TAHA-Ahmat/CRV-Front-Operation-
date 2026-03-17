@@ -768,8 +768,8 @@ export const useCRVStore = defineStore('crv', {
 
     /**
      * Marquer une phase comme non réalisée
-     * CONFORME : motifNonRealisation ET detailMotif OBLIGATOIRES
-     * REF : DOCUMENTATION_FRONTEND_CRV.md Bloc 4.e
+     * CONFORME : motifNonRealisation OBLIGATOIRE, detailMotif OBLIGATOIRE si motif = AUTRE
+     * REF : businessRules.middleware.js L124-146
      */
     async marquerPhaseNonRealisee(phaseId, data) {
       this._checkEditable()
@@ -782,11 +782,11 @@ export const useCRVStore = defineStore('crv', {
         throw new Error(this.error)
       }
 
-      // CORRECTION CONFORMITÉ : detailMotif OBLIGATOIRE
-      if (!data.detailMotif || data.detailMotif.trim() === '') {
-        this.error = 'Le détail du motif est obligatoire'
+      // detailMotif OBLIGATOIRE uniquement si motif = AUTRE (conforme businessRules.middleware.js)
+      if (data.motifNonRealisation === 'AUTRE' && (!data.detailMotif || data.detailMotif.trim() === '')) {
+        this.error = 'Le détail du motif est obligatoire pour le motif AUTRE'
         this.errorCode = ERROR_CODES.DETAIL_MOTIF_REQUIS
-        console.log('[CRV][PHASE_VALIDATE]', { action: 'nonRealise', error: 'detailMotif manquant' })
+        console.log('[CRV][PHASE_VALIDATE]', { action: 'nonRealise', error: 'detailMotif manquant pour motif AUTRE' })
         throw new Error(this.error)
       }
 
