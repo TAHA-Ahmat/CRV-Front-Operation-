@@ -614,38 +614,25 @@ const saveCurrentStepData = async () => {
 /**
  * Handler pour les mises à jour de phases depuis CRVPhases
  */
-const handlePhaseUpdate = async (phaseData) => {
+const handlePhaseUpdate = (phaseData) => {
   console.log('[CRVArrivee] handlePhaseUpdate:', phaseData)
-  // Le composant CRVPhases appelle directement le store
-  // On recharge juste le CRV pour avoir la complétude à jour
-  if (crvStore.currentCRV) {
-    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
-    console.log(`[CRVArrivee] Après phase update - Complétude: ${crvStore.completude}%`)
-  }
+  // Le store (demarrerPhase, terminerPhase, etc.) recharge déjà le CRV après l'action
 }
 
 /**
  * Handler pour l'ajout de charges depuis CRVCharges
  */
-const handleChargeAdded = async (chargeData) => {
+const handleChargeAdded = (chargeData) => {
   console.log('[CRVArrivee] handleChargeAdded:', chargeData)
-  // Le composant CRVCharges appelle directement le store
-  if (crvStore.currentCRV) {
-    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
-    console.log(`[CRVArrivee] Après charge ajoutée - Complétude: ${crvStore.completude}%`)
-  }
+  // Le store (addCharge) recharge déjà le CRV après l'action
 }
 
 /**
  * Handler pour l'ajout d'événements depuis CRVEvenements
  */
-const handleEvenementAdded = async (evenementData) => {
+const handleEvenementAdded = (evenementData) => {
   console.log('[CRVArrivee] handleEvenementAdded:', evenementData)
-  // Le composant CRVEvenements appelle directement le store
-  if (crvStore.currentCRV) {
-    await crvStore.loadCRV(crvStore.currentCRV.id || crvStore.currentCRV._id)
-    console.log(`[CRVArrivee] Après événement ajouté - Complétude: ${crvStore.completude}%`)
-  }
+  // Le store (addEvenement) recharge déjà le CRV après l'action
 }
 
 /**
