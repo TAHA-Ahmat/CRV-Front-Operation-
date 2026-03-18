@@ -395,7 +395,7 @@ onMounted(async () => {
           typeAppareil: vol.typeAvion || vol.avion?.typeAvion || '',
           immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
           route: [vol.aeroportOrigine, vol.aeroportDestination].filter(Boolean).join(' - '),
-          poste: vol.poste || ''
+          poste: vol.posteStationnement || ''
         }
       }
 
@@ -450,7 +450,7 @@ const saveCurrentStepData = async () => {
             immatriculation: h.immatriculation,
             aeroportOrigine: routeParts[0] || '',
             aeroportDestination: routeParts[1] || '',
-            poste: h.poste
+            posteStationnement: h.poste
           }
         })
         break
