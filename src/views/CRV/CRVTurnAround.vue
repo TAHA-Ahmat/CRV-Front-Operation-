@@ -539,36 +539,12 @@ const handleValidation = async (validationData) => {
       }
     }
 
-    // Recharger pour avoir le nouveau statut et la complétude à jour
+    // Recharger pour avoir le nouveau statut
     await crvStore.loadCRV(crvId)
 
-    // Étape 2 : Si TERMINÉ, valider (seuil 80%)
-    if (crvStore.crvStatus === 'TERMINE') {
-      const newCompletude = crvStore.completude
-
-      if (newCompletude < SEUILS_COMPLETUDE.VALIDER) {
-        alert(`Complétude insuffisante pour valider : ${newCompletude}% (minimum ${SEUILS_COMPLETUDE.VALIDER}% requis)`)
-        return
-      }
-
-      console.log('[CRVTurnAround] Validation du CRV...')
-      try {
-        await crvStore.validateCRV(validationData?.commentaires)
-        console.log('[CRVTurnAround] CRV validé')
-        isValidated.value = true
-      } catch (e) {
-        console.error('[CRVTurnAround] Erreur validation:', e)
-        if (crvStore.anomalies.length > 0) {
-          alert(`Impossible de valider :\n${crvStore.anomalies.join('\n')}`)
-        } else {
-          alert(e.message || 'Erreur lors de la validation')
-        }
-        return
-      }
-    }
-
-    // Succès
-    console.log('[CRVTurnAround] Validation complète, statut final:', crvStore.crvStatus)
+    // Soumission terminée — la validation TERMINÉ→VALIDÉ est du ressort du superviseur
+    isValidated.value = true
+    console.log('[CRVTurnAround] Soumission complète, statut final:', crvStore.crvStatus)
 
   } catch (error) {
     console.error('[CRVTurnAround] Erreur validation:', error)

@@ -111,9 +111,23 @@
       </div>
     </div>
 
-    <!-- Aucune charge - DOCTRINE: pas de confirmation, juste informatif -->
+    <!-- Aucune charge -->
     <div v-else class="empty-state">
       <p>Aucune charge enregistrée pour ce vol</p>
+      <div v-if="!disabled && crvId" class="absence-confirmation">
+        <button
+          v-if="!absenceConfirmed"
+          @click="handleConfirmNoCharge"
+          class="btn btn-outline-warning"
+          type="button"
+          :disabled="confirmingAbsence"
+        >
+          {{ confirmingAbsence ? 'Confirmation...' : 'Confirmer : aucune charge pour ce vol' }}
+        </button>
+        <p v-else class="absence-confirmed-msg">
+          Absence de charge confirmée (vol ferry / technique / repositionnement)
+        </p>
+      </div>
     </div>
 
     <!-- CONFORMITÉ RÉGLEMENTAIRE: Modal édition besoins médicaux et mineurs -->
@@ -574,6 +588,8 @@ const chargesStore = useChargesStore()
 // États locaux
 const saving = ref(false)
 const errorMessage = ref('')
+const confirmingAbsence = ref(false)
+const absenceConfirmed = ref(crvStore.currentCRV?.confirmationAucuneCharge || false)
 
 // États pour édition des détails passagers (besoins médicaux et mineurs)
 const editingChargeId = ref(null)
@@ -804,8 +820,20 @@ const handleAddCharge = async () => {
   }
 }
 
-// SUPPRIMÉ AUDIT: handleConfirmNoCharge et watcher hasConfirmationAucuneCharge
-// DOCTRINE: "Absence = Non documenté" - pas de confirmation d'absence
+// P0: confirmation d'absence de charge (vol ferry/technique/repositionnement)
+const handleConfirmNoCharge = async () => {
+  if (!props.crvId) return
+  confirmingAbsence.value = true
+  try {
+    await crvStore.confirmerAbsence('charge')
+    absenceConfirmed.value = true
+    console.log('[CRV][CHARGE_ABSENCE_CONFIRMED]', { crvId: props.crvId })
+  } catch (err) {
+    errorMessage.value = err.message || 'Erreur confirmation absence'
+  } finally {
+    confirmingAbsence.value = false
+  }
+}
 
 // MVS-4 #6: Validation format code ONU
 const validateCodeONU = () => {
@@ -1069,6 +1097,30 @@ const getTotalSpecialNeeds = (charge) => {
   border-radius: 8px;
   border: 1px dashed #d1d5db;
   margin-bottom: 20px;
+}
+
+.absence-confirmation {
+  margin-top: 15px;
+}
+
+.btn-outline-warning {
+  background: transparent;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-outline-warning:hover:not(:disabled) {
+  background: #fef3c7;
+}
+
+.absence-confirmed-msg {
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .add-charge-section {
