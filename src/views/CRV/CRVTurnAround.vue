@@ -41,10 +41,10 @@
             ></div>
           </div>
           <div v-if="crvStore.completude < SEUILS_COMPLETUDE.VALIDER" class="completude-warning">
-            ⚠️ Minimum {{ SEUILS_COMPLETUDE.VALIDER }}% requis pour la validation (actuellement {{ crvStore.completude }}%)
+            ⚠️ Minimum {{ SEUILS_COMPLETUDE.VALIDER }}% requis pour la soumission (actuellement {{ crvStore.completude }}%)
           </div>
           <div v-else class="completude-success">
-            ✅ CRV prêt pour validation
+            ✅ CRV prêt pour soumission
           </div>
         </div>
 
@@ -76,7 +76,7 @@
             </div>
             <div class="step" :class="{ active: currentStep >= 7 }">
               <div class="step-number">7</div>
-              <div class="step-label">Validation</div>
+              <div class="step-label">Soumission</div>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@
             </div>
           </div>
 
-          <!-- Étape 7: Validation -->
+          <!-- Étape 7: Soumission -->
           <div v-show="currentStep === 7">
             <CRVValidation
               v-model="formData.validation"

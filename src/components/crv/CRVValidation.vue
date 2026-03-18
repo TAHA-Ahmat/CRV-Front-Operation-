@@ -1,10 +1,10 @@
 <template>
   <div class="crv-validation-component card">
-    <h3 class="section-title">Validation du CRV</h3>
+    <h3 class="section-title">Soumission du CRV</h3>
 
     <div v-if="!validated" class="validation-form">
       <div class="form-group">
-        <label class="form-label">Nom du validateur</label>
+        <label class="form-label">Soumis par</label>
         <input
           v-model="localData.validateur"
           type="text"
@@ -59,21 +59,21 @@
           type="button"
           :disabled="!canValidate || loading"
         >
-          {{ loading ? 'Validation en cours...' : 'Valider le CRV' }}
+          {{ loading ? 'Soumission en cours...' : 'Soumettre le CRV' }}
         </button>
         <p v-if="!canValidate && !loading" class="validation-warning">
-          Veuillez remplir tous les champs requis et certifier les informations
+          Veuillez remplir tous les champs requis et certifier les informations avant soumission
         </p>
       </div>
     </div>
 
     <div v-else class="validation-success">
       <div class="success-icon">✓</div>
-      <h4>CRV Validé</h4>
+      <h4>CRV Soumis</h4>
       <div class="validation-info">
-        <p><strong>Validé par:</strong> {{ localData.validateur }}</p>
-        <p><strong>Fonction:</strong> {{ localData.fonction }}</p>
-        <p><strong>Date de validation:</strong> {{ formatDate(localData.dateValidation) }}</p>
+        <p><strong>Soumis par :</strong> {{ localData.validateur }}</p>
+        <p><strong>Fonction :</strong> {{ localData.fonction }}</p>
+        <p><strong>Date de soumission :</strong> {{ formatDate(localData.dateValidation) }}</p>
       </div>
       <div v-if="localData.commentaires" class="validation-comments">
         <strong>Commentaires:</strong>
