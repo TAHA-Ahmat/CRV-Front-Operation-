@@ -329,10 +329,13 @@ const toutesPhaseTraitees = computed(() => {
 const formData = ref({
   header: {
     numeroVol: '',
-    date: new Date().toISOString().split('T')[0],
-    typeAppareil: '',
+    compagnieAerienne: '',
+    codeIATA: '',
+    dateVol: new Date().toISOString().split('T')[0],
+    aeroportOrigine: '',
+    aeroportDestination: '',
+    typeAvion: '',
     immatriculation: '',
-    route: '',
     poste: ''
   },
   personnes: [],
@@ -391,10 +394,13 @@ onMounted(async () => {
         const vol = crvStore.currentCRV.vol
         formData.value.header = {
           numeroVol: vol.numeroVol || '',
-          date: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.date,
-          typeAppareil: vol.typeAvion || vol.avion?.typeAvion || '',
+          compagnieAerienne: vol.compagnieAerienne || '',
+          codeIATA: vol.codeIATA || '',
+          dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
+          aeroportOrigine: vol.aeroportOrigine || '',
+          aeroportDestination: vol.aeroportDestination || '',
+          typeAvion: vol.typeAvion || vol.avion?.typeAvion || '',
           immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
-          route: [vol.aeroportOrigine, vol.aeroportDestination].filter(Boolean).join(' - '),
           poste: vol.posteStationnement || ''
         }
       }
@@ -439,17 +445,18 @@ const saveCurrentStepData = async () => {
   try {
     switch (currentStep.value) {
       case 1: {
-        // Étape 1: Sauvegarder les infos du vol (aligné sur CRVArrivee)
+        // Étape 1: Sauvegarder les infos du vol (aligné sur CRVHeader)
         const h = formData.value.header
-        const routeParts = h.route ? h.route.split(' - ') : []
         await crvStore.updateCRV({
           vol: {
             numeroVol: h.numeroVol,
-            dateVol: h.date,
-            typeAvion: h.typeAppareil,
+            compagnieAerienne: h.compagnieAerienne,
+            codeIATA: h.codeIATA,
+            dateVol: h.dateVol,
+            aeroportOrigine: h.aeroportOrigine,
+            aeroportDestination: h.aeroportDestination,
+            typeAvion: h.typeAvion,
             immatriculation: h.immatriculation,
-            aeroportOrigine: routeParts[0] || '',
-            aeroportDestination: routeParts[1] || '',
             posteStationnement: h.poste
           }
         })

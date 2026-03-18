@@ -447,7 +447,7 @@ onMounted(async () => {
           dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
           immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
           typeAvion: vol.typeAvion || vol.avion?.typeAvion || '',
-          poste: vol.poste || ''
+          poste: vol.posteStationnement || ''
         }
       }
 
@@ -570,7 +570,8 @@ const saveCurrentStepData = async () => {
             aeroportDestination: formData.value.header.aeroportDestination,
             dateVol: formData.value.header.dateVol,
             immatriculation: formData.value.header.immatriculation,
-            typeAvion: formData.value.header.typeAvion
+            typeAvion: formData.value.header.typeAvion,
+            posteStationnement: formData.value.header.poste
           }
         })
         console.log('[CRVArrivee] Infos vol sauvegardées')
