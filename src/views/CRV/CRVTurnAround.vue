@@ -180,7 +180,12 @@
 
           <!-- Étape 5: Charges -->
           <div v-show="currentStep === 5">
-            <CRVCharges v-model="formData.charges" :disabled="crvStore.isLocked" />
+            <CRVCharges
+              :charges="crvStore.charges"
+              :crv-id="crvStore.getCRVId"
+              :disabled="crvStore.isLocked"
+              @charge-added="handleChargeAdded"
+            />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
@@ -193,7 +198,12 @@
 
           <!-- Étape 6: Événements -->
           <div v-show="currentStep === 6">
-            <CRVEvenements v-model="formData.evenements" :disabled="crvStore.isLocked" />
+            <CRVEvenements
+              :evenements="crvStore.evenements"
+              :crv-id="crvStore.getCRVId"
+              :disabled="crvStore.isLocked"
+              @evenement-added="handleEvenementAdded"
+            />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
@@ -383,6 +393,23 @@ const saveCurrentStepData = async () => {
 
   try {
     switch (currentStep.value) {
+      case 1: {
+        // Étape 1: Sauvegarder les infos du vol (aligné sur CRVArrivee)
+        const h = formData.value.header
+        const routeParts = h.route ? h.route.split(' - ') : []
+        await crvStore.updateCRV({
+          vol: {
+            numeroVol: h.numeroVol,
+            dateVol: h.date,
+            typeAvion: h.typeAppareil,
+            immatriculation: h.immatriculation,
+            aeroportOrigine: routeParts[0] || '',
+            aeroportDestination: routeParts[1] || '',
+            poste: h.poste
+          }
+        })
+        break
+      }
       case 2:
         if (formData.value.personnes.length > 0) {
           await crvStore.updatePersonnel(formData.value.personnes)
@@ -444,6 +471,14 @@ const prevStep = () => {
     currentStep.value--
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+}
+
+const handleChargeAdded = (chargeData) => {
+  console.log('[CRVTurnAround] handleChargeAdded:', chargeData)
+}
+
+const handleEvenementAdded = (evenementData) => {
+  console.log('[CRVTurnAround] handleEvenementAdded:', evenementData)
 }
 
 const handleValidation = async (validationData) => {
