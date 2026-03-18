@@ -180,7 +180,12 @@
 
           <!-- Étape 5: Charges -->
           <div v-show="currentStep === 5">
-            <CRVCharges v-model="formData.charges" :disabled="crvStore.isLocked" />
+            <CRVCharges
+              :charges="crvStore.charges"
+              :crv-id="crvStore.getCRVId"
+              :disabled="crvStore.isLocked"
+              @charge-added="handleChargeAdded"
+            />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
@@ -193,7 +198,12 @@
 
           <!-- Étape 6: Événements -->
           <div v-show="currentStep === 6">
-            <CRVEvenements v-model="formData.evenements" :disabled="crvStore.isLocked" />
+            <CRVEvenements
+              :evenements="crvStore.evenements"
+              :crv-id="crvStore.getCRVId"
+              :disabled="crvStore.isLocked"
+              @evenement-added="handleEvenementAdded"
+            />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
@@ -258,10 +268,13 @@ const stepValidationError = ref('')
 const formData = ref({
   header: {
     numeroVol: '',
-    date: new Date().toISOString().split('T')[0],
-    typeAppareil: '',
+    compagnieAerienne: '',
+    codeIATA: '',
+    dateVol: new Date().toISOString().split('T')[0],
+    aeroportOrigine: '',
+    aeroportDestination: '',
+    typeAvion: '',
     immatriculation: '',
-    route: '',
     poste: ''
   },
   personnes: [],
@@ -336,11 +349,14 @@ onMounted(async () => {
         const vol = crvStore.currentCRV.vol
         formData.value.header = {
           numeroVol: vol.numeroVol || '',
-          date: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.date,
-          typeAppareil: vol.avion?.typeAvion || '',
-          immatriculation: vol.avion?.immatriculation || '',
-          route: [vol.aeroportOrigine, vol.aeroportDestination].filter(Boolean).join(' - '),
-          poste: vol.poste || ''
+          compagnieAerienne: vol.compagnieAerienne || '',
+          codeIATA: vol.codeIATA || '',
+          dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
+          aeroportOrigine: vol.aeroportOrigine || '',
+          aeroportDestination: vol.aeroportDestination || '',
+          typeAvion: vol.typeAvion || vol.avion?.typeAvion || '',
+          immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
+          poste: vol.posteStationnement || ''
         }
       }
 
@@ -349,9 +365,16 @@ onMounted(async () => {
         formData.value.personnes = [...crvStore.currentCRV.personnelAffecte]
       }
 
-      // Synchroniser les engins
+      // Synchroniser les engins (mapper AffectationEnginVol → format CRVEngins)
       if (crvStore.engins?.length > 0) {
-        formData.value.engins = [...crvStore.engins]
+        formData.value.engins = crvStore.engins.map(a => ({
+          type: a.engin?.typeEngin?.toLowerCase() || a.type || '',
+          immatriculation: a.engin?.numeroEngin || a.immatriculation || '',
+          heureDebut: a.heureDebut ? new Date(a.heureDebut).toTimeString().slice(0, 5) : '',
+          heureFin: a.heureFin ? new Date(a.heureFin).toTimeString().slice(0, 5) : '',
+          usage: a.usage || '',
+          remarques: a.remarques || ''
+        }))
       }
     }
 
@@ -383,6 +406,24 @@ const saveCurrentStepData = async () => {
 
   try {
     switch (currentStep.value) {
+      case 1: {
+        // Étape 1: Sauvegarder les infos du vol (aligné sur CRVHeader)
+        const h = formData.value.header
+        await crvStore.updateCRV({
+          vol: {
+            numeroVol: h.numeroVol,
+            compagnieAerienne: h.compagnieAerienne,
+            codeIATA: h.codeIATA,
+            dateVol: h.dateVol,
+            aeroportOrigine: h.aeroportOrigine,
+            aeroportDestination: h.aeroportDestination,
+            typeAvion: h.typeAvion,
+            immatriculation: h.immatriculation,
+            posteStationnement: h.poste
+          }
+        })
+        break
+      }
       case 2:
         if (formData.value.personnes.length > 0) {
           await crvStore.updatePersonnel(formData.value.personnes)
@@ -444,6 +485,14 @@ const prevStep = () => {
     currentStep.value--
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+}
+
+const handleChargeAdded = (chargeData) => {
+  console.log('[CRVTurnAround] handleChargeAdded:', chargeData)
+}
+
+const handleEvenementAdded = (evenementData) => {
+  console.log('[CRVTurnAround] handleEvenementAdded:', evenementData)
 }
 
 const handleValidation = async (validationData) => {

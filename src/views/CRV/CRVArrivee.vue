@@ -447,7 +447,7 @@ onMounted(async () => {
           dateVol: vol.dateVol ? vol.dateVol.split('T')[0] : formData.value.header.dateVol,
           immatriculation: vol.avion?.immatriculation || vol.immatriculation || '',
           typeAvion: vol.typeAvion || vol.avion?.typeAvion || '',
-          poste: vol.poste || ''
+          poste: vol.posteStationnement || ''
         }
       }
 
@@ -456,9 +456,16 @@ onMounted(async () => {
         formData.value.personnes = [...crvStore.currentCRV.personnelAffecte]
       }
 
-      // Synchroniser les engins
+      // Synchroniser les engins (mapper AffectationEnginVol → format CRVEngins)
       if (crvStore.engins?.length > 0) {
-        formData.value.engins = [...crvStore.engins]
+        formData.value.engins = crvStore.engins.map(a => ({
+          type: a.engin?.typeEngin?.toLowerCase() || a.type || '',
+          immatriculation: a.engin?.numeroEngin || a.immatriculation || '',
+          heureDebut: a.heureDebut ? new Date(a.heureDebut).toTimeString().slice(0, 5) : '',
+          heureFin: a.heureFin ? new Date(a.heureFin).toTimeString().slice(0, 5) : '',
+          usage: a.usage || '',
+          remarques: a.remarques || ''
+        }))
       }
     }
 
@@ -570,7 +577,8 @@ const saveCurrentStepData = async () => {
             aeroportDestination: formData.value.header.aeroportDestination,
             dateVol: formData.value.header.dateVol,
             immatriculation: formData.value.header.immatriculation,
-            typeAvion: formData.value.header.typeAvion
+            typeAvion: formData.value.header.typeAvion,
+            posteStationnement: formData.value.header.poste
           }
         })
         console.log('[CRVArrivee] Infos vol sauvegardées')

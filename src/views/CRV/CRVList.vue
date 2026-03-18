@@ -650,8 +650,9 @@ const canReactiverCRV = (crv) => {
 const canSupprimerCRV = (crv) => {
   const userRole = authStore.currentUser?.fonction || authStore.currentUser?.role
   if (!canDeleteCRV(userRole)) return false
-  // Pas verrouillé
-  return crv.statut !== 'VERROUILLE'
+  // Suppression interdite dès TERMINÉ (règle métier : suppression interdite ≥ TERMINÉ)
+  const statutsInterdits = ['TERMINE', 'VALIDE', 'VERROUILLE']
+  return !statutsInterdits.includes(crv.statut)
 }
 
 // Vérifier si un CRV peut être archivé (VALIDE ou VERROUILLE)
