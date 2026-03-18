@@ -584,36 +584,12 @@ const handleValidation = async (validationData) => {
       }
     }
 
-    // Recharger pour avoir le nouveau statut et la complétude à jour
+    // Recharger pour avoir le nouveau statut
     await crvStore.loadCRV(crvId)
 
-    // Étape 2 : Si TERMINÉ, valider (seuil 80%)
-    if (crvStore.crvStatus === 'TERMINE') {
-      const newCompletude = crvStore.completude
-
-      if (newCompletude < SEUILS_COMPLETUDE.VALIDER) {
-        alert(`Complétude insuffisante pour valider : ${newCompletude}% (minimum ${SEUILS_COMPLETUDE.VALIDER}% requis)`)
-        return
-      }
-
-      console.log('[CRVDepart] Validation du CRV...')
-      try {
-        await crvStore.validateCRV(validationData?.commentaires)
-        console.log('[CRVDepart] CRV validé')
-        isValidated.value = true
-      } catch (e) {
-        console.error('[CRVDepart] Erreur validation:', e)
-        if (crvStore.anomalies.length > 0) {
-          alert(`Impossible de valider :\n${crvStore.anomalies.join('\n')}`)
-        } else {
-          alert(e.message || 'Erreur lors de la validation')
-        }
-        return
-      }
-    }
-
-    // Succès
-    console.log('[CRVDepart] Validation complète, statut final:', crvStore.crvStatus)
+    // Soumission terminée — la validation TERMINÉ→VALIDÉ est du ressort du superviseur
+    isValidated.value = true
+    console.log('[CRVDepart] Soumission complète, statut final:', crvStore.crvStatus)
 
   } catch (error) {
     console.error('[CRVDepart] Erreur validation:', error)

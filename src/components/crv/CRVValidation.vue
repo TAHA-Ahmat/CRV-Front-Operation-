@@ -70,6 +70,7 @@
     <div v-else class="validation-success">
       <div class="success-icon">✓</div>
       <h4>CRV Soumis</h4>
+      <p class="soumission-info">En attente de validation par un superviseur</p>
       <div class="validation-info">
         <p><strong>Soumis par :</strong> {{ localData.validateur }}</p>
         <p><strong>Fonction :</strong> {{ localData.fonction }}</p>
@@ -283,6 +284,12 @@ const downloadPDF = async () => {
   font-size: 24px;
   font-weight: 700;
   color: #166534;
+  margin-bottom: 8px;
+}
+
+.soumission-info {
+  color: #92400e;
+  font-size: 14px;
   margin-bottom: 20px;
 }
 
