@@ -554,7 +554,7 @@
  * - AJOUTÉ: Import des enums centralisés
  * - AJOUTÉ: Console.log format [CRV][CHARGE_*]
  */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
 import { useChargesStore } from '@/stores/chargesStore'
 import { chargesAPI } from '@/services/api'
@@ -590,6 +590,11 @@ const saving = ref(false)
 const errorMessage = ref('')
 const confirmingAbsence = ref(false)
 const absenceConfirmed = ref(crvStore.currentCRV?.confirmationAucuneCharge || false)
+
+// Sync absenceConfirmed quand le CRV est (re)chargé
+watch(() => crvStore.currentCRV?.confirmationAucuneCharge, (val) => {
+  if (val) absenceConfirmed.value = true
+})
 
 // États pour édition des détails passagers (besoins médicaux et mineurs)
 const editingChargeId = ref(null)
