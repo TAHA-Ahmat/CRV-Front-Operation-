@@ -367,6 +367,7 @@ export const useCRVStore = defineStore('crv', {
         this.charges = result.charges || []
         this.evenements = result.evenements || []
         this.observations = result.observations || []
+        this.engins = result.engins || []
 
         console.log('[CRV][LOAD]', {
           action: 'loadCRV',

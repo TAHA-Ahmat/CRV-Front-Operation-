@@ -410,9 +410,16 @@ onMounted(async () => {
         formData.value.personnes = [...crvStore.currentCRV.personnelAffecte]
       }
 
-      // Synchroniser les engins
+      // Synchroniser les engins (mapper AffectationEnginVol → format CRVEngins)
       if (crvStore.engins?.length > 0) {
-        formData.value.engins = [...crvStore.engins]
+        formData.value.engins = crvStore.engins.map(a => ({
+          type: a.engin?.typeEngin?.toLowerCase() || a.type || '',
+          immatriculation: a.engin?.numeroEngin || a.immatriculation || '',
+          heureDebut: a.heureDebut ? new Date(a.heureDebut).toTimeString().slice(0, 5) : '',
+          heureFin: a.heureFin ? new Date(a.heureFin).toTimeString().slice(0, 5) : '',
+          usage: a.usage || '',
+          remarques: a.remarques || ''
+        }))
       }
     }
 
