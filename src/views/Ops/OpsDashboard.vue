@@ -190,7 +190,7 @@ export default {
       const statuses = [
         { status: 'BROUILLON', label: 'Brouillon', color: '#9ca3af' },
         { status: 'EN_COURS', label: 'En cours', color: '#f59e0b' },
-        { status: 'TERMINE', label: 'Terminé', color: '#3b82f6' },
+        { status: 'TERMINE', label: 'Soumis', color: '#3b82f6' },
         { status: 'VALIDE', label: 'Validé', color: '#10b981' },
         { status: 'VERROUILLE', label: 'Verrouillé', color: '#6366f1' },
         { status: 'ANNULE', label: 'Annulé', color: '#ef4444' }

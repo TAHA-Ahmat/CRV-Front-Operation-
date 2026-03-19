@@ -26,7 +26,7 @@
                 <option value="">Tous les statuts</option>
                 <option value="BROUILLON">Brouillon</option>
                 <option value="EN_COURS">En cours</option>
-                <option value="TERMINE">Terminé</option>
+                <option value="TERMINE">Soumis</option>
                 <option value="VALIDE">Validé</option>
                 <option value="VERROUILLE">Verrouillé</option>
                 <option value="ANNULE">Annulé</option>
@@ -380,7 +380,7 @@
               <option value="">Tous les statuts</option>
               <option value="BROUILLON">Brouillon</option>
               <option value="EN_COURS">En cours</option>
-              <option value="TERMINE">Terminé</option>
+              <option value="TERMINE">Soumis</option>
               <option value="VALIDE">Validé</option>
               <option value="VERROUILLE">Verrouillé</option>
               <option value="ANNULE">Annulé</option>
@@ -578,7 +578,7 @@ const formatStatus = (statut) => {
   const statuts = {
     'BROUILLON': 'Brouillon',
     'EN_COURS': 'En cours',
-    'TERMINE': 'Terminé',
+    'TERMINE': 'Soumis',
     'VALIDE': 'Validé',
     'VERROUILLE': 'Verrouillé',
     'ANNULE': 'Annulé'

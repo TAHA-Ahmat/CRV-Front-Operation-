@@ -12,7 +12,7 @@
         <div class="flex-1 min-w-[200px]">
           <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
           <select v-model="filters.statut" @change="loadCRVList" class="input w-full">
-            <option value="TERMINE">Terminé (en attente validation)</option>
+            <option value="TERMINE">Soumis (en attente de validation)</option>
             <option value="VALIDE">Validé (en attente verrouillage)</option>
             <option value="VERROUILLE">Verrouillé</option>
             <option value="">Tous</option>

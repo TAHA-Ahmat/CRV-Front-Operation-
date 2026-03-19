@@ -119,6 +119,19 @@
             />
           </div>
         </div>
+        <!-- STAB-2: Responsable du vol — checkbox par personne -->
+        <div class="responsable-vol-check">
+          <label class="checkbox-label-inline">
+            <input
+              type="checkbox"
+              :checked="personne.isResponsable"
+              :disabled="disabled"
+              @change="setResponsable(index)"
+            />
+            <span class="responsable-label">Responsable du vol</span>
+            <span v-if="personne.isResponsable" class="responsable-badge">✓ Responsable</span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -190,7 +203,8 @@ const addPersonne = () => {
     fonctionAutre: '', // Champ libre si fonction = AUTRE
     matricule: '',
     telephone: '',   // CORRECTION AUDIT: Champ manquant
-    remarques: ''    // CORRECTION AUDIT: Champ manquant
+    remarques: '',   // CORRECTION AUDIT: Champ manquant
+    isResponsable: false  // STAB-2: flag responsable du vol
   })
   emitUpdate()
 }
@@ -207,11 +221,57 @@ const emitUpdate = () => {
   emit('update:modelValue', [...localData.value])
   setTimeout(() => { isUpdating = false }, 0)
 }
+
+// STAB-2: un seul responsable du vol — décoche les autres
+const setResponsable = (selectedIndex) => {
+  localData.value.forEach((p, i) => {
+    p.isResponsable = (i === selectedIndex) ? !p.isResponsable : false
+  })
+  const resp = localData.value.find(p => p.isResponsable)
+  console.log('[CRV][RESPONSABLE_VOL]', resp ? `${resp.nom} ${resp.prenom}` : '(aucun)')
+  emitUpdate()
+}
 </script>
 
 <style scoped>
 .crv-personnes-component {
   margin-bottom: 20px;
+}
+
+.responsable-vol-check {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.checkbox-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1e40af;
+}
+
+.checkbox-label-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.responsable-label {
+  font-weight: 500;
+}
+
+.responsable-badge {
+  background: #16a34a;
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
 .section-title {
