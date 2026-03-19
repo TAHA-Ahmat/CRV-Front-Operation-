@@ -162,57 +162,204 @@
       </p>
     </div>
 
-    <!-- Modal Détail CRV -->
+    <!-- Fiche lecture CRV superviseur -->
     <div v-if="selectedCRV" class="modal-overlay" @click.self="closeCRVDetail">
-      <div class="modal-content max-w-4xl">
+      <div class="modal-content max-w-5xl">
         <div class="modal-header">
-          <h2 class="text-xl font-bold">{{ selectedCRV.numeroCRV }}</h2>
+          <div class="flex items-center gap-3">
+            <h2 class="text-xl font-bold">{{ selectedCRV.numeroCRV }}</h2>
+            <span :class="getStatutClass(selectedCRV.statut)" class="px-3 py-1 rounded-full text-sm font-medium">
+              {{ getStatutLabel(selectedCRV.statut) }}
+            </span>
+            <span class="text-lg font-bold" :class="selectedCRV.completude >= 80 ? 'text-green-600' : 'text-orange-500'">
+              {{ selectedCRV.completude }}%
+            </span>
+          </div>
           <button @click="closeCRVDetail" class="text-gray-400 hover:text-gray-600">
             <span class="text-2xl">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <!-- Résumé CRV -->
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <span class="text-gray-500 text-sm">Statut</span>
-              <div :class="getStatutClass(selectedCRV.statut)" class="inline-block px-3 py-1 rounded-full text-sm font-medium mt-1">
-                {{ getStatutLabel(selectedCRV.statut) }}
-              </div>
-            </div>
-            <div>
-              <span class="text-gray-500 text-sm">Complétude</span>
-              <div class="text-lg font-bold" :class="selectedCRV.completude >= 80 ? 'text-green-600' : 'text-orange-500'">
-                {{ selectedCRV.completude }}%
-              </div>
-            </div>
-            <div v-if="selectedCRV.vol">
-              <span class="text-gray-500 text-sm">Vol</span>
-              <div class="font-medium">{{ selectedCRV.vol.numeroVol }} - {{ selectedCRV.vol.compagnieAerienne }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500 text-sm">Type</span>
-              <div class="font-medium">{{ getTypeOperationLabel(selectedCRV.vol?.typeOperation) }}</div>
-            </div>
+          <!-- Chargement fiche complète -->
+          <div v-if="ficheLoading" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
-
-          <!-- Historique actions -->
-          <div v-if="validationStatus?.historique?.length" class="mb-6">
-            <h3 class="font-medium text-gray-700 mb-2">Historique des actions</h3>
-            <div class="border rounded-lg divide-y">
-              <div v-for="(action, idx) in validationStatus.historique" :key="idx" class="p-3 text-sm">
-                <div class="flex justify-between">
-                  <span class="font-medium">{{ action.action }}</span>
-                  <span class="text-gray-500">{{ formatDate(action.date) }}</span>
+          <div v-else-if="ficheData">
+            <!-- Section VOL -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">Vol</h3>
+              <div class="fiche-grid">
+                <div class="fiche-field">
+                  <span class="fiche-label">N° Vol</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.numeroVol || '-' }}</span>
                 </div>
-                <div v-if="action.commentaires" class="text-gray-600 mt-1">{{ action.commentaires }}</div>
-                <div class="text-gray-400 text-xs mt-1">Par: {{ action.utilisateur }}</div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Compagnie</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.compagnieAerienne || '-' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Type</span>
+                  <span class="fiche-value">{{ getTypeOperationLabel(ficheData.crv?.vol?.typeOperation) }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Avion</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.typeAvion || ficheData.crv?.vol?.avion?.typeAvion || '-' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Immat.</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.avion?.immatriculation || ficheData.crv?.vol?.immatriculation || '-' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Poste</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.posteStationnement || '-' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Origine</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.aeroportOrigine || '-' }}</span>
+                </div>
+                <div class="fiche-field">
+                  <span class="fiche-label">Destination</span>
+                  <span class="fiche-value">{{ ficheData.crv?.vol?.aeroportDestination || '-' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section PERSONNEL -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">
+                Personnel
+                <span class="fiche-count">{{ ficheData.crv?.personnelAffecte?.length || 0 }}</span>
+              </h3>
+              <div v-if="ficheData.crv?.personnelAffecte?.length > 0" class="fiche-table">
+                <div v-for="(p, idx) in ficheData.crv.personnelAffecte" :key="idx" class="fiche-table-row">
+                  <span class="font-medium">{{ p.nom }} {{ p.prenom }}</span>
+                  <span class="text-gray-500 text-sm">{{ p.fonction }}</span>
+                  <span v-if="p.isResponsable" class="fiche-badge-green">Responsable vol</span>
+                  <span v-if="p.matricule" class="text-gray-400 text-xs">{{ p.matricule }}</span>
+                </div>
+              </div>
+              <p v-else class="text-gray-400 text-sm italic">Aucun personnel déclaré</p>
+            </div>
+
+            <!-- Section PHASES -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">
+                Phases
+                <span class="fiche-count">{{ ficheData.phases?.length || 0 }}</span>
+              </h3>
+              <div v-if="ficheData.phases?.length > 0" class="fiche-table">
+                <div v-for="(ph, idx) in ficheData.phases" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm">{{ ph.phase?.nom || ph.nom || '-' }}</span>
+                  <span :class="phaseStatutClass(ph.statut)" class="text-xs px-2 py-0.5 rounded">{{ ph.statut }}</span>
+                  <span v-if="ph.heureDebutReelle" class="text-gray-500 text-xs">
+                    {{ formatTime(ph.heureDebutReelle) }}
+                    <span v-if="ph.heureFinReelle"> → {{ formatTime(ph.heureFinReelle) }}</span>
+                  </span>
+                </div>
+              </div>
+              <p v-else class="text-gray-400 text-sm italic">Aucune phase</p>
+            </div>
+
+            <!-- Section ENGINS -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">
+                Engins
+                <span class="fiche-count">{{ ficheData.engins?.length || 0 }}</span>
+              </h3>
+              <div v-if="ficheData.engins?.length > 0" class="fiche-table">
+                <div v-for="(e, idx) in ficheData.engins" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm">{{ e.engin?.typeEngin || e.type || '-' }}</span>
+                  <span class="text-gray-500 text-sm">{{ e.engin?.numeroEngin || e.immatriculation || '-' }}</span>
+                  <span v-if="e.usage" class="text-gray-400 text-xs">{{ e.usage }}</span>
+                </div>
+              </div>
+              <p v-else class="text-gray-400 text-sm italic">Aucun engin déclaré</p>
+            </div>
+
+            <!-- Section CHARGES -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">
+                Charges
+                <span class="fiche-count">{{ ficheData.charges?.length || 0 }}</span>
+                <span v-if="ficheData.crv?.confirmationAucuneCharge" class="fiche-badge-blue">Aucune charge déclarée</span>
+              </h3>
+              <div v-if="ficheData.charges?.length > 0" class="fiche-table">
+                <div v-for="(c, idx) in ficheData.charges" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm">{{ c.typeCharge }}</span>
+                  <span class="text-gray-500 text-sm">{{ c.sensOperation }}</span>
+                  <span v-if="c.passagersAdultes" class="text-xs text-gray-400">PAX: {{ c.passagersAdultes }}</span>
+                  <span v-if="c.poidsTotal" class="text-xs text-gray-400">{{ c.poidsTotal }} kg</span>
+                </div>
+              </div>
+              <p v-else-if="!ficheData.crv?.confirmationAucuneCharge" class="text-gray-400 text-sm italic">Aucune charge saisie</p>
+            </div>
+
+            <!-- Section ÉVÉNEMENTS -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">
+                Événements
+                <span class="fiche-count">{{ ficheData.evenements?.length || 0 }}</span>
+              </h3>
+              <div v-if="ficheData.evenements?.length > 0" class="fiche-table">
+                <div v-for="(ev, idx) in ficheData.evenements" :key="idx" class="fiche-table-row">
+                  <span :class="ev.gravite === 'CRITIQUE' ? 'text-red-600 font-bold' : ev.gravite === 'MAJEUR' ? 'text-orange-600 font-medium' : ''" class="text-sm">
+                    {{ ev.typeEvenement }}
+                  </span>
+                  <span class="text-xs px-2 py-0.5 rounded" :class="ev.gravite === 'CRITIQUE' ? 'bg-red-100 text-red-800' : ev.gravite === 'MAJEUR' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'">
+                    {{ ev.gravite }}
+                  </span>
+                  <span class="text-gray-500 text-xs truncate max-w-[200px]">{{ ev.description }}</span>
+                </div>
+              </div>
+              <p v-else class="text-gray-400 text-sm italic">Aucun événement (vol nominal)</p>
+            </div>
+
+            <!-- Section OBSERVATIONS -->
+            <div v-if="ficheData.observations?.length > 0" class="fiche-section">
+              <h3 class="fiche-section-title">
+                Observations
+                <span class="fiche-count">{{ ficheData.observations.length }}</span>
+              </h3>
+              <div class="fiche-table">
+                <div v-for="(obs, idx) in ficheData.observations" :key="idx" class="fiche-table-row">
+                  <span class="text-sm">{{ obs.contenu || obs.texte || '-' }}</span>
+                  <span class="text-gray-400 text-xs">{{ formatDate(obs.dateHeure) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section HISTORIQUE REJETS -->
+            <div v-if="ficheData.crv?.historiqueRejets?.length > 0" class="fiche-section fiche-section-warning">
+              <h3 class="fiche-section-title text-orange-700">
+                Historique des rejets
+                <span class="fiche-count bg-orange-100 text-orange-700">{{ ficheData.crv.historiqueRejets.length }}</span>
+              </h3>
+              <div class="fiche-table">
+                <div v-for="(r, idx) in ficheData.crv.historiqueRejets" :key="idx" class="fiche-table-row">
+                  <span class="text-sm font-medium text-orange-700">{{ r.raison }}</span>
+                  <span class="text-gray-400 text-xs">{{ formatDate(r.date) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Historique validation -->
+            <div v-if="validationStatus?.historique?.length" class="fiche-section">
+              <h3 class="fiche-section-title">Historique validation</h3>
+              <div class="fiche-table">
+                <div v-for="(action, idx) in validationStatus.historique" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm">{{ action.action }}</span>
+                  <span class="text-gray-500 text-xs">{{ formatDate(action.date) }}</span>
+                  <span v-if="action.commentaires" class="text-gray-400 text-xs">{{ action.commentaires }}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Actions disponibles -->
-          <div class="flex gap-3 justify-end">
+          <!-- Actions superviseur -->
+          <div class="flex gap-3 justify-end mt-6 pt-4 border-t">
+            <button @click="downloadPDF(selectedCRV)" class="btn btn-secondary" title="Télécharger le PDF">
+              📄 PDF
+            </button>
             <template v-if="selectedCRV.statut === 'TERMINE'">
               <button
                 v-if="canValidate"
@@ -231,24 +378,11 @@
               </button>
             </template>
             <template v-else-if="selectedCRV.statut === 'VALIDE'">
-              <button
-                v-if="canLock"
-                @click="handleLock(selectedCRV)"
-                class="btn btn-primary"
-              >
-                Verrouiller
-              </button>
+              <button v-if="canLock" @click="handleLock(selectedCRV)" class="btn btn-primary">Verrouiller</button>
             </template>
             <template v-else-if="selectedCRV.statut === 'VERROUILLE'">
-              <button
-                v-if="canUnlock"
-                @click="openUnlockModal(selectedCRV)"
-                class="btn btn-danger"
-              >
-                Déverrouiller
-              </button>
+              <button v-if="canUnlock" @click="openUnlockModal(selectedCRV)" class="btn btn-danger">Déverrouiller</button>
             </template>
-            <!-- Bouton Archiver Google Drive -->
             <ArchiveButton
               v-if="selectedCRV.statut === 'VALIDE' || selectedCRV.statut === 'VERROUILLE'"
               document-type="crv"
@@ -419,6 +553,8 @@ const saving = ref(false)
 const crvList = ref([])
 const selectedCRV = ref(null)
 const validationStatus = ref(null)
+const ficheData = ref(null)
+const ficheLoading = ref(false)
 const pagination = ref({ page: 1, pages: 1, total: 0 })
 
 // Filtres
@@ -531,18 +667,76 @@ function changePage(page) {
 
 async function selectCRV(crv) {
   selectedCRV.value = crv
+  ficheData.value = null
+  ficheLoading.value = true
+
   try {
-    const response = await validationAPI.getStatus(crv.id || crv._id)
-    validationStatus.value = response.data.data || response.data
+    // Charger les données complètes du CRV (vol, phases, charges, engins, événements, observations)
+    const [crvResponse, validResponse] = await Promise.allSettled([
+      crvAPI.getById(crv.id || crv._id),
+      validationAPI.getStatus(crv.id || crv._id)
+    ])
+
+    if (crvResponse.status === 'fulfilled') {
+      ficheData.value = crvResponse.value.data.data || crvResponse.value.data
+    }
+    if (validResponse.status === 'fulfilled') {
+      validationStatus.value = validResponse.value.data.data || validResponse.value.data
+    } else {
+      validationStatus.value = null
+    }
   } catch (error) {
-    console.error('[ValidationCRV] Erreur récupération statut:', error)
-    validationStatus.value = null
+    console.error('[ValidationCRV] Erreur chargement fiche:', error)
+  } finally {
+    ficheLoading.value = false
   }
 }
 
 function closeCRVDetail() {
   selectedCRV.value = null
   validationStatus.value = null
+  ficheData.value = null
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function phaseStatutClass(statut) {
+  const classes = {
+    'TERMINE': 'bg-green-100 text-green-700',
+    'EN_COURS': 'bg-yellow-100 text-yellow-700',
+    'NON_COMMENCE': 'bg-gray-100 text-gray-500',
+    'NON_REALISE': 'bg-purple-100 text-purple-700'
+  }
+  return classes[statut] || 'bg-gray-100 text-gray-500'
+}
+
+async function downloadPDF(crv) {
+  const crvId = crv?.id || crv?._id
+  if (!crvId) return
+  try {
+    const response = await crvAPI.getPDFBase64(crvId)
+    const data = response.data.data || response.data
+    const { base64, mimeType } = data
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const blob = new Blob([new Uint8Array(byteNumbers)], { type: mimeType || 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `CRV_${crv.numeroCRV || crvId}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    showToast('Erreur génération PDF', 'error')
+  }
 }
 
 // Modal handlers
@@ -769,5 +963,58 @@ watch(() => filters.value.statut, () => {
 
 .btn:disabled {
   @apply opacity-50 cursor-not-allowed;
+}
+
+/* Fiche lecture superviseur */
+.fiche-section {
+  @apply mb-4 pb-3 border-b border-gray-100;
+}
+
+.fiche-section:last-of-type {
+  @apply border-b-0;
+}
+
+.fiche-section-warning {
+  @apply bg-orange-50 rounded-lg p-3 border border-orange-200;
+}
+
+.fiche-section-title {
+  @apply text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2;
+}
+
+.fiche-count {
+  @apply bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full;
+}
+
+.fiche-grid {
+  @apply grid grid-cols-4 gap-x-4 gap-y-2;
+}
+
+.fiche-field {
+  @apply flex flex-col;
+}
+
+.fiche-label {
+  @apply text-xs text-gray-400;
+}
+
+.fiche-value {
+  @apply text-sm font-medium text-gray-800;
+}
+
+.fiche-table {
+  @apply space-y-1;
+}
+
+.fiche-table-row {
+  @apply flex items-center gap-3 py-1.5 px-2 bg-gray-50 rounded text-sm;
+}
+
+.fiche-badge-green {
+  @apply bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium;
+}
+
+.fiche-badge-blue {
+  @apply bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium;
 }
 </style>
