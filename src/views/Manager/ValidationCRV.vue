@@ -160,70 +160,74 @@
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
           <div v-else-if="ficheData">
-            <!-- RÉSUMÉ DÉCISIONNEL — lecture 5-10 secondes -->
-            <div class="decision-summary">
-              <div class="fiche-grid">
-                <div class="fiche-field"><span class="fiche-label">Vol</span><span class="fiche-value">{{ ficheData.crv?.vol?.numeroVol || '-' }} — {{ ficheData.crv?.vol?.compagnieAerienne || '-' }}</span></div>
-                <div class="fiche-field"><span class="fiche-label">Type</span><span class="fiche-value">{{ getTypeOperationLabel(ficheData.crv?.vol?.typeOperation) }}</span></div>
-                <div class="fiche-field"><span class="fiche-label">Responsable vol</span><span class="fiche-value" :class="{ 'text-orange-500': !ficheResponsable }">{{ ficheResponsable || 'Non désigné' }}</span></div>
-                <div class="fiche-field"><span class="fiche-label">Personnel</span><span class="fiche-value">{{ ficheData.crv?.personnelAffecte?.length || 0 }} agent(s)</span></div>
-                <div class="fiche-field"><span class="fiche-label">Phases</span><span class="fiche-value">{{ fichePhasesSummary }}</span></div>
-                <div class="fiche-field"><span class="fiche-label">Événements</span><span class="fiche-value" :class="{ 'text-red-600 font-bold': ficheData.evenements?.length > 0 }">{{ ficheData.evenements?.length || 0 }}{{ ficheData.evenements?.length > 0 ? ' ⚠' : '' }}</span></div>
+
+            <!-- ═══ RÉSUMÉ DÉCISIONNEL — lecture 5-10 secondes ═══ -->
+            <div class="ds-summary" :class="ficheVerdictClass">
+              <div class="ds-verdict">{{ ficheVerdict }}</div>
+              <div class="ds-grid">
+                <div class="ds-item"><span class="ds-label">Vol</span><span class="ds-val">{{ ficheData.crv?.vol?.numeroVol || '-' }} — {{ ficheData.crv?.vol?.compagnieAerienne || '-' }}</span></div>
+                <div class="ds-item"><span class="ds-label">Type</span><span class="ds-val">{{ getTypeOperationLabel(ficheData.crv?.vol?.typeOperation) }}</span></div>
+                <div class="ds-item"><span class="ds-label">Avion</span><span class="ds-val">{{ ficheData.crv?.vol?.typeAvion || '-' }} {{ ficheData.crv?.vol?.posteStationnement ? '• Poste ' + ficheData.crv.vol.posteStationnement : '' }}</span></div>
+                <div class="ds-item"><span class="ds-label">Resp. vol</span><span class="ds-val" :class="{ 'text-orange-500': !ficheResponsable }">{{ ficheResponsable || '⚠ Non désigné' }}</span></div>
+                <div class="ds-item"><span class="ds-label">Phases</span><span class="ds-val">{{ fichePhasesSummary }}</span></div>
+                <div class="ds-item"><span class="ds-label">Événements</span><span class="ds-val" :class="{ 'text-red-600 font-bold': ficheData.evenements?.length > 0 }">{{ ficheData.evenements?.length > 0 ? ficheData.evenements.length + ' ⚠' : 'Aucun' }}</span></div>
               </div>
             </div>
 
-            <!-- ALERTE REJET si rejets antérieurs -->
-            <div v-if="ficheLastRejet" class="fiche-section-warning mb-4">
+            <!-- ═══ ZONE CRITIQUE : alertes en premier ═══ -->
+
+            <!-- Alerte rejet -->
+            <div v-if="ficheLastRejet" class="fiche-section-warning mb-3">
               <div class="text-sm font-semibold text-orange-700">↩ Rejeté {{ ficheData.crv.historiqueRejets.length }} fois — Dernier motif :</div>
               <div class="text-sm font-medium text-orange-800 mt-1">{{ ficheLastRejet.raison }}</div>
               <div class="text-xs text-orange-400 mt-0.5">{{ formatDate(ficheLastRejet.date) }}</div>
             </div>
 
-            <!-- Section VOL -->
-            <div class="fiche-section">
-              <h3 class="fiche-section-title">Vol</h3>
-              <div class="fiche-grid">
-                <div class="fiche-field">
-                  <span class="fiche-label">N° Vol</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.numeroVol || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Compagnie</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.compagnieAerienne || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Type</span>
-                  <span class="fiche-value">{{ getTypeOperationLabel(ficheData.crv?.vol?.typeOperation) }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Avion</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.typeAvion || ficheData.crv?.vol?.avion?.typeAvion || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Immat.</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.avion?.immatriculation || ficheData.crv?.vol?.immatriculation || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Poste</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.posteStationnement || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Origine</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.aeroportOrigine || '-' }}</span>
-                </div>
-                <div class="fiche-field">
-                  <span class="fiche-label">Destination</span>
-                  <span class="fiche-value">{{ ficheData.crv?.vol?.aeroportDestination || '-' }}</span>
+            <!-- Événements (avant phases — c'est ce qui déclenche l'investigation) -->
+            <div v-if="ficheData.evenements?.length > 0" class="fiche-section fiche-section-critical">
+              <h3 class="fiche-section-title text-red-700">
+                Événements
+                <span class="fiche-count bg-red-100 text-red-700">{{ ficheData.evenements.length }}</span>
+              </h3>
+              <div class="fiche-table">
+                <div v-for="(ev, idx) in ficheData.evenements" :key="idx" class="fiche-table-row">
+                  <span :class="ev.gravite === 'CRITIQUE' ? 'text-red-600 font-bold' : ev.gravite === 'MAJEUR' ? 'text-orange-600 font-medium' : ''" class="text-sm">{{ ev.typeEvenement }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded" :class="ev.gravite === 'CRITIQUE' ? 'bg-red-100 text-red-800' : ev.gravite === 'MAJEUR' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'">{{ ev.gravite }}</span>
+                  <span class="text-gray-500 text-xs truncate max-w-[200px]">{{ ev.description }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Section PERSONNEL -->
+            <!-- ═══ PHASES — synthèse + détail dépliable ═══ -->
             <div class="fiche-section">
-              <h3 class="fiche-section-title">
-                Personnel
-                <span class="fiche-count">{{ ficheData.crv?.personnelAffecte?.length || 0 }}</span>
+              <h3 class="fiche-section-title cursor-pointer select-none" @click="showPhasesDetail = !showPhasesDetail">
+                Phases
+                <span class="fiche-count">{{ fichePhasesSummary }}</span>
+                <span v-if="ficheData.phases?.length > 0" class="ds-toggle">{{ showPhasesDetail ? '▾' : '▸' }}</span>
               </h3>
+              <!-- Synthèse compacte (toujours visible) -->
+              <div v-if="ficheData.phases?.length > 0" class="ds-phase-summary">
+                <span v-if="phaseCounts.termine > 0" class="ds-phase-chip ds-phase-chip--ok">{{ phaseCounts.termine }} terminée{{ phaseCounts.termine > 1 ? 's' : '' }}</span>
+                <span v-if="phaseCounts.nonRealise > 0" class="ds-phase-chip ds-phase-chip--skip">{{ phaseCounts.nonRealise }} non réalisée{{ phaseCounts.nonRealise > 1 ? 's' : '' }}</span>
+                <span v-if="phaseCounts.enCours > 0" class="ds-phase-chip ds-phase-chip--progress">{{ phaseCounts.enCours }} en cours</span>
+                <span v-if="phaseCounts.nonCommence > 0" class="ds-phase-chip ds-phase-chip--pending">{{ phaseCounts.nonCommence }} non commencée{{ phaseCounts.nonCommence > 1 ? 's' : '' }}</span>
+              </div>
+              <!-- Détail dépliable -->
+              <div v-if="showPhasesDetail && ficheData.phases?.length > 0" class="fiche-table mt-2">
+                <div v-for="(ph, idx) in ficheData.phases" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm flex-1">{{ ph.phase?.nom || ph.nom || '-' }}</span>
+                  <span :class="phaseStatutClass(ph.statut)" class="text-xs px-2 py-0.5 rounded">{{ ph.statut }}</span>
+                  <span v-if="ph.heureDebutReelle" class="text-gray-500 text-xs">{{ formatTime(ph.heureDebutReelle) }}<span v-if="ph.heureFinReelle"> → {{ formatTime(ph.heureFinReelle) }}</span></span>
+                </div>
+              </div>
+              <p v-if="!ficheData.phases?.length" class="text-gray-400 text-sm italic">Aucune phase</p>
+            </div>
+
+            <!-- ═══ SECTIONS SECONDAIRES ═══ -->
+
+            <!-- Personnel -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title">Personnel <span class="fiche-count">{{ ficheData.crv?.personnelAffecte?.length || 0 }}</span></h3>
               <div v-if="ficheData.crv?.personnelAffecte?.length > 0" class="fiche-table">
                 <div v-for="(p, idx) in ficheData.crv.personnelAffecte" :key="idx" class="fiche-table-row">
                   <span class="font-medium">{{ p.nom }} {{ p.prenom }}</span>
@@ -235,47 +239,11 @@
               <p v-else class="text-gray-400 text-sm italic">Aucun personnel déclaré</p>
             </div>
 
-            <!-- Section PHASES -->
+            <!-- Charges -->
             <div class="fiche-section">
               <h3 class="fiche-section-title">
-                Phases
-                <span class="fiche-count">{{ ficheData.phases?.length || 0 }}</span>
-              </h3>
-              <div v-if="ficheData.phases?.length > 0" class="fiche-table">
-                <div v-for="(ph, idx) in ficheData.phases" :key="idx" class="fiche-table-row">
-                  <span class="font-medium text-sm">{{ ph.phase?.nom || ph.nom || '-' }}</span>
-                  <span :class="phaseStatutClass(ph.statut)" class="text-xs px-2 py-0.5 rounded">{{ ph.statut }}</span>
-                  <span v-if="ph.heureDebutReelle" class="text-gray-500 text-xs">
-                    {{ formatTime(ph.heureDebutReelle) }}
-                    <span v-if="ph.heureFinReelle"> → {{ formatTime(ph.heureFinReelle) }}</span>
-                  </span>
-                </div>
-              </div>
-              <p v-else class="text-gray-400 text-sm italic">Aucune phase</p>
-            </div>
-
-            <!-- Section ENGINS -->
-            <div class="fiche-section">
-              <h3 class="fiche-section-title">
-                Engins
-                <span class="fiche-count">{{ ficheData.engins?.length || 0 }}</span>
-              </h3>
-              <div v-if="ficheData.engins?.length > 0" class="fiche-table">
-                <div v-for="(e, idx) in ficheData.engins" :key="idx" class="fiche-table-row">
-                  <span class="font-medium text-sm">{{ e.engin?.typeEngin || e.type || '-' }}</span>
-                  <span class="text-gray-500 text-sm">{{ e.engin?.numeroEngin || e.immatriculation || '-' }}</span>
-                  <span v-if="e.usage" class="text-gray-400 text-xs">{{ e.usage }}</span>
-                </div>
-              </div>
-              <p v-else class="text-gray-400 text-sm italic">Aucun engin déclaré</p>
-            </div>
-
-            <!-- Section CHARGES -->
-            <div class="fiche-section">
-              <h3 class="fiche-section-title">
-                Charges
-                <span class="fiche-count">{{ ficheData.charges?.length || 0 }}</span>
-                <span v-if="ficheData.crv?.confirmationAucuneCharge" class="fiche-badge-blue">Aucune charge déclarée</span>
+                Charges <span class="fiche-count">{{ ficheData.charges?.length || 0 }}</span>
+                <span v-if="ficheData.crv?.confirmationAucuneCharge" class="fiche-badge-blue">Aucune charge</span>
               </h3>
               <div v-if="ficheData.charges?.length > 0" class="fiche-table">
                 <div v-for="(c, idx) in ficheData.charges" :key="idx" class="fiche-table-row">
@@ -288,32 +256,34 @@
               <p v-else-if="!ficheData.crv?.confirmationAucuneCharge" class="text-gray-400 text-sm italic">Aucune charge saisie</p>
             </div>
 
-            <!-- Section ÉVÉNEMENTS -->
-            <div class="fiche-section">
-              <h3 class="fiche-section-title">
-                Événements
-                <span class="fiche-count">{{ ficheData.evenements?.length || 0 }}</span>
-              </h3>
-              <div v-if="ficheData.evenements?.length > 0" class="fiche-table">
-                <div v-for="(ev, idx) in ficheData.evenements" :key="idx" class="fiche-table-row">
-                  <span :class="ev.gravite === 'CRITIQUE' ? 'text-red-600 font-bold' : ev.gravite === 'MAJEUR' ? 'text-orange-600 font-medium' : ''" class="text-sm">
-                    {{ ev.typeEvenement }}
-                  </span>
-                  <span class="text-xs px-2 py-0.5 rounded" :class="ev.gravite === 'CRITIQUE' ? 'bg-red-100 text-red-800' : ev.gravite === 'MAJEUR' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'">
-                    {{ ev.gravite }}
-                  </span>
-                  <span class="text-gray-500 text-xs truncate max-w-[200px]">{{ ev.description }}</span>
+            <!-- Engins -->
+            <div v-if="ficheData.engins?.length > 0" class="fiche-section">
+              <h3 class="fiche-section-title">Engins <span class="fiche-count">{{ ficheData.engins.length }}</span></h3>
+              <div class="fiche-table">
+                <div v-for="(e, idx) in ficheData.engins" :key="idx" class="fiche-table-row">
+                  <span class="font-medium text-sm">{{ e.engin?.typeEngin || e.type || '-' }}</span>
+                  <span class="text-gray-500 text-sm">{{ e.engin?.numeroEngin || e.immatriculation || '-' }}</span>
+                  <span v-if="e.usage" class="text-gray-400 text-xs">{{ e.usage }}</span>
                 </div>
               </div>
-              <p v-else class="text-gray-400 text-sm italic">Aucun événement (vol nominal)</p>
             </div>
 
-            <!-- Section OBSERVATIONS -->
-            <div v-if="ficheData.observations?.length > 0" class="fiche-section">
-              <h3 class="fiche-section-title">
-                Observations
-                <span class="fiche-count">{{ ficheData.observations.length }}</span>
+            <!-- Vol détail (condensé, info déjà dans résumé) -->
+            <div class="fiche-section">
+              <h3 class="fiche-section-title cursor-pointer select-none" @click="showVolDetail = !showVolDetail">
+                Détail vol <span class="ds-toggle">{{ showVolDetail ? '▾' : '▸' }}</span>
               </h3>
+              <div v-if="showVolDetail" class="fiche-grid mt-1">
+                <div class="fiche-field"><span class="fiche-label">Immat.</span><span class="fiche-value">{{ ficheData.crv?.vol?.avion?.immatriculation || ficheData.crv?.vol?.immatriculation || '-' }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Origine</span><span class="fiche-value">{{ ficheData.crv?.vol?.aeroportOrigine || '-' }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Destination</span><span class="fiche-value">{{ ficheData.crv?.vol?.aeroportDestination || '-' }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Poste</span><span class="fiche-value">{{ ficheData.crv?.vol?.posteStationnement || '-' }}</span></div>
+              </div>
+            </div>
+
+            <!-- Observations -->
+            <div v-if="ficheData.observations?.length > 0" class="fiche-section">
+              <h3 class="fiche-section-title">Observations <span class="fiche-count">{{ ficheData.observations.length }}</span></h3>
               <div class="fiche-table">
                 <div v-for="(obs, idx) in ficheData.observations" :key="idx" class="fiche-table-row">
                   <span class="text-sm">{{ obs.contenu || obs.texte || '-' }}</span>
@@ -322,13 +292,19 @@
               </div>
             </div>
 
-            <!-- Section HISTORIQUE REJETS -->
-            <div v-if="ficheData.crv?.historiqueRejets?.length > 0" class="fiche-section fiche-section-warning">
-              <h3 class="fiche-section-title text-orange-700">
-                Historique des rejets
-                <span class="fiche-count bg-orange-100 text-orange-700">{{ ficheData.crv.historiqueRejets.length }}</span>
+            <!-- Événements section (si aucun événement — message nominal) -->
+            <div v-if="!ficheData.evenements?.length" class="fiche-section">
+              <h3 class="fiche-section-title">Événements</h3>
+              <p class="text-green-600 text-sm">✓ Vol nominal — aucun événement signalé</p>
+            </div>
+
+            <!-- Historique rejets détaillé -->
+            <div v-if="ficheData.crv?.historiqueRejets?.length > 1" class="fiche-section">
+              <h3 class="fiche-section-title cursor-pointer select-none" @click="showRejetDetail = !showRejetDetail">
+                Historique complet des rejets <span class="fiche-count bg-orange-100 text-orange-700">{{ ficheData.crv.historiqueRejets.length }}</span>
+                <span class="ds-toggle">{{ showRejetDetail ? '▾' : '▸' }}</span>
               </h3>
-              <div class="fiche-table">
+              <div v-if="showRejetDetail" class="fiche-table mt-1">
                 <div v-for="(r, idx) in ficheData.crv.historiqueRejets" :key="idx" class="fiche-table-row">
                   <span class="text-sm font-medium text-orange-700">{{ r.raison }}</span>
                   <span class="text-gray-400 text-xs">{{ formatDate(r.date) }}</span>
@@ -338,8 +314,10 @@
 
             <!-- Historique validation -->
             <div v-if="validationStatus?.historique?.length" class="fiche-section">
-              <h3 class="fiche-section-title">Historique validation</h3>
-              <div class="fiche-table">
+              <h3 class="fiche-section-title cursor-pointer select-none" @click="showValidationHistory = !showValidationHistory">
+                Historique validation <span class="ds-toggle">{{ showValidationHistory ? '▾' : '▸' }}</span>
+              </h3>
+              <div v-if="showValidationHistory" class="fiche-table mt-1">
                 <div v-for="(action, idx) in validationStatus.historique" :key="idx" class="fiche-table-row">
                   <span class="font-medium text-sm">{{ action.action }}</span>
                   <span class="text-gray-500 text-xs">{{ formatDate(action.date) }}</span>
@@ -549,6 +527,10 @@ const selectedCRV = ref(null)
 const validationStatus = ref(null)
 const ficheData = ref(null)
 const ficheLoading = ref(false)
+const showPhasesDetail = ref(false)
+const showVolDetail = ref(false)
+const showRejetDetail = ref(false)
+const showValidationHistory = ref(false)
 const pagination = ref({ page: 1, pages: 1, total: 0 })
 
 // Filtres
@@ -621,6 +603,32 @@ const fichePhasesSummary = computed(() => {
 const ficheLastRejet = computed(() => {
   const rejets = ficheData.value?.crv?.historiqueRejets
   return rejets?.length > 0 ? rejets[rejets.length - 1] : null
+})
+const phaseCounts = computed(() => {
+  const phases = ficheData.value?.phases || []
+  return {
+    termine: phases.filter(p => p.statut === 'TERMINE').length,
+    nonRealise: phases.filter(p => p.statut === 'NON_REALISE').length,
+    enCours: phases.filter(p => p.statut === 'EN_COURS').length,
+    nonCommence: phases.filter(p => p.statut === 'NON_COMMENCE').length,
+    total: phases.length
+  }
+})
+const ficheVerdict = computed(() => {
+  const evts = ficheData.value?.evenements?.length || 0
+  const rejets = ficheData.value?.crv?.historiqueRejets?.length || 0
+  const noResp = !ficheResponsable.value
+  if (rejets > 0) return '↩ Dossier rejeté — à re-vérifier'
+  if (evts > 0) return '⚠ Événements signalés — attention requise'
+  if (noResp) return '⚠ Responsable vol non désigné'
+  return '✓ Dossier nominal'
+})
+const ficheVerdictClass = computed(() => {
+  const evts = ficheData.value?.evenements?.length || 0
+  const rejets = ficheData.value?.crv?.historiqueRejets?.length || 0
+  if (rejets > 0) return 'ds-summary--reject'
+  if (evts > 0) return 'ds-summary--warn'
+  return 'ds-summary--ok'
 })
 
 // Methods
@@ -731,6 +739,10 @@ function closeCRVDetail() {
   selectedCRV.value = null
   validationStatus.value = null
   ficheData.value = null
+  showPhasesDetail.value = false
+  showVolDetail.value = false
+  showRejetDetail.value = false
+  showValidationHistory.value = false
 }
 
 function formatTime(dateStr) {
@@ -1053,9 +1065,58 @@ watch(() => filters.value.statut, () => {
   @apply bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium;
 }
 
-/* Résumé décisionnel */
-.decision-summary {
-  @apply bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200;
+/* ====== FICHE DÉCISIONNELLE ====== */
+
+/* Résumé décisionnel renforcé */
+.ds-summary {
+  @apply rounded-lg p-4 mb-4 border-2;
+}
+.ds-summary--ok {
+  @apply bg-green-50 border-green-200;
+}
+.ds-summary--warn {
+  @apply bg-orange-50 border-orange-300;
+}
+.ds-summary--reject {
+  @apply bg-red-50 border-red-300;
+}
+.ds-verdict {
+  @apply text-sm font-bold mb-3;
+}
+.ds-summary--ok .ds-verdict { @apply text-green-700; }
+.ds-summary--warn .ds-verdict { @apply text-orange-700; }
+.ds-summary--reject .ds-verdict { @apply text-red-700; }
+.ds-grid {
+  @apply grid grid-cols-3 gap-2;
+}
+.ds-item {
+  @apply flex flex-col;
+}
+.ds-label {
+  @apply text-xs text-gray-400 uppercase tracking-wide;
+}
+.ds-val {
+  @apply text-sm font-medium text-gray-800 mt-0.5;
+}
+.ds-toggle {
+  @apply text-gray-400 text-xs ml-1;
+}
+
+/* Phases synthèse chips */
+.ds-phase-summary {
+  @apply flex flex-wrap gap-2;
+}
+.ds-phase-chip {
+  @apply text-xs px-2.5 py-1 rounded-full font-medium;
+}
+.ds-phase-chip--ok { @apply bg-green-100 text-green-700; }
+.ds-phase-chip--skip { @apply bg-purple-100 text-purple-700; }
+.ds-phase-chip--progress { @apply bg-yellow-100 text-yellow-700; }
+.ds-phase-chip--pending { @apply bg-gray-100 text-gray-500; }
+
+/* Section critique */
+.fiche-section-critical {
+  @apply bg-red-50 rounded-lg p-3 border border-red-200;
 }
 
 /* ====== COCKPIT SUPERVISEUR ====== */
