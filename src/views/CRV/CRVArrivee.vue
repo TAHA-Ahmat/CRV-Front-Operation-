@@ -120,10 +120,7 @@
 
           <!-- Étape 2: Personnel -->
           <div v-show="currentStep === 2">
-            <CRVPersonnes
-              v-model="formData.personnes"
-              :disabled="crvStore.isLocked"
-            />
+            <CRVPersonnes v-model="formData.personnes" :disabled="crvStore.isLocked" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour

@@ -100,7 +100,7 @@ export const useCRVStore = defineStore('crv', {
       const statuts = {
         [STATUT_CRV.BROUILLON]: 'Brouillon',
         [STATUT_CRV.EN_COURS]: 'En cours',
-        [STATUT_CRV.TERMINE]: 'Terminé',
+        [STATUT_CRV.TERMINE]: 'Soumis',
         [STATUT_CRV.VALIDE]: 'Validé',
         [STATUT_CRV.VERROUILLE]: 'Verrouillé',
         [STATUT_CRV.ANNULE]: 'Annulé'

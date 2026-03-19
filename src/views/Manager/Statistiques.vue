@@ -343,7 +343,7 @@ const formatStatut = (statut) => {
   const map = {
     'BROUILLON': 'Brouillon',
     'EN_COURS': 'En cours',
-    'TERMINE': 'Terminé',
+    'TERMINE': 'Soumis',
     'VALIDE': 'Validé',
     'VERROUILLE': 'Verrouillé',
     'ANNULE': 'Annulé'
