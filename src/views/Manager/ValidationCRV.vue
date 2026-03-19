@@ -1,9 +1,14 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
+    <!-- Header cockpit -->
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Validation CRV</h1>
-      <p class="text-gray-600 mt-1">CRV en attente de validation</p>
+      <h1 class="text-2xl font-bold text-gray-800">Supervision CRV</h1>
+      <div v-if="crvList.length > 0" class="flex items-center gap-4 mt-2">
+        <span class="sv-counter">{{ crvList.length }} dossier{{ crvList.length > 1 ? 's' : '' }}</span>
+        <span v-if="countAttention > 0" class="sv-counter sv-counter--warn">{{ countAttention }} demande{{ countAttention > 1 ? 'nt' : '' }} attention</span>
+        <span v-if="countRejeted > 0" class="sv-counter sv-counter--reject">{{ countRejeted }} déjà rejeté{{ countRejeted > 1 ? 's' : '' }}</span>
+      </div>
+      <p v-else class="text-gray-500 mt-1 text-sm">Aucun CRV en file</p>
     </div>
 
     <!-- Filtres -->
@@ -40,89 +45,60 @@
     </div>
 
     <!-- Liste CRV -->
-    <div v-else-if="crvList.length > 0" class="space-y-4">
+    <div v-else-if="crvList.length > 0" class="sv-list">
       <div
         v-for="crv in crvList"
         :key="crv.id || crv._id"
-        class="card hover:shadow-lg transition-shadow cursor-pointer"
+        class="sv-card"
+        :class="cardClass(crv)"
         @click="selectCRV(crv)"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <div class="flex items-center gap-3 mb-2">
-              <span class="font-bold text-lg">{{ crv.numeroCRV }}</span>
-              <span :class="getStatutClass(crv.statut)" class="px-2 py-1 rounded-full text-xs font-medium">
-                {{ getStatutLabel(crv.statut) }}
-              </span>
-              <span v-if="hasRejets(crv)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">↩ Rejeté</span>
-              <span v-if="hasEvents(crv)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">⚠ Événement</span>
+        <!-- Bande latérale de criticité (CSS) -->
+        <div class="sv-card-body">
+          <!-- Zone info principale -->
+          <div class="sv-card-info">
+            <!-- Ligne 1 : vol + type -->
+            <div class="sv-card-flight">
+              <span class="sv-flight-number">{{ crv.vol?.numeroVol || crv.numeroCRV }}</span>
+              <span class="sv-flight-company">{{ crv.vol?.compagnieAerienne || '' }}</span>
+              <span class="sv-flight-type">{{ getTypeOperationLabel(crv.vol?.typeOperation) }}</span>
             </div>
-            <div class="text-gray-600 text-sm flex items-center gap-2">
-              <span v-if="crv.vol" class="font-medium">{{ crv.vol.numeroVol }}</span>
-              <span v-if="crv.vol" class="text-gray-400">{{ crv.vol.compagnieAerienne }}</span>
-              <span v-if="crv.vol?.typeOperation" class="text-gray-400 text-xs">({{ getTypeOperationLabel(crv.vol.typeOperation) }})</span>
-              <span v-if="getResponsable(crv)" class="text-xs text-blue-600">👤 {{ getResponsable(crv) }}</span>
+            <!-- Ligne 2 : numéro CRV + statut + signaux -->
+            <div class="sv-card-meta">
+              <span class="sv-crv-id">{{ crv.numeroCRV }}</span>
+              <span :class="getStatutClass(crv.statut)" class="sv-badge">{{ getStatutLabel(crv.statut) }}</span>
+              <span v-if="hasRejets(crv)" class="sv-signal sv-signal--reject">↩ Rejeté</span>
+              <span v-if="hasEvents(crv)" class="sv-signal sv-signal--event">⚠ Événement</span>
+              <span v-if="getResponsable(crv)" class="sv-signal sv-signal--resp">👤 {{ getResponsable(crv) }}</span>
+              <span v-else class="sv-signal sv-signal--no-resp">Resp. non désigné</span>
             </div>
-            <div class="text-gray-400 text-xs mt-1">
-              {{ formatDate(crv.createdAt) }}
-            </div>
+            <!-- Ligne 3 : date -->
+            <div class="sv-card-date">{{ formatDate(crv.createdAt) }}</div>
           </div>
-          <div class="flex gap-2">
-            <!-- Actions rapides selon statut -->
+          <!-- Zone actions -->
+          <div class="sv-card-actions" @click.stop>
             <template v-if="crv.statut === 'TERMINE'">
-              <button
-                v-if="canValidate"
-                @click.stop="openValidateModal(crv)"
-                class="btn btn-sm btn-success"
-                :disabled="crv.completude < 80"
-                :title="crv.completude < 80 ? 'Complétude insuffisante (minimum 80%)' : 'Approuver ce CRV'"
-              >
-                Valider
-              </button>
-              <button
-                v-if="canReject"
-                @click.stop="openRejectModal(crv)"
-                class="btn btn-sm btn-warning"
-                title="Renvoyer pour correction"
-              >
-                Rejeter
-              </button>
+              <button v-if="canValidate" @click="openValidateModal(crv)" class="sv-action sv-action--validate" :disabled="crv.completude < 80" :title="crv.completude < 80 ? 'Complétude < 80%' : 'Valider'">✓</button>
+              <button v-if="canReject" @click="openRejectModal(crv)" class="sv-action sv-action--reject" title="Rejeter">↩</button>
             </template>
             <template v-else-if="crv.statut === 'VALIDE'">
-              <button
-                v-if="canLock"
-                @click.stop="handleLock(crv)"
-                class="btn btn-sm btn-primary"
-                title="Finaliser ce CRV (aucune modification possible après)"
-              >
-                Verrouiller
-              </button>
+              <button v-if="canLock" @click="handleLock(crv)" class="sv-action sv-action--lock" title="Verrouiller">🔒</button>
             </template>
             <template v-else-if="crv.statut === 'VERROUILLE'">
-              <button
-                v-if="canUnlock"
-                @click.stop="openUnlockModal(crv)"
-                class="btn btn-sm btn-danger"
-                title="Opération exceptionnelle: déverrouiller ce CRV"
-              >
-                Déverrouiller
-              </button>
+              <button v-if="canUnlock" @click="openUnlockModal(crv)" class="sv-action sv-action--unlock" title="Déverrouiller">🔓</button>
             </template>
-            <!-- Bouton Archiver Google Drive -->
-            <div @click.stop>
-              <ArchiveButton
-                v-if="crv.statut === 'VALIDE' || crv.statut === 'VERROUILLE'"
-                document-type="crv"
-                :document-id="crv._id || crv.id"
-                :document-name="crv.numeroCRV"
-                :archivage-info="crv.archivage"
-                :document-statut="crv.statut"
-                :api-service="crvAPI"
-                :compact="true"
-                @archived="onCRVArchived"
-                @error="onArchiveError"
-              />
-            </div>
+            <ArchiveButton
+              v-if="crv.statut === 'VALIDE' || crv.statut === 'VERROUILLE'"
+              document-type="crv"
+              :document-id="crv._id || crv.id"
+              :document-name="crv.numeroCRV"
+              :archivage-info="crv.archivage"
+              :document-statut="crv.statut"
+              :api-service="crvAPI"
+              :compact="true"
+              @archived="onCRVArchived"
+              @error="onArchiveError"
+            />
           </div>
         </div>
       </div>
@@ -606,6 +582,19 @@ const toastClass = computed(() => ({
   'bg-orange-500 text-white': toast.value.type === 'warning'
 }))
 
+// Compteurs header cockpit
+const countAttention = computed(() => crvList.value.filter(c => hasEvents(c)).length)
+const countRejeted = computed(() => crvList.value.filter(c => hasRejets(c)).length)
+
+// Classe carte dynamique
+function cardClass(crv) {
+  return {
+    'sv-card--rejected': hasRejets(crv),
+    'sv-card--event': !hasRejets(crv) && hasEvents(crv),
+    'sv-card--nominal': !hasRejets(crv) && !hasEvents(crv)
+  }
+}
+
 // Helpers liste — signaux visuels
 function hasEvents(crv) {
   return crv.evenements?.length > 0 || crv.nbEvenements > 0
@@ -1067,5 +1056,121 @@ watch(() => filters.value.statut, () => {
 /* Résumé décisionnel */
 .decision-summary {
   @apply bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200;
+}
+
+/* ====== COCKPIT SUPERVISEUR ====== */
+
+/* Compteurs header */
+.sv-counter {
+  @apply text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full;
+}
+.sv-counter--warn {
+  @apply bg-orange-50 text-orange-700;
+}
+.sv-counter--reject {
+  @apply bg-red-50 text-red-700;
+}
+
+/* Liste */
+.sv-list {
+  @apply space-y-2;
+}
+
+/* Carte CRV */
+.sv-card {
+  @apply bg-white rounded-lg border border-gray-200 cursor-pointer;
+  transition: all 0.15s ease;
+}
+.sv-card:hover {
+  @apply shadow-md border-gray-300;
+  transform: translateY(-1px);
+}
+
+/* Bandes latérales de criticité */
+.sv-card--rejected {
+  @apply border-l-4 border-l-red-400;
+}
+.sv-card--event {
+  @apply border-l-4 border-l-orange-400;
+}
+.sv-card--nominal {
+  @apply border-l-4 border-l-green-300;
+}
+
+.sv-card-body {
+  @apply flex justify-between items-center px-4 py-3 gap-4;
+}
+
+/* Zone info */
+.sv-card-info {
+  @apply flex-1 min-w-0;
+}
+.sv-card-flight {
+  @apply flex items-baseline gap-2 mb-1;
+}
+.sv-flight-number {
+  @apply text-base font-bold text-gray-900;
+}
+.sv-flight-company {
+  @apply text-sm text-gray-500;
+}
+.sv-flight-type {
+  @apply text-xs text-gray-400;
+}
+.sv-card-meta {
+  @apply flex items-center gap-2 flex-wrap;
+}
+.sv-crv-id {
+  @apply text-xs text-gray-400 font-mono;
+}
+.sv-badge {
+  @apply px-2 py-0.5 rounded-full text-xs font-medium;
+}
+.sv-card-date {
+  @apply text-xs text-gray-300 mt-1;
+}
+
+/* Signaux */
+.sv-signal {
+  @apply text-xs px-2 py-0.5 rounded-full font-medium;
+}
+.sv-signal--reject {
+  @apply bg-red-50 text-red-700 border border-red-200;
+}
+.sv-signal--event {
+  @apply bg-orange-50 text-orange-700 border border-orange-200;
+}
+.sv-signal--resp {
+  @apply text-blue-600;
+}
+.sv-signal--no-resp {
+  @apply text-gray-400 italic;
+  font-size: 11px;
+}
+
+/* Actions compactes */
+.sv-card-actions {
+  @apply flex items-center gap-1.5 flex-shrink-0;
+}
+.sv-action {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all;
+}
+.sv-action:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+.sv-action:disabled {
+  @apply opacity-30 cursor-not-allowed;
+}
+.sv-action--validate {
+  @apply bg-green-100 text-green-700 hover:bg-green-200;
+}
+.sv-action--reject {
+  @apply bg-orange-100 text-orange-700 hover:bg-orange-200;
+}
+.sv-action--lock {
+  @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+}
+.sv-action--unlock {
+  @apply bg-red-100 text-red-700 hover:bg-red-200;
 }
 </style>
