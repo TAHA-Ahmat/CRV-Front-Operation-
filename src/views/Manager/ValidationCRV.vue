@@ -54,17 +54,16 @@
               <span :class="getStatutClass(crv.statut)" class="px-2 py-1 rounded-full text-xs font-medium">
                 {{ getStatutLabel(crv.statut) }}
               </span>
-              <span v-if="crv.completude !== undefined" class="text-sm text-gray-500">
-                Complétude: {{ crv.completude }}%
-              </span>
+              <span v-if="hasRejets(crv)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">↩ Rejeté</span>
+              <span v-if="hasEvents(crv)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">⚠ Événement</span>
             </div>
-            <div class="text-gray-600 text-sm">
-              <span v-if="crv.vol">{{ crv.vol.numeroVol }} - {{ crv.vol.compagnieAerienne }}</span>
-              <span v-if="crv.vol?.typeOperation" class="ml-2 text-gray-400">
-                ({{ getTypeOperationLabel(crv.vol.typeOperation) }})
-              </span>
+            <div class="text-gray-600 text-sm flex items-center gap-2">
+              <span v-if="crv.vol" class="font-medium">{{ crv.vol.numeroVol }}</span>
+              <span v-if="crv.vol" class="text-gray-400">{{ crv.vol.compagnieAerienne }}</span>
+              <span v-if="crv.vol?.typeOperation" class="text-gray-400 text-xs">({{ getTypeOperationLabel(crv.vol.typeOperation) }})</span>
+              <span v-if="getResponsable(crv)" class="text-xs text-blue-600">👤 {{ getResponsable(crv) }}</span>
             </div>
-            <div class="text-gray-500 text-xs mt-1">
+            <div class="text-gray-400 text-xs mt-1">
               {{ formatDate(crv.createdAt) }}
             </div>
           </div>
@@ -185,6 +184,25 @@
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
           <div v-else-if="ficheData">
+            <!-- RÉSUMÉ DÉCISIONNEL — lecture 5-10 secondes -->
+            <div class="decision-summary">
+              <div class="fiche-grid">
+                <div class="fiche-field"><span class="fiche-label">Vol</span><span class="fiche-value">{{ ficheData.crv?.vol?.numeroVol || '-' }} — {{ ficheData.crv?.vol?.compagnieAerienne || '-' }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Type</span><span class="fiche-value">{{ getTypeOperationLabel(ficheData.crv?.vol?.typeOperation) }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Responsable vol</span><span class="fiche-value" :class="{ 'text-orange-500': !ficheResponsable }">{{ ficheResponsable || 'Non désigné' }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Personnel</span><span class="fiche-value">{{ ficheData.crv?.personnelAffecte?.length || 0 }} agent(s)</span></div>
+                <div class="fiche-field"><span class="fiche-label">Phases</span><span class="fiche-value">{{ fichePhasesSummary }}</span></div>
+                <div class="fiche-field"><span class="fiche-label">Événements</span><span class="fiche-value" :class="{ 'text-red-600 font-bold': ficheData.evenements?.length > 0 }">{{ ficheData.evenements?.length || 0 }}{{ ficheData.evenements?.length > 0 ? ' ⚠' : '' }}</span></div>
+              </div>
+            </div>
+
+            <!-- ALERTE REJET si rejets antérieurs -->
+            <div v-if="ficheLastRejet" class="fiche-section-warning mb-4">
+              <div class="text-sm font-semibold text-orange-700">↩ Rejeté {{ ficheData.crv.historiqueRejets.length }} fois — Dernier motif :</div>
+              <div class="text-sm font-medium text-orange-800 mt-1">{{ ficheLastRejet.raison }}</div>
+              <div class="text-xs text-orange-400 mt-0.5">{{ formatDate(ficheLastRejet.date) }}</div>
+            </div>
+
             <!-- Section VOL -->
             <div class="fiche-section">
               <h3 class="fiche-section-title">Vol</h3>
@@ -587,6 +605,34 @@ const toastClass = computed(() => ({
   'bg-red-500 text-white': toast.value.type === 'error',
   'bg-orange-500 text-white': toast.value.type === 'warning'
 }))
+
+// Helpers liste — signaux visuels
+function hasEvents(crv) {
+  return crv.evenements?.length > 0 || crv.nbEvenements > 0
+}
+function hasRejets(crv) {
+  return crv.historiqueRejets?.length > 0
+}
+function getResponsable(crv) {
+  const resp = crv.personnelAffecte?.find(p => p.isResponsable)
+  return resp ? `${resp.nom} ${resp.prenom}` : null
+}
+
+// Helpers fiche — résumé décisionnel
+const ficheResponsable = computed(() => {
+  const resp = ficheData.value?.crv?.personnelAffecte?.find(p => p.isResponsable)
+  return resp ? `${resp.nom} ${resp.prenom} (${resp.fonction})` : null
+})
+const fichePhasesSummary = computed(() => {
+  const phases = ficheData.value?.phases
+  if (!phases?.length) return '0'
+  const done = phases.filter(p => p.statut === 'TERMINE' || p.statut === 'NON_REALISE').length
+  return `${done}/${phases.length} traitées`
+})
+const ficheLastRejet = computed(() => {
+  const rejets = ficheData.value?.crv?.historiqueRejets
+  return rejets?.length > 0 ? rejets[rejets.length - 1] : null
+})
 
 // Methods
 function getStatutLabel(statut) {
@@ -1016,5 +1062,10 @@ watch(() => filters.value.statut, () => {
 
 .fiche-badge-blue {
   @apply bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium;
+}
+
+/* Résumé décisionnel */
+.decision-summary {
+  @apply bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200;
 }
 </style>
