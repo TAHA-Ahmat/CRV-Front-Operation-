@@ -46,6 +46,59 @@
           <div v-else class="completude-success">
             ✅ CRV prêt pour soumission
           </div>
+
+          <!-- Encart SLA -->
+          <div v-if="slaStatus" class="sla-encart" :class="slaStatus.cssClass">
+            <span class="sla-icon">⏱</span>
+            <span class="sla-text">
+              SLA : <strong>{{ slaStatus.label }}</strong>
+              <span class="sla-detail">— {{ slaStatus.etape }} · {{ slaStatus.source }}</span>
+              <span v-if="slaStatus.turnaround?.categorie" class="sla-detail sla-turnaround">
+                · Turnaround {{ slaStatus.turnaround.turnaround }}min ({{ slaStatus.turnaround.source }})
+              </span>
+            </span>
+          </div>
+
+          <!-- SLA Bagages -->
+          <div v-if="slaBagages" class="sla-bagages-row">
+            <div v-if="slaBagages.premierBagage" class="sla-bagages-item" :class="slaBagages.premierBagage.cssClass">
+              <span>1er bag. : </span>
+              <strong>{{ slaBagages.premierBagage.label }}</strong>
+              <span v-if="slaBagages.premierBagage.enAttente" class="sla-attente"> (en cours)</span>
+            </div>
+            <div v-if="slaBagages.dernierBagage" class="sla-bagages-item" :class="slaBagages.dernierBagage.cssClass">
+              <span>Dern. bag. : </span>
+              <strong>{{ slaBagages.dernierBagage.label }}</strong>
+              <span v-if="slaBagages.dernierBagage.enAttente" class="sla-attente"> (en cours)</span>
+            </div>
+          </div>
+
+          <!-- SLA Boarding -->
+          <div v-if="slaBoarding" class="sla-bagages-row">
+            <div v-if="slaBoarding.debut" class="sla-bagages-item" :class="slaBoarding.debut.cssClass">
+              <span>Boarding : </span>
+              <strong>{{ slaBoarding.debut.label }}</strong>
+              <span v-if="slaBoarding.debut.enAttente" class="sla-attente"> (en attente)</span>
+            </div>
+            <div v-if="slaBoarding.fermetureGate" class="sla-bagages-item" :class="slaBoarding.fermetureGate.cssClass">
+              <span>Gate : </span>
+              <strong>{{ slaBoarding.fermetureGate.label }}</strong>
+              <span v-if="slaBoarding.fermetureGate.enAttente" class="sla-attente"> (en attente)</span>
+            </div>
+          </div>
+          <!-- SLA Check-in -->
+          <div v-if="slaCheckin" class="sla-bagages-row">
+            <div v-if="slaCheckin.ouverture" class="sla-bagages-item" :class="slaCheckin.ouverture.cssClass">
+              <span>Check-in ouv. : </span>
+              <strong>{{ slaCheckin.ouverture.label }}</strong>
+              <span v-if="slaCheckin.ouverture.enAttente" class="sla-attente"> (en attente)</span>
+            </div>
+            <div v-if="slaCheckin.fermeture" class="sla-bagages-item" :class="slaCheckin.fermeture.cssClass">
+              <span>Check-in ferm. : </span>
+              <strong>{{ slaCheckin.fermeture.label }}</strong>
+              <span v-if="slaCheckin.fermeture.enAttente" class="sla-attente"> (en attente)</span>
+            </div>
+          </div>
         </div>
 
         <div class="crv-progress">
@@ -89,6 +142,80 @@
               title="Informations du vol - Turn Around"
               :disabled="crvStore.isLocked"
             />
+
+            <!-- Horaires prévus (depuis le bulletin) -->
+            <div v-if="crvStore.currentCRV?.horaire" class="horaires-prevus card">
+              <h3 class="section-title">Horaires prévus</h3>
+              <div class="horaires-row">
+                <div v-if="crvStore.currentCRV.horaire.heureAtterrisagePrevue" class="horaire-item">
+                  <label class="horaire-label">Atterrissage prévu</label>
+                  <span class="horaire-value">{{ formatHoraire(crvStore.currentCRV.horaire.heureAtterrisagePrevue) }}</span>
+                </div>
+                <div v-if="crvStore.currentCRV.horaire.heureDecollagePrevue" class="horaire-item">
+                  <label class="horaire-label">Décollage prévu</label>
+                  <span class="horaire-value">{{ formatHoraire(crvStore.currentCRV.horaire.heureDecollagePrevue) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Horodatages terrain boarding -->
+            <div v-if="crvStore.currentCRV?.horaire" class="boarding-horodatages card">
+              <h3 class="section-title">Boarding</h3>
+              <div class="horaires-row">
+                <div class="horaire-item horaire-editable">
+                  <label class="horaire-label">Début embarquement</label>
+                  <input
+                    v-if="!crvStore.isLocked"
+                    type="datetime-local"
+                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.debutBoardingAt)"
+                    @change="updateBoardingHorodatage('debutBoardingAt', $event.target.value)"
+                    class="horaire-input"
+                  />
+                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.debutBoardingAt ? formatHoraire(crvStore.currentCRV.horaire.debutBoardingAt) : '—' }}</span>
+                </div>
+                <div class="horaire-item horaire-editable">
+                  <label class="horaire-label">Fermeture gate</label>
+                  <input
+                    v-if="!crvStore.isLocked"
+                    type="datetime-local"
+                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.fermetureGateAt)"
+                    @change="updateBoardingHorodatage('fermetureGateAt', $event.target.value)"
+                    class="horaire-input"
+                  />
+                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.fermetureGateAt ? formatHoraire(crvStore.currentCRV.horaire.fermetureGateAt) : '—' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Horodatages terrain check-in -->
+            <div v-if="crvStore.currentCRV?.horaire" class="boarding-horodatages card">
+              <h3 class="section-title">Check-in</h3>
+              <div class="horaires-row">
+                <div class="horaire-item horaire-editable">
+                  <label class="horaire-label">Ouverture comptoir</label>
+                  <input
+                    v-if="!crvStore.isLocked"
+                    type="datetime-local"
+                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.ouvertureComptoirAt)"
+                    @change="updateCheckinHorodatage('ouvertureComptoirAt', $event.target.value)"
+                    class="horaire-input"
+                  />
+                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.ouvertureComptoirAt ? formatHoraire(crvStore.currentCRV.horaire.ouvertureComptoirAt) : '—' }}</span>
+                </div>
+                <div class="horaire-item horaire-editable">
+                  <label class="horaire-label">Fermeture comptoir</label>
+                  <input
+                    v-if="!crvStore.isLocked"
+                    type="datetime-local"
+                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.fermetureComptoirAt)"
+                    @change="updateCheckinHorodatage('fermetureComptoirAt', $event.target.value)"
+                    class="horaire-input"
+                  />
+                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.fermetureComptoirAt ? formatHoraire(crvStore.currentCRV.horaire.fermetureComptoirAt) : '—' }}</span>
+                </div>
+              </div>
+            </div>
+
             <div class="step-actions">
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
                 Continuer
@@ -143,7 +270,7 @@
                 ></div>
               </div>
               <div v-if="!toutesPhaseTraitees" class="phases-warning-message">
-                {{ phasesNonTraitees.length }} phase(s) restante(s) à traiter avant de continuer
+                {{ phasesNonTraitees.length }} phase(s) restante(s) non traitée(s)
               </div>
               <div v-else class="phases-success-message">
                 Toutes les phases sont traitées - Vous pouvez continuer
@@ -154,13 +281,9 @@
               :phases="crvStore.phases"
               crv-type="turnaround"
               :disabled="crvStore.isLocked"
+              :sla-terrain="slaTerrain"
+              :code-i-a-t-a="crvStore.currentCRV?.vol?.codeIATA"
             />
-
-            <!-- Message d'erreur si tentative de continuer sans traiter les phases -->
-            <div v-if="stepValidationError && currentStep === 4" class="step-validation-error">
-              <strong>Validation impossible</strong>
-              <pre>{{ stepValidationError }}</pre>
-            </div>
 
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
@@ -170,10 +293,9 @@
                 v-if="!crvStore.isLocked"
                 @click="nextStep"
                 class="btn btn-primary"
-                :class="{ 'btn-disabled': !toutesPhaseTraitees }"
                 type="button"
               >
-                {{ toutesPhaseTraitees ? 'Continuer' : `Traiter ${phasesNonTraitees.length} phase(s)` }}
+                Continuer
               </button>
             </div>
           </div>
@@ -245,6 +367,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
+import { useSLA } from '@/composables/useSLA'
+import { crvAPI } from '@/services/api'
 
 import CRVHeader from '@/components/crv/CRVHeader.vue'
 import CRVPersonnes from '@/components/crv/CRVPersonnes.vue'
@@ -259,6 +383,30 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const crvStore = useCRVStore()
+
+const { init: initSLA, calculerSLACRV, calculerSLABagages, calculerSLABoarding, calculerSLACheckin } = useSLA()
+const slaStatus = computed(() => crvStore.currentCRV ? calculerSLACRV(crvStore.currentCRV) : null)
+const slaBagages = computed(() => crvStore.currentCRV ? calculerSLABagages(crvStore.currentCRV) : null)
+const slaBoarding = computed(() => crvStore.currentCRV ? calculerSLABoarding(crvStore.currentCRV) : null)
+const slaCheckin = computed(() => crvStore.currentCRV ? calculerSLACheckin(crvStore.currentCRV) : null)
+
+// SLA terrain agrégé pour CRVPhases
+const slaTerrain = computed(() => {
+  const result = {}
+  const b = slaBagages.value
+  if (b) {
+    const worst = b.premierBagage?.niveau || b.dernierBagage?.niveau || null
+    const detail = b.premierBagage?.label || b.dernierBagage?.label || null
+    result.bagages = { niveau: worst, detail }
+  }
+  const bd = slaBoarding.value
+  if (bd) {
+    const worst = bd.debut?.niveau || bd.fermetureGate?.niveau || null
+    const detail = bd.debut?.label || bd.fermetureGate?.label || null
+    result.boarding = { niveau: worst, detail }
+  }
+  return result
+})
 
 const currentStep = ref(1)
 const isValidated = ref(false)
@@ -311,7 +459,63 @@ const toutesPhaseTraitees = computed(() => {
   return phasesNonTraitees.value.length === 0
 })
 
+const formatHoraire = (datetime) => {
+  if (!datetime) return '—'
+  const d = new Date(datetime)
+  return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+// ── Horodatages terrain boarding ──
+const formatDatetimeLocal = (isoString) => {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const updateBoardingHorodatage = async (champ, valeur) => {
+  try {
+    const crvId = crvStore.currentCRV?._id
+    if (!crvId) return
+    const horaire = crvStore.currentCRV.horaire || {}
+    const payload = {
+      debutBoardingAt: horaire.debutBoardingAt || null,
+      fermetureGateAt: horaire.fermetureGateAt || null
+    }
+    payload[champ] = valeur ? new Date(valeur).toISOString() : null
+    const { data } = await crvAPI.updateHorodatagesBoarding(crvId, payload)
+    if (data.data) {
+      crvStore.currentCRV.horaire.debutBoardingAt = data.data.debutBoardingAt
+      crvStore.currentCRV.horaire.fermetureGateAt = data.data.fermetureGateAt
+    }
+  } catch (err) {
+    console.error('[Boarding] Erreur mise à jour:', err.response?.data?.message || err.message)
+  }
+}
+
+const updateCheckinHorodatage = async (champ, valeur) => {
+  try {
+    const crvId = crvStore.currentCRV?._id
+    if (!crvId) return
+    const horaire = crvStore.currentCRV.horaire || {}
+    const payload = {
+      ouvertureComptoirAt: horaire.ouvertureComptoirAt || null,
+      fermetureComptoirAt: horaire.fermetureComptoirAt || null
+    }
+    payload[champ] = valeur ? new Date(valeur).toISOString() : null
+    const { data } = await crvAPI.updateHorodatagesCheckin(crvId, payload)
+    if (data.data) {
+      crvStore.currentCRV.horaire.ouvertureComptoirAt = data.data.ouvertureComptoirAt
+      crvStore.currentCRV.horaire.fermetureComptoirAt = data.data.fermetureComptoirAt
+    }
+  } catch (err) {
+    console.error('[Checkin] Erreur mise à jour:', err.response?.data?.message || err.message)
+  }
+}
+
 onMounted(async () => {
+  initSLA()
   console.log('[CRVTurnAround] onMounted - Initialisation...')
 
   try {
@@ -438,45 +642,29 @@ const saveCurrentStepData = async () => {
       // gèrent la sauvegarde directement via le store
     }
 
-    // Recharger pour mettre à jour la complétude
-    await crvStore.loadCRV(crvId)
-    console.log(`[CRVTurnAround] Sauvegarde étape ${currentStep.value} OK — Complétude: ${crvStore.completude}%`)
+    // La complétude est déjà mise à jour par updateCRV() — pas besoin de recharger
   } catch (error) {
     console.error('[CRVTurnAround] Erreur sauvegarde étape:', error)
-    alert('Attention : la sauvegarde a échoué. Vos données pourraient ne pas être enregistrées.')
+    stepValidationError.value = 'Attention : la sauvegarde a échoué. Vos données pourraient ne pas être enregistrées.'
   }
 }
 
+const isNavigating = ref(false)
 const nextStep = async () => {
+  if (isNavigating.value) return // anti-double-clic
   if (currentStep.value < 7) {
     // Réinitialiser l'erreur de validation
     stepValidationError.value = ''
 
-    // VALIDATION ÉTAPE 4 (Phases) : Toutes les phases doivent être traitées
-    if (currentStep.value === 4) {
-      if (!toutesPhaseTraitees.value) {
-        const nbNonTraitees = phasesNonTraitees.value.length
-
-        let message = `Impossible de continuer : ${nbNonTraitees} phase(s) non traitée(s).\n\n`
-        message += `Phase(s) non traitées :\n`
-        phasesNonTraitees.value.forEach(p => {
-          message += `  - ${p.phase?.libelle || p.nomPhase || p.nom || 'Phase sans nom'}\n`
-        })
-        message += '\nPour chaque phase, vous devez :\n'
-        message += '• Soit la démarrer puis la terminer\n'
-        message += '• Soit la marquer comme "Non réalisée" avec un motif'
-
-        stepValidationError.value = message
-        alert(message)
-        console.warn('[CRVTurnAround] Blocage étape 4 - Phases non traitées:', phasesNonTraitees.value)
-        return
-      }
-    }
-
     // Sauvegarder les données de l'étape courante
-    await saveCurrentStepData()
-    currentStep.value++
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    isNavigating.value = true
+    try {
+      await saveCurrentStepData()
+      currentStep.value++
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      isNavigating.value = false
+    }
   }
 }
 
@@ -520,7 +708,7 @@ const handleValidation = async (validationData) => {
     // Étape 1 : Si EN_COURS, terminer d'abord (seuil 50%)
     if (statut === 'EN_COURS') {
       if (completude < SEUILS_COMPLETUDE.TERMINER) {
-        alert(`Complétude insuffisante pour terminer : ${completude}% (minimum ${SEUILS_COMPLETUDE.TERMINER}% requis)`)
+        stepValidationError.value = `Complétude insuffisante pour terminer : ${completude}% (minimum ${SEUILS_COMPLETUDE.TERMINER}% requis)`
         return
       }
 
@@ -531,9 +719,9 @@ const handleValidation = async (validationData) => {
       } catch (e) {
         console.error('[CRVTurnAround] Erreur terminaison:', e)
         if (crvStore.anomalies.length > 0) {
-          alert(`Impossible de terminer :\n${crvStore.anomalies.join('\n')}`)
+          stepValidationError.value = `Impossible de terminer :\n${crvStore.anomalies.join('\n')}`
         } else {
-          alert(e.message || 'Erreur lors de la terminaison')
+          stepValidationError.value = e.message || 'Erreur lors de la terminaison'
         }
         return
       }
@@ -548,7 +736,7 @@ const handleValidation = async (validationData) => {
 
   } catch (error) {
     console.error('[CRVTurnAround] Erreur validation:', error)
-    alert(error.message || 'Erreur lors de la validation du CRV')
+    stepValidationError.value = error.message || 'Erreur lors de la validation du CRV'
   } finally {
     isLoading.value = false
   }
@@ -682,13 +870,13 @@ const handleLogout = async () => {
 }
 
 .step.active .step-number {
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 .step.completed .step-number {
-  background: #16a34a;
-  color: white;
+  background: var(--color-success);
+  color: var(--text-inverse);
 }
 
 .step-label {
@@ -699,7 +887,7 @@ const handleLogout = async () => {
 }
 
 .step.active .step-label {
-  color: #2563eb;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -731,44 +919,44 @@ const handleLogout = async () => {
 
 /* États selon le contrat backend */
 .status-BROUILLON {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--status-brouillon-bg);
+  color: var(--status-brouillon-text);
 }
 
 .status-EN_COURS {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--status-en-cours-bg);
+  color: var(--status-en-cours-text);
 }
 
 .status-TERMINE {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--status-termine-bg);
+  color: var(--status-termine-text);
 }
 
 .status-VALIDE {
-  background: #dcfce7;
-  color: #166534;
-  border: 2px solid #10b981;
+  background: var(--status-valide-bg);
+  color: var(--status-valide-text);
+  border: 2px solid var(--status-valide-border);
 }
 
 .status-VERROUILLE {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 2px solid #ef4444;
+  background: var(--status-verrouille-bg);
+  color: var(--status-verrouille-text);
+  border: 2px solid var(--status-verrouille-border);
 }
 
 .status-ANNULE {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--status-annule-bg);
+  color: var(--status-annule-text);
   text-decoration: line-through;
 }
 
 .completude-section {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 25px;
   margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .completude-header {
@@ -781,19 +969,19 @@ const handleLogout = async () => {
 .completude-label {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .completude-value {
   font-size: 24px;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .completude-bar {
   width: 100%;
   height: 24px;
-  background: #e5e7eb;
+  background: var(--border-color);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -823,10 +1011,10 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--status-termine-text);
   font-size: 14px;
   font-weight: 500;
 }
@@ -836,22 +1024,46 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #d1fae5;
-  border: 1px solid #10b981;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
   border-radius: 8px;
-  color: #065f46;
+  color: var(--status-valide-text);
   font-size: 14px;
   font-weight: 600;
 }
 
+/* Encart SLA */
+.sla-encart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.sla-encart .sla-icon { font-size: 16px; }
+.sla-encart .sla-detail { opacity: 0.8; font-size: 12px; }
+.sla-encart.sla-ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+.sla-encart.sla-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+.sla-encart.sla-critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+.sla-encart.sla-exceeded { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.5); color: #fca5a5; font-weight: 700; }
+.sla-bagages-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.sla-bagages-item { font-size: 12px; padding: 3px 8px; border-radius: 4px; }
+.sla-bagages-item.sla-ok { color: #22c55e; }
+.sla-bagages-item.sla-warning { color: #f59e0b; }
+.sla-bagages-item.sla-critical { color: #ef4444; }
+.sla-bagages-item.sla-exceeded { color: #fca5a5; font-weight: 700; }
+.sla-attente { font-style: italic; opacity: 0.7; }
+
 /* Indicateur de progression des phases */
 .phases-progress-indicator {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 2px solid #e5e7eb;
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border-color);
 }
 
 .phases-progress-header {
@@ -864,7 +1076,7 @@ const handleLogout = async () => {
 .phases-progress-label {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .phases-progress-count {
@@ -875,19 +1087,19 @@ const handleLogout = async () => {
 }
 
 .phases-progress-count.complete {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-bg);
+  color: var(--status-valide-text);
 }
 
 .phases-progress-count.incomplete {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--status-termine-text);
 }
 
 .phases-progress-bar {
   width: 100%;
   height: 12px;
-  background: #e5e7eb;
+  background: var(--border-color);
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -906,20 +1118,20 @@ const handleLogout = async () => {
 
 .phases-warning-message {
   padding: 12px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--status-termine-text);
   font-size: 14px;
   font-weight: 500;
 }
 
 .phases-success-message {
   padding: 12px 16px;
-  background: #d1fae5;
-  border: 1px solid #10b981;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
   border-radius: 8px;
-  color: #065f46;
+  color: var(--status-valide-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -927,10 +1139,10 @@ const handleLogout = async () => {
 .step-validation-error {
   margin-top: 20px;
   padding: 20px;
-  background: #fef2f2;
-  border: 2px solid #ef4444;
+  background: var(--color-error-bg);
+  border: 2px solid var(--color-error);
   border-radius: 12px;
-  color: #b91c1c;
+  color: var(--status-verrouille-text);
 }
 
 .step-validation-error strong {
@@ -949,8 +1161,13 @@ const handleLogout = async () => {
 
 .btn-disabled {
   opacity: 0.7;
-  background: #9ca3af !important;
+  background: var(--text-tertiary) !important;
 }
+
+.boarding-horodatages { margin-top: 8px; }
+.boarding-horodatages .section-title { font-size: 14px; margin-bottom: 8px; }
+.horaire-editable { display: flex; flex-direction: column; gap: 4px; }
+.horaire-input { padding: 4px 8px; border: 1px solid var(--border-color, #ddd); border-radius: 4px; font-size: 13px; background: var(--bg-secondary, #f9fafb); color: var(--text-primary, #1f2937); }
 
 /* ============================================ */
 /* RESPONSIVE DESIGN                            */

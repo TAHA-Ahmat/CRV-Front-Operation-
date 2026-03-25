@@ -46,6 +46,34 @@
           <div v-else class="completude-success">
             ✅ CRV prêt pour soumission
           </div>
+
+          <!-- Encart SLA -->
+          <div v-if="slaStatus" class="sla-encart" :class="slaStatus.cssClass">
+            <span class="sla-icon">⏱</span>
+            <span class="sla-text">
+              SLA : <strong>{{ slaStatus.label }}</strong>
+              <span class="sla-detail">— {{ slaStatus.etape }} · {{ slaStatus.source }}</span>
+              <span v-if="slaStatus.turnaround?.categorie" class="sla-detail sla-turnaround">
+                · Turnaround {{ slaStatus.turnaround.turnaround }}min ({{ slaStatus.turnaround.source }})
+              </span>
+            </span>
+          </div>
+
+          <!-- SLA Bagages -->
+          <div v-if="slaBagages" class="sla-bagages-row">
+            <div v-if="slaBagages.premierBagage" class="sla-bagages-item" :class="slaBagages.premierBagage.cssClass">
+              <span>1er bag. : </span>
+              <strong>{{ slaBagages.premierBagage.label }}</strong>
+              <span v-if="slaBagages.premierBagage.enAttente" class="sla-attente"> (en cours)</span>
+            </div>
+            <div v-if="slaBagages.dernierBagage" class="sla-bagages-item" :class="slaBagages.dernierBagage.cssClass">
+              <span>Dern. bag. : </span>
+              <strong>{{ slaBagages.dernierBagage.label }}</strong>
+              <span v-if="slaBagages.dernierBagage.enAttente" class="sla-attente"> (en cours)</span>
+            </div>
+          </div>
+
+          <!-- SLA Boarding + Check-in : NON affiché sur Arrivée (opérations Départ uniquement) -->
         </div>
 
         <div class="crv-progress">
@@ -103,6 +131,7 @@
                 </div>
               </div>
             </div>
+            <!-- Boarding + Check-in : NON affiché sur CRV Arrivée (opérations Départ uniquement) -->
             <div class="step-actions">
               <button
                 v-if="!crvStore.isLocked"
@@ -185,7 +214,7 @@
               </div>
               <div v-if="!toutesPhaseTraitees" class="phases-warning-message">
                 <span class="warning-icon">⚠️</span>
-                <span>{{ phasesNonTraitees.length }} phase(s) restante(s) à traiter avant de continuer</span>
+                <span>{{ phasesNonTraitees.length }} phase(s) restante(s) non traitée(s)</span>
               </div>
               <div v-else class="phases-success-message">
                 <span class="success-icon">✅</span>
@@ -197,14 +226,10 @@
               :phases="crvStore.phases"
               crv-type="arrivee"
               :disabled="crvStore.isLocked"
+              :sla-terrain="slaTerrain"
+              :code-i-a-t-a="crvStore.currentCRV?.vol?.codeIATA"
               @phase-update="handlePhaseUpdate"
             />
-
-            <!-- Message d'erreur si tentative de continuer sans traiter les phases -->
-            <div v-if="stepValidationError && currentStep === 4" class="step-validation-error">
-              <strong>⛔ Validation impossible</strong>
-              <pre>{{ stepValidationError }}</pre>
-            </div>
 
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
@@ -223,10 +248,9 @@
                 v-if="!crvStore.isLocked"
                 @click="nextStep"
                 class="btn btn-primary"
-                :class="{ 'btn-disabled': !toutesPhaseTraitees }"
                 type="button"
               >
-                {{ toutesPhaseTraitees ? 'Continuer' : `Traiter ${phasesNonTraitees.length} phase(s)` }}
+                Continuer
               </button>
             </div>
           </div>
@@ -314,6 +338,8 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
+import { useSLA } from '@/composables/useSLA'
+import { crvAPI } from '@/services/api'
 
 import CRVHeader from '@/components/crv/CRVHeader.vue'
 import CRVPersonnes from '@/components/crv/CRVPersonnes.vue'
@@ -328,6 +354,22 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const crvStore = useCRVStore()
+const { init: initSLA, calculerSLACRV, calculerSLABagages, calculerSLABoarding, calculerSLACheckin } = useSLA()
+const slaStatus = computed(() => crvStore.currentCRV ? calculerSLACRV(crvStore.currentCRV) : null)
+const slaBagages = computed(() => crvStore.currentCRV ? calculerSLABagages(crvStore.currentCRV) : null)
+// SLA terrain agrégé pour CRVPhases
+const slaTerrain = computed(() => {
+  const result = {}
+  const b = slaBagages.value
+  if (b) {
+    const worst = b.premierBagage?.niveau || b.dernierBagage?.niveau || null
+    const detail = b.premierBagage?.label || b.dernierBagage?.label || null
+    result.bagages = { niveau: worst, detail }
+  }
+  return result
+})
+const slaBoarding = computed(() => crvStore.currentCRV ? calculerSLABoarding(crvStore.currentCRV) : null)
+const slaCheckin = computed(() => crvStore.currentCRV ? calculerSLACheckin(crvStore.currentCRV) : null)
 
 const currentStep = ref(1)
 const isValidated = ref(false)
@@ -339,6 +381,55 @@ const generatingPhases = ref(false)
 const formatHoraire = (datetime) => {
   if (!datetime) return '-'
   return new Date(datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+// ── Horodatages terrain boarding ──
+const formatDatetimeLocal = (isoString) => {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const updateCheckinHorodatage = async (champ, valeur) => {
+  try {
+    const crvId = crvStore.currentCRV?._id
+    if (!crvId) return
+    const horaire = crvStore.currentCRV.horaire || {}
+    const payload = {
+      ouvertureComptoirAt: horaire.ouvertureComptoirAt || null,
+      fermetureComptoirAt: horaire.fermetureComptoirAt || null
+    }
+    payload[champ] = valeur ? new Date(valeur).toISOString() : null
+    const { data } = await crvAPI.updateHorodatagesCheckin(crvId, payload)
+    if (data.data) {
+      crvStore.currentCRV.horaire.ouvertureComptoirAt = data.data.ouvertureComptoirAt
+      crvStore.currentCRV.horaire.fermetureComptoirAt = data.data.fermetureComptoirAt
+    }
+  } catch (err) {
+    console.error('[Checkin] Erreur mise à jour:', err.response?.data?.message || err.message)
+  }
+}
+
+const updateBoardingHorodatage = async (champ, valeur) => {
+  try {
+    const crvId = crvStore.currentCRV?._id
+    if (!crvId) return
+    const horaire = crvStore.currentCRV.horaire || {}
+    const payload = {
+      debutBoardingAt: horaire.debutBoardingAt || null,
+      fermetureGateAt: horaire.fermetureGateAt || null
+    }
+    payload[champ] = valeur ? new Date(valeur).toISOString() : null
+    const { data } = await crvAPI.updateHorodatagesBoarding(crvId, payload)
+    if (data.data) {
+      crvStore.currentCRV.horaire.debutBoardingAt = data.data.debutBoardingAt
+      crvStore.currentCRV.horaire.fermetureGateAt = data.data.fermetureGateAt
+    }
+  } catch (err) {
+    console.error('[Boarding] Erreur mise à jour:', err.response?.data?.message || err.message)
+  }
 }
 
 // Données locales pour l'affichage du header (infos vol)
@@ -387,6 +478,7 @@ const toutesPhaseTraitees = computed(() => {
 })
 
 onMounted(async () => {
+  initSLA()
   console.log('[CRVArrivee] onMounted - Initialisation...')
   isLoading.value = true
   errorMessage.value = ''
@@ -491,50 +583,22 @@ watch(() => crvStore.completude, (newVal, oldVal) => {
   console.log(`[CRVArrivee] Complétude: ${oldVal}% → ${newVal}%`)
 })
 
+const isNavigating = ref(false)
 const nextStep = async () => {
+  if (isNavigating.value) return // anti-double-clic
   if (currentStep.value < 7) {
     // Réinitialiser l'erreur de validation
     stepValidationError.value = ''
 
-    // VALIDATION ÉTAPE 4 (Phases) : Toutes les phases doivent être traitées
-    if (currentStep.value === 4) {
-      if (!toutesPhaseTraitees.value) {
-        const nbNonTraitees = phasesNonTraitees.value.length
-        const phasesEnCours = crvStore.phases.filter(p => p.statut === 'EN_COURS')
-
-        let message = `Impossible de continuer : ${nbNonTraitees} phase(s) non traitée(s).\n\n`
-
-        if (phasesEnCours.length > 0) {
-          message += `Phase(s) en cours (à terminer) :\n`
-          phasesEnCours.forEach(p => {
-            message += `  - ${p.phase?.libelle || p.nomPhase || p.nom}\n`
-          })
-          message += '\n'
-        }
-
-        const phasesNonCommencees = crvStore.phases.filter(p => p.statut === 'NON_COMMENCE')
-        if (phasesNonCommencees.length > 0) {
-          message += `Phase(s) non démarrées :\n`
-          phasesNonCommencees.forEach(p => {
-            message += `  - ${p.phase?.libelle || p.nomPhase || p.nom}\n`
-          })
-        }
-
-        message += '\nPour chaque phase, vous devez :\n'
-        message += '• Soit la démarrer puis la terminer\n'
-        message += '• Soit la marquer comme "Non réalisée" avec un motif'
-
-        stepValidationError.value = message
-        alert(message)
-        console.warn('[CRVArrivee] Blocage étape 4 - Phases non traitées:', phasesNonTraitees.value)
-        return
-      }
-    }
-
     // Sauvegarder les données de l'étape courante si nécessaire
-    await saveCurrentStepData()
-    currentStep.value++
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    isNavigating.value = true
+    try {
+      await saveCurrentStepData()
+      currentStep.value++
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      isNavigating.value = false
+    }
   }
 }
 
@@ -606,13 +670,10 @@ const saveCurrentStepData = async () => {
         break
     }
 
-    // Recharger le CRV pour avoir la complétude à jour
-    await crvStore.loadCRV(crvId)
-    console.log(`[CRVArrivee] CRV rechargé - Complétude: ${crvStore.completude}%`)
+    // La complétude est déjà mise à jour par updateCRV() — pas besoin de recharger
 
   } catch (error) {
     console.error('[CRVArrivee] Erreur sauvegarde:', error)
-    // Ne pas bloquer la navigation en cas d'erreur
   }
 }
 
@@ -659,7 +720,6 @@ const handleValidation = async (validationData) => {
     if (statut === 'EN_COURS') {
       if (completude < SEUILS_COMPLETUDE.TERMINER) {
         errorMessage.value = `Complétude insuffisante pour terminer: ${completude}% (minimum ${SEUILS_COMPLETUDE.TERMINER}% requis)`
-        alert(errorMessage.value)
         return
       }
 
@@ -674,7 +734,6 @@ const handleValidation = async (validationData) => {
         } else {
           errorMessage.value = e.message || 'Erreur lors de la terminaison'
         }
-        alert(errorMessage.value)
         return
       }
     }
@@ -689,7 +748,6 @@ const handleValidation = async (validationData) => {
   } catch (error) {
     console.error('[CRVArrivee] Erreur validation:', error)
     errorMessage.value = error.message || 'Erreur lors de la validation du CRV'
-    alert(errorMessage.value)
   } finally {
     isLoading.value = false
   }
@@ -805,7 +863,7 @@ const genererDonneesEtape4 = async () => {
     console.log('[CRVArrivee] Toutes les phases générées! Complétude:', crvStore.completude + '%')
   } catch (error) {
     console.error('[CRVArrivee] Erreur génération phases:', error)
-    alert('Erreur lors de la génération des phases: ' + error.message)
+    errorMessage.value = 'Erreur lors de la génération des phases: ' + error.message
   } finally {
     generatingPhases.value = false
   }
@@ -830,7 +888,7 @@ const genererDonneesEtape5 = async () => {
     console.log('[CRVArrivee] Complétude après charges:', crvStore.completude + '%')
   } catch (error) {
     console.error('[CRVArrivee] Erreur génération charges:', error)
-    alert('Erreur: ' + error.message)
+    errorMessage.value = 'Erreur: ' + error.message
   }
 }
 
@@ -852,7 +910,7 @@ const genererDonneesEtape6 = async () => {
     console.log('[CRVArrivee] Complétude après événements:', crvStore.completude + '%')
   } catch (error) {
     console.error('[CRVArrivee] Erreur génération événements:', error)
-    alert('Erreur: ' + error.message)
+    errorMessage.value = 'Erreur: ' + error.message
   }
 }
 
@@ -980,13 +1038,13 @@ const handleLogout = async () => {
 }
 
 .step.active .step-number {
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 .step.completed .step-number {
-  background: #16a34a;
-  color: white;
+  background: var(--color-success);
+  color: var(--text-inverse);
 }
 
 .step-label {
@@ -997,7 +1055,7 @@ const handleLogout = async () => {
 }
 
 .step.active .step-label {
-  color: #2563eb;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -1029,42 +1087,42 @@ const handleLogout = async () => {
 
 /* États selon le contrat backend */
 .status-BROUILLON {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--status-brouillon-bg);
+  color: var(--status-brouillon-text);
 }
 
 .status-EN_COURS {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--status-en-cours-bg);
+  color: var(--status-en-cours-text);
 }
 
 .status-TERMINE {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--status-termine-bg);
+  color: var(--status-termine-text);
 }
 
 .status-VALIDE {
-  background: #dcfce7;
-  color: #166534;
-  border: 2px solid #10b981;
+  background: var(--status-valide-bg);
+  color: var(--status-valide-text);
+  border: 2px solid var(--status-valide-border);
 }
 
 .status-VERROUILLE {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 2px solid #ef4444;
+  background: var(--status-verrouille-bg);
+  color: var(--status-verrouille-text);
+  border: 2px solid var(--status-verrouille-border);
 }
 
 .status-ANNULE {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--status-annule-bg);
+  color: var(--status-annule-text);
   text-decoration: line-through;
 }
 
 /* Horaires prévus */
 .horaires-prevus {
-  background: #f0f4ff;
-  border: 1px solid #3b82f6;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -1073,7 +1131,7 @@ const handleLogout = async () => {
 .horaires-prevus .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1e40af;
+  color: var(--color-primary);
   margin: 0 0 12px;
 }
 
@@ -1091,21 +1149,21 @@ const handleLogout = async () => {
 .horaire-label {
   font-size: 13px;
   font-weight: 500;
-  color: #3b82f6;
+  color: var(--color-info);
 }
 
 .horaire-value {
   font-size: 20px;
   font-weight: 700;
-  color: #1e40af;
+  color: var(--color-primary);
 }
 
 .completude-section {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 25px;
   margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .completude-header {
@@ -1118,19 +1176,19 @@ const handleLogout = async () => {
 .completude-label {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .completude-value {
   font-size: 24px;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .completude-bar {
   width: 100%;
   height: 24px;
-  background: #e5e7eb;
+  background: var(--border-color);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -1160,10 +1218,10 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--status-termine-text);
   font-size: 14px;
   font-weight: 500;
 }
@@ -1173,22 +1231,50 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #d1fae5;
-  border: 1px solid #10b981;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
   border-radius: 8px;
-  color: #065f46;
+  color: var(--status-valide-text);
   font-size: 14px;
   font-weight: 600;
 }
 
+/* Encart SLA */
+.sla-encart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.sla-encart .sla-icon { font-size: 16px; }
+.sla-encart .sla-detail { opacity: 0.8; font-size: 12px; }
+.sla-encart.sla-ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+.sla-encart.sla-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+.sla-encart.sla-critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+.sla-encart.sla-exceeded { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.5); color: #fca5a5; font-weight: 700; }
+.sla-bagages-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.sla-bagages-item { font-size: 12px; padding: 3px 8px; border-radius: 4px; }
+.sla-bagages-item.sla-ok { color: #22c55e; }
+.sla-bagages-item.sla-warning { color: #f59e0b; }
+.sla-bagages-item.sla-critical { color: #ef4444; }
+.sla-bagages-item.sla-exceeded { color: #fca5a5; font-weight: 700; }
+.sla-attente { font-style: italic; opacity: 0.7; }
+.boarding-horodatages { margin-top: 8px; }
+.boarding-horodatages .section-title { font-size: 14px; margin-bottom: 8px; }
+.horaire-editable { display: flex; flex-direction: column; gap: 4px; }
+.horaire-input { padding: 4px 8px; border: 1px solid var(--border-color, #ddd); border-radius: 4px; font-size: 13px; background: var(--bg-secondary, #f9fafb); color: var(--text-primary, #1f2937); }
+
 /* Indicateur de progression des phases */
 .phases-progress-indicator {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 2px solid #e5e7eb;
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border-color);
 }
 
 .phases-progress-header {
@@ -1201,7 +1287,7 @@ const handleLogout = async () => {
 .phases-progress-label {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .phases-progress-count {
@@ -1212,19 +1298,19 @@ const handleLogout = async () => {
 }
 
 .phases-progress-count.complete {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-bg);
+  color: var(--status-valide-text);
 }
 
 .phases-progress-count.incomplete {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--status-termine-text);
 }
 
 .phases-progress-bar {
   width: 100%;
   height: 12px;
-  background: #e5e7eb;
+  background: var(--border-color);
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -1246,10 +1332,10 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--status-termine-text);
   font-size: 14px;
   font-weight: 500;
 }
@@ -1259,10 +1345,10 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #d1fae5;
-  border: 1px solid #10b981;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
   border-radius: 8px;
-  color: #065f46;
+  color: var(--status-valide-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -1276,10 +1362,10 @@ const handleLogout = async () => {
 .step-validation-error {
   margin-top: 20px;
   padding: 20px;
-  background: #fef2f2;
-  border: 2px solid #ef4444;
+  background: var(--color-error-bg);
+  border: 2px solid var(--color-error);
   border-radius: 12px;
-  color: #b91c1c;
+  color: var(--status-verrouille-text);
 }
 
 .step-validation-error strong {
@@ -1299,12 +1385,12 @@ const handleLogout = async () => {
 /* Bouton désactivé visuellement */
 .btn-disabled {
   opacity: 0.7;
-  background: #9ca3af !important;
+  background: var(--text-tertiary) !important;
   cursor: pointer;
 }
 
 .btn-disabled:hover {
-  background: #9ca3af !important;
+  background: var(--text-tertiary) !important;
 }
 
 /* Bouton de test/génération */
