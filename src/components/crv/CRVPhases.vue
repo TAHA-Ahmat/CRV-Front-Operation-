@@ -719,7 +719,12 @@ const getPhaseSLATerrain = (phase) => {
     if (sla) return { domaine: 'Boarding', niveau: (sla.niveau || '').toLowerCase(), detail: sla.detail }
   }
 
-  // Check-in : on ne l'attache pas aux phases (le check-in n'est pas une phase opérationnelle CRV)
+  // Check-in : DEP_CHECKIN et TA_CHECKIN sont désormais des phases (Palier 2)
+  // Le SLA terrain check-in est géré par le SLACountdown (mode DEADLINE), pas par cet indicateur statique
+  if (categorie === 'PASSAGERS' && (typeOp === 'DEPART' || typeOp === 'TURN_AROUND') && libelle.includes('enregistrement')) {
+    const sla = props.slaTerrain?.checkin
+    if (sla) return { domaine: 'Check-in', niveau: (sla.niveau || '').toLowerCase(), detail: sla.detail }
+  }
 
   return null
 }
