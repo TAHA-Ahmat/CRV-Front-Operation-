@@ -18,8 +18,13 @@
     </div>
 
     <div v-else class="phases-list">
+      <template v-for="(groupe, gi) in phasesGroupees" :key="gi">
+        <div v-if="groupe.group" class="phase-group-header">
+          <span class="phase-group-label" :class="'group-' + groupe.group.toLowerCase()">{{ groupe.label }}</span>
+          <span class="phase-group-count">{{ groupe.phases.length }} phase{{ groupe.phases.length > 1 ? 's' : '' }}</span>
+        </div>
       <div
-        v-for="phase in phases"
+        v-for="phase in groupe.phases"
         :key="phase.id || phase._id"
         class="phase-item"
         :class="{ 'phase-termine': phase.statut === 'TERMINE', 'phase-non-realise': phase.statut === 'NON_REALISE' }"
@@ -39,6 +44,39 @@
           <span class="phase-status" :class="getStatusClass(phase.statut)">
             {{ getStatusLabel(phase.statut) }}
           </span>
+        </div>
+
+        <!-- Countdown SLA temps réel -->
+        <SLACountdown :phase="phase" />
+
+        <!-- Indicateur SLA terrain (si applicable à cette phase) -->
+        <div v-if="getPhaseSLATerrain(phase)" class="phase-sla-indicator" :class="'phase-sla-' + (getPhaseSLATerrain(phase).niveau || 'attente')">
+          <span class="phase-sla-icon">{{ { ok: '🟢', warning: '🟡', critical: '🟠', exceeded: '🔴' }[getPhaseSLATerrain(phase).niveau] || '⏳' }}</span>
+          <span class="phase-sla-text">
+            <template v-if="getPhaseSLATerrain(phase).niveau === 'exceeded'">
+              SLA {{ getPhaseSLATerrain(phase).domaine }} dépassé
+              <template v-if="getPhaseSLATerrain(phase).detail"> — {{ getPhaseSLATerrain(phase).detail }}</template>
+            </template>
+            <template v-else-if="getPhaseSLATerrain(phase).niveau === 'critical'">
+              SLA {{ getPhaseSLATerrain(phase).domaine }} critique
+              <template v-if="getPhaseSLATerrain(phase).detail"> — {{ getPhaseSLATerrain(phase).detail }}</template>
+            </template>
+            <template v-else-if="getPhaseSLATerrain(phase).niveau === 'warning'">
+              SLA {{ getPhaseSLATerrain(phase).domaine }} à surveiller
+            </template>
+            <template v-else-if="getPhaseSLATerrain(phase).niveau === 'ok'">
+              SLA {{ getPhaseSLATerrain(phase).domaine }} OK
+            </template>
+            <template v-else>
+              SLA {{ getPhaseSLATerrain(phase).domaine }} — en attente horodatage
+            </template>
+          </span>
+        </div>
+
+        <!-- Indicateur durée locale (uniquement si PAS de SLA terrain sur cette phase) -->
+        <div v-if="getPhaseOwnSLA(phase) && !getPhaseSLATerrain(phase)" class="phase-duration-indicator" :class="'duration-' + getPhaseOwnSLA(phase).niveau">
+          <span class="duration-icon">⏱</span>
+          <span class="duration-text">Durée : {{ getPhaseOwnSLA(phase).label }}</span>
         </div>
 
         <!-- MVS-3 #1: Affichage des prérequis -->
@@ -198,7 +236,7 @@
           <div v-if="phaseEditId === (phase.id || phase._id)" class="manual-hours-form">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Heure de début</label>
+                <label class="form-label">{{ isPhaseInstant(phase) ? 'Heure' : 'Heure de début' }}</label>
                 <input
                   v-model="editHeureDebut"
                   type="time"
@@ -206,7 +244,7 @@
                   :disabled="saving"
                 />
               </div>
-              <div class="form-group">
+              <div v-if="!isPhaseInstant(phase)" class="form-group">
                 <label class="form-label">Heure de fin <span class="required">*</span></label>
                 <input
                   v-model="editHeureFin"
@@ -230,10 +268,10 @@
               <button
                 @click="handleSavePhaseManuel(phase)"
                 class="btn btn-success btn-sm"
-                :disabled="!editHeureFin || saving"
+                :disabled="(isPhaseInstant(phase) ? !editHeureDebut : !editHeureFin) || saving"
                 type="button"
               >
-                Terminer la phase
+                {{ isPhaseInstant(phase) ? 'Confirmer l\'heure' : 'Terminer la phase' }}
               </button>
               <button
                 @click="cancelEdit"
@@ -249,7 +287,7 @@
           <!-- Vue par défaut -->
           <div v-else class="form-row">
             <div class="form-group">
-              <label class="form-label">Heure de début</label>
+              <label class="form-label">{{ isPhaseInstant(phase) ? 'Heure' : 'Heure de début' }}</label>
               <input
                 :value="formatTime(phase.heureDebutReelle)"
                 type="time"
@@ -257,7 +295,7 @@
                 disabled
               />
             </div>
-            <div class="form-group">
+            <div v-if="!isPhaseInstant(phase)" class="form-group">
               <label class="form-label">Action</label>
               <button
                 @click="showEditForm(phase, true)"
@@ -350,7 +388,7 @@
             <!-- Horaires réels -->
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Début réel</label>
+                <label class="form-label">{{ isPhaseInstant(phase) ? 'Heure' : 'Début réel' }}</label>
                 <input
                   :value="formatTime(phase.heureDebutReelle)"
                   type="time"
@@ -358,7 +396,7 @@
                   disabled
                 />
               </div>
-              <div class="form-group">
+              <div v-if="!isPhaseInstant(phase)" class="form-group">
                 <label class="form-label">Fin réelle</label>
                 <input
                   :value="formatTime(phase.heureFinReelle)"
@@ -367,7 +405,7 @@
                   disabled
                 />
               </div>
-              <div class="form-group">
+              <div v-if="!isPhaseInstant(phase)" class="form-group">
                 <label class="form-label">Durée</label>
                 <input
                   :value="formatDuree(phase.dureeReelleMinutes)"
@@ -428,6 +466,7 @@
           {{ errorMessage }}
         </div>
       </div>
+      </template>
     </div>
 
     <!-- Message d'erreur global -->
@@ -450,7 +489,9 @@
  */
 import { ref, computed } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
+import { useSLA } from '@/composables/useSLA'
 import { MOTIF_NON_REALISATION, getEnumOptions } from '@/config/crvEnums'
+import SLACountdown from '@/components/crv/SLACountdown.vue'
 
 const props = defineProps({
   phases: {
@@ -464,12 +505,23 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  // SLA terrain par domaine — { bagages: {...}, boarding: {...}, checkin: {...} }
+  slaTerrain: {
+    type: Object,
+    default: () => ({})
+  },
+  // Code IATA compagnie du CRV — pour résolution durée phase par compagnie
+  codeIATA: {
+    type: String,
+    default: null
   }
 })
 
 const emit = defineEmits(['phase-update'])
 
 const crvStore = useCRVStore()
+const { resoudreDureePhase } = useSLA()
 
 // États locaux
 const loading = ref(false)
@@ -551,9 +603,125 @@ const getPhaseTypeOperation = (phase) => {
   return phase.phase?.typeOperation || phase.typeOperation || null
 }
 
+// Regroupement visuel des phases par typeOperation (pour TurnAround)
+const ORDER_GROUPS = ['ARRIVEE', 'TURN_AROUND', 'DEPART', 'COMMUN']
+const GROUP_LABELS = { ARRIVEE: 'Arrivée', TURN_AROUND: 'Turn-Around', DEPART: 'Départ', COMMUN: 'Commun' }
+
+// Tri par phase.ordre au sein d'un groupe
+const sortByOrdre = (phases) => [...phases].sort((a, b) => {
+  const ordreA = a.phase?.ordre ?? a.ordre ?? 999
+  const ordreB = b.phase?.ordre ?? b.ordre ?? 999
+  return ordreA - ordreB
+})
+
+const phasesGroupees = computed(() => {
+  if (!props.phases || props.phases.length === 0) return []
+  const types = new Set(props.phases.map(p => getPhaseTypeOperation(p)).filter(Boolean))
+
+  // Si un seul type sans COMMUN — pas besoin de regroupement
+  if (types.size === 1 && !types.has('COMMUN')) {
+    return [{ group: null, phases: sortByOrdre(props.phases) }]
+  }
+
+  // Regrouper par typeOperation pour TOUS les CRV (Arrivée, Départ, TurnAround)
+  // Ordre : ARRIVEE → TURN_AROUND → DEPART → COMMUN
+  const groups = []
+  for (const g of ORDER_GROUPS) {
+    const filtered = props.phases.filter(p => getPhaseTypeOperation(p) === g)
+    if (filtered.length > 0) groups.push({ group: g, label: GROUP_LABELS[g], phases: sortByOrdre(filtered) })
+  }
+  // Phases sans type
+  const orphans = props.phases.filter(p => !getPhaseTypeOperation(p))
+  if (orphans.length > 0) groups.push({ group: 'AUTRE', label: 'Autre', phases: sortByOrdre(orphans) })
+  return groups
+})
+
 // MVS-3 #6: Obtenir le seuil SLA de la phase (en minutes)
 const getPhaseSeuil = (phase) => {
   return phase.phase?.seuilSLA || phase.seuilSLA || 15 // 15 min par défaut
+}
+
+// EXTENSION 11 — Détection type temporel
+const isPhaseInstant = (phase) => {
+  return phase.phase?.typeTemporel === 'INSTANT'
+}
+
+// EXTENSION 12 — SLA propre par phase (basé sur dureeStandardMinutes)
+const PHASE_SLA_SEUILS = { WARNING: 1.25, CRITICAL: 1.5, EXCEEDED: 1.5 }
+
+/**
+ * Calcule le SLA propre d'une phase basé sur sa durée standard.
+ * DEBUT_FIN : compare durée réelle (ou temps écoulé) vs dureeStandardMinutes
+ * INSTANT : pas de SLA durée (retourne null)
+ * @returns {{ niveau, label, cssClass }|null}
+ */
+const getPhaseOwnSLA = (phase) => {
+  // Pas de SLA pour les instants — une seule heure, pas de durée
+  if (isPhaseInstant(phase)) return null
+
+  const defaultStandard = phase.phase?.dureeStandardMinutes
+  if (!defaultStandard || defaultStandard <= 0) return null
+
+  // Résolution par compagnie : phaseDurees[code] sinon Phase.dureeStandardMinutes
+  const codePhase = phase.phase?.code
+  const { duree: standard, source } = codePhase && props.codeIATA
+    ? resoudreDureePhase(codePhase, props.codeIATA, defaultStandard)
+    : { duree: defaultStandard, source: 'standard' }
+
+  // Phase terminée → utiliser durée réelle
+  if (phase.statut === 'TERMINE' && phase.dureeReelleMinutes != null) {
+    return qualifyPhaseSLA(phase.dureeReelleMinutes, standard, source)
+  }
+
+  // Phase en cours → utiliser temps écoulé depuis début
+  if (phase.statut === 'EN_COURS' && phase.heureDebutReelle) {
+    const debut = new Date(phase.heureDebutReelle)
+    const elapsed = Math.round((new Date() - debut) / 60000)
+    if (elapsed >= 0) return qualifyPhaseSLA(elapsed, standard, source)
+  }
+
+  // Non démarrée ou données manquantes
+  return null
+}
+
+function qualifyPhaseSLA(minutes, standard, source = 'standard') {
+  const ratio = minutes / standard
+  const srcLabel = source !== 'standard' ? ` · ${source}` : ''
+  if (ratio > PHASE_SLA_SEUILS.EXCEEDED) {
+    return { niveau: 'exceeded', label: `${minutes}/${standard} min — Dépassé${srcLabel}`, cssClass: 'phase-sla-exceeded' }
+  } else if (ratio > PHASE_SLA_SEUILS.CRITICAL) {
+    return { niveau: 'critical', label: `${minutes}/${standard} min — Critique${srcLabel}`, cssClass: 'phase-sla-critical' }
+  } else if (ratio > PHASE_SLA_SEUILS.WARNING) {
+    return { niveau: 'warning', label: `${minutes}/${standard} min${srcLabel}`, cssClass: 'phase-sla-warning' }
+  }
+  return { niveau: 'ok', label: `${minutes}/${standard} min${srcLabel}`, cssClass: 'phase-sla-ok' }
+}
+
+/**
+ * Résoudre le SLA terrain applicable à une phase donnée
+ * Mapping : catégorie phase → domaine SLA terrain
+ * Ne retourne un résultat que si le SLA terrain est réellement calculable
+ */
+const getPhaseSLATerrain = (phase) => {
+  const categorie = phase.phase?.categorie
+  const typeOp = getPhaseTypeOperation(phase)
+  const libelle = (phase.phase?.libelle || '').toLowerCase()
+
+  // Bagages : phases catégorie BAGAGE avec libellé contenant "livraison" ou "déchargement"
+  if (categorie === 'BAGAGE' && (libelle.includes('livraison') || libelle.includes('déchargement') || libelle.includes('dechargement'))) {
+    const sla = props.slaTerrain?.bagages
+    if (sla) return { domaine: 'Bagages', niveau: (sla.niveau || '').toLowerCase(), detail: sla.detail }
+  }
+
+  // Boarding : phase embarquement passagers (catégorie PASSAGERS, type DEPART ou TURN_AROUND)
+  if (categorie === 'PASSAGERS' && (typeOp === 'DEPART' || typeOp === 'TURN_AROUND') && libelle.includes('embarquement')) {
+    const sla = props.slaTerrain?.boarding
+    if (sla) return { domaine: 'Boarding', niveau: (sla.niveau || '').toLowerCase(), detail: sla.detail }
+  }
+
+  // Check-in : on ne l'attache pas aux phases (le check-in n'est pas une phase opérationnelle CRV)
+
+  return null
 }
 
 // Formatters
@@ -667,14 +835,21 @@ const handleSavePhaseManuel = async (phase) => {
 
   try {
     const data = {}
+    const instant = isPhaseInstant(phase)
 
-    if (editHeureFin.value) {
+    if (instant) {
+      // INSTANT : une seule heure → directement TERMINE
+      data.statut = 'TERMINE'
+      if (editHeureDebut.value) {
+        data.heureDebutReelle = editHeureDebut.value
+      }
+    } else if (editHeureFin.value) {
       data.statut = 'TERMINE'
     } else if (editStatutOriginal.value === 'NON_COMMENCE') {
       data.statut = 'EN_COURS'
     }
 
-    if (editHeureDebut.value) {
+    if (!instant && editHeureDebut.value) {
       data.heureDebutReelle = editHeureDebut.value
     }
     if (editHeureFin.value) {
@@ -776,10 +951,10 @@ const handleMarquerNonRealisee = async (phase) => {
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #6b7280;
-  background: #f9fafb;
+  color: var(--text-secondary);
+  background: var(--bg-body);
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--text-muted);
 }
 
 .phases-list {
@@ -788,22 +963,53 @@ const handleMarquerNonRealisee = async (phase) => {
   gap: 20px;
 }
 
+/* Regroupement visuel des phases (TurnAround) */
+.phase-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  border-left: 4px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+.phase-group-header:first-child { margin-top: 0; }
+.phase-group-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+}
+.phase-group-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.group-arrivee { color: #2563eb; }
+.group-turn_around { color: #d97706; }
+.group-depart { color: #059669; }
+.group-commun { color: #6b7280; }
+.phase-group-header:has(.group-arrivee) { border-left-color: #2563eb; }
+.phase-group-header:has(.group-turn_around) { border-left-color: #d97706; }
+.phase-group-header:has(.group-depart) { border-left-color: #059669; }
+.phase-group-header:has(.group-commun) { border-left-color: #6b7280; }
+
 .phase-item {
-  background: #f9fafb;
+  background: var(--bg-body);
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   transition: all 0.2s;
 }
 
 .phase-item.phase-termine {
   background: #ecfdf5;
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .phase-item.phase-non-realise {
   background: #fef3c7;
-  border-color: #f59e0b;
+  border-color: var(--color-warning);
 }
 
 .phase-header {
@@ -812,13 +1018,13 @@ const handleMarquerNonRealisee = async (phase) => {
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .phase-header h4 {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .phase-status {
@@ -829,23 +1035,23 @@ const handleMarquerNonRealisee = async (phase) => {
 }
 
 .status-non-commence {
-  background: #e5e7eb;
-  color: #4b5563;
+  background: var(--border-color);
+  color: var(--text-primary);
 }
 
 .status-en-cours {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-info-bg);
+  color: var(--color-primary);
 }
 
 .status-termine {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--color-success-bg);
+  color: var(--status-valide-text);
 }
 
 .status-non-realise {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--status-termine-text);
 }
 
 .phase-actions-block,
@@ -869,12 +1075,12 @@ const handleMarquerNonRealisee = async (phase) => {
 .form-label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .form-input {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
@@ -882,19 +1088,19 @@ const handleMarquerNonRealisee = async (phase) => {
 
 .form-input:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .form-input:disabled {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-badge);
+  color: var(--text-secondary);
 }
 
 /* CORRECTION AUDIT: Style pour champ obligatoire non rempli */
 .form-input.required-field {
-  border-color: #dc2626;
-  background: #fef2f2;
+  border-color: var(--color-error);
+  background: var(--color-error-bg);
 }
 
 .field-hint {
@@ -903,7 +1109,7 @@ const handleMarquerNonRealisee = async (phase) => {
 }
 
 .field-hint.error {
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .action-buttons {
@@ -928,17 +1134,17 @@ const handleMarquerNonRealisee = async (phase) => {
 }
 
 .btn-primary {
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
 }
 
 .btn-success {
-  background: #10b981;
-  color: white;
+  background: var(--color-success);
+  color: var(--text-inverse);
 }
 
 .btn-success:hover:not(:disabled) {
@@ -946,8 +1152,8 @@ const handleMarquerNonRealisee = async (phase) => {
 }
 
 .btn-warning {
-  background: #f59e0b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--text-inverse);
 }
 
 .btn-warning:hover:not(:disabled) {
@@ -955,12 +1161,12 @@ const handleMarquerNonRealisee = async (phase) => {
 }
 
 .btn-secondary {
-  background: #6b7280;
-  color: white;
+  background: var(--text-secondary);
+  color: var(--text-inverse);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #4b5563;
+  background: var(--text-primary);
 }
 
 .btn:disabled {
@@ -972,7 +1178,7 @@ const handleMarquerNonRealisee = async (phase) => {
   margin-top: 15px;
   padding: 15px;
   background: #fffbeb;
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--color-warning);
   border-radius: 8px;
 }
 
@@ -991,34 +1197,34 @@ const handleMarquerNonRealisee = async (phase) => {
 .observation-text,
 .motif-text {
   padding: 10px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 6px;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .required {
-  color: #dc2626;
+  color: var(--color-error);
   font-weight: 700;
 }
 
 .error-message {
   margin-top: 10px;
   padding: 10px;
-  background: #fef2f2;
+  background: var(--color-error-bg);
   border: 1px solid #fecaca;
   border-radius: 6px;
-  color: #dc2626;
+  color: var(--color-error);
   font-size: 13px;
 }
 
 .error-banner {
   margin-top: 15px;
   padding: 15px;
-  background: #fef2f2;
+  background: var(--color-error-bg);
   border: 1px solid #fecaca;
   border-radius: 8px;
-  color: #dc2626;
+  color: var(--color-error);
   font-weight: 500;
 }
 
@@ -1031,7 +1237,7 @@ textarea.form-input {
   margin-top: 15px;
   padding: 15px;
   background: #eff6ff;
-  border: 1px solid #3b82f6;
+  border: 1px solid var(--color-info);
   border-radius: 8px;
 }
 
@@ -1048,13 +1254,13 @@ textarea.form-input {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1067,7 +1273,7 @@ textarea.form-input {
 .progress-count {
   font-size: 14px;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--color-primary);
   background: #eff6ff;
   padding: 4px 10px;
   border-radius: 6px;
@@ -1075,8 +1281,44 @@ textarea.form-input {
 
 .progress-impact {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
+
+/* Indicateur SLA terrain par phase */
+.phase-sla-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.phase-sla-icon { font-size: 14px; }
+.phase-sla-text { font-weight: 500; }
+.phase-sla-ok { background: #f0fdf4; color: #166534; }
+.phase-sla-warning { background: #fffbeb; color: #92400e; }
+.phase-sla-critical { background: #fff7ed; color: #c2410c; }
+.phase-sla-exceeded { background: #fef2f2; color: #991b1b; font-weight: 600; }
+.phase-sla-attente { background: #f8fafc; color: #64748b; font-style: italic; }
+
+/* EXTENSION 12 — Indicateur durée locale (distinct du SLA contractuel) */
+.phase-duration-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+.duration-icon { font-size: 12px; }
+.duration-text { font-weight: 400; }
+.duration-ok { background: #f8fafb; color: #64748b; }
+.duration-warning { background: #fffbeb; color: #92400e; }
+.duration-critical { background: #fff7ed; color: #c2410c; }
+.duration-exceeded { background: #fef2f2; color: #991b1b; font-weight: 500; }
 
 /* MVS-3 #1: Styles prérequis */
 .phase-prerequis {
@@ -1085,14 +1327,14 @@ textarea.form-input {
   gap: 8px;
   margin-bottom: 15px;
   padding: 8px 12px;
-  background: #f3f4f6;
+  background: var(--bg-badge);
   border-radius: 6px;
   font-size: 13px;
 }
 
 .prerequis-label {
   font-weight: 500;
-  color: #4b5563;
+  color: var(--text-primary);
 }
 
 .prerequis-ok {
@@ -1101,7 +1343,7 @@ textarea.form-input {
 }
 
 .prerequis-manquants {
-  color: #dc2626;
+  color: var(--color-error);
   font-weight: 500;
 }
 
@@ -1121,13 +1363,13 @@ textarea.form-input {
 }
 
 .type-arrivee {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-info-bg);
+  color: var(--color-primary);
 }
 
 .type-depart {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--status-termine-text);
 }
 
 .type-turn_around {
@@ -1139,15 +1381,15 @@ textarea.form-input {
 .non-realise-info-banner {
   margin-bottom: 15px;
   padding: 10px 12px;
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
   border-radius: 6px;
 }
 
 .non-realise-info-banner p {
   margin: 0;
   font-size: 13px;
-  color: #92400e;
+  color: var(--status-termine-text);
   line-height: 1.5;
 }
 
@@ -1160,12 +1402,12 @@ textarea.form-input {
   background: #f0f4ff;
   padding: 8px 12px;
   border-radius: 6px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-info);
   margin-bottom: 8px;
 }
 
 .prevu-label {
-  color: #3b82f6;
+  color: var(--color-info);
   font-weight: 600;
 }
 
@@ -1185,26 +1427,26 @@ textarea.form-input {
 }
 
 .ecart-ok {
-  background: #dcfce7;
+  background: var(--color-success-bg);
 }
 
 .ecart-ok .ecart-valeur {
-  color: #166534;
+  color: var(--status-valide-text);
   font-weight: 600;
 }
 
 .ecart-depassement {
-  background: #fee2e2;
+  background: var(--color-error-bg);
 }
 
 .ecart-depassement .ecart-valeur {
-  color: #dc2626;
+  color: var(--color-error);
   font-weight: 600;
 }
 
 .ecart-seuil {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 /* ============================================ */
