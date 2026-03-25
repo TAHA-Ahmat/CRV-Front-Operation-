@@ -158,63 +158,7 @@
               </div>
             </div>
 
-            <!-- Horodatages terrain boarding -->
-            <div v-if="crvStore.currentCRV?.horaire" class="boarding-horodatages card">
-              <h3 class="section-title">Boarding</h3>
-              <div class="horaires-row">
-                <div class="horaire-item horaire-editable">
-                  <label class="horaire-label">Début embarquement</label>
-                  <input
-                    v-if="!crvStore.isLocked"
-                    type="datetime-local"
-                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.debutBoardingAt)"
-                    @change="updateBoardingHorodatage('debutBoardingAt', $event.target.value)"
-                    class="horaire-input"
-                  />
-                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.debutBoardingAt ? formatHoraire(crvStore.currentCRV.horaire.debutBoardingAt) : '—' }}</span>
-                </div>
-                <div class="horaire-item horaire-editable">
-                  <label class="horaire-label">Fermeture gate</label>
-                  <input
-                    v-if="!crvStore.isLocked"
-                    type="datetime-local"
-                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.fermetureGateAt)"
-                    @change="updateBoardingHorodatage('fermetureGateAt', $event.target.value)"
-                    class="horaire-input"
-                  />
-                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.fermetureGateAt ? formatHoraire(crvStore.currentCRV.horaire.fermetureGateAt) : '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Horodatages terrain check-in -->
-            <div v-if="crvStore.currentCRV?.horaire" class="boarding-horodatages card">
-              <h3 class="section-title">Check-in</h3>
-              <div class="horaires-row">
-                <div class="horaire-item horaire-editable">
-                  <label class="horaire-label">Ouverture comptoir</label>
-                  <input
-                    v-if="!crvStore.isLocked"
-                    type="datetime-local"
-                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.ouvertureComptoirAt)"
-                    @change="updateCheckinHorodatage('ouvertureComptoirAt', $event.target.value)"
-                    class="horaire-input"
-                  />
-                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.ouvertureComptoirAt ? formatHoraire(crvStore.currentCRV.horaire.ouvertureComptoirAt) : '—' }}</span>
-                </div>
-                <div class="horaire-item horaire-editable">
-                  <label class="horaire-label">Fermeture comptoir</label>
-                  <input
-                    v-if="!crvStore.isLocked"
-                    type="datetime-local"
-                    :value="formatDatetimeLocal(crvStore.currentCRV.horaire.fermetureComptoirAt)"
-                    @change="updateCheckinHorodatage('fermetureComptoirAt', $event.target.value)"
-                    class="horaire-input"
-                  />
-                  <span v-else class="horaire-value">{{ crvStore.currentCRV.horaire.fermetureComptoirAt ? formatHoraire(crvStore.currentCRV.horaire.fermetureComptoirAt) : '—' }}</span>
-                </div>
-              </div>
-            </div>
+            <!-- Boarding + Check-in : déplacés vers Step 4 (phases DEP_BOARDING + DEP_CHECKIN) -->
 
             <div class="step-actions">
               <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
