@@ -48,6 +48,11 @@
           <router-link to="/validation" class="nav-link">À valider</router-link>
         </template>
 
+        <!-- UX-4 : Vue chef d'équipe (CHEF_EQUIPE + SUPERVISEUR + MANAGER) -->
+        <template v-if="isChefEquipe || isSuperviseur || isManager">
+          <router-link to="/dashboard-chef" class="nav-link">Équipe</router-link>
+        </template>
+
         <!-- MANAGER : Dashboard complet -->
         <template v-if="isManager">
           <router-link to="/dashboard-manager" class="nav-link">Dashboard</router-link>
@@ -133,6 +138,10 @@
       </template>
       <template v-if="canValidate">
         <router-link to="/validation" class="mobile-nav-link" @click="closeMobileMenu">À valider</router-link>
+      </template>
+      <!-- UX-4 : vue chef d'équipe (mobile) -->
+      <template v-if="isChefEquipe || isSuperviseur || isManager">
+        <router-link to="/dashboard-chef" class="mobile-nav-link" @click="closeMobileMenu">Équipe</router-link>
       </template>
       <template v-if="isManager">
         <router-link to="/dashboard-manager" class="mobile-nav-link" @click="closeMobileMenu">Dashboard</router-link>
