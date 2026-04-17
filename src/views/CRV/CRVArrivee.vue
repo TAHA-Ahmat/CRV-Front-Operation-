@@ -42,9 +42,19 @@
               :compagnie-nom="crvStore.currentCRV?.vol?.compagnie || crvStore.currentCRV?.vol?.nomCompagnie || null"
               @close="showTasksDrawer = false"
               @action="handleTaskAction"
+              @cause-retard="handleCauseRetard"
             />
           </div>
         </div>
+
+        <!-- UX-5 : modal saisie cause retard -->
+        <SLACauseRetardModal
+          v-if="causeRetardPhase"
+          :phase="causeRetardPhase"
+          :crv-id="crvStore.currentCRV?._id || crvStore.currentCRV?.id"
+          @close="causeRetardPhase = null"
+          @saved="onCauseRetardSaved"
+        />
 
         <!-- UX-3 : Onboarding SLA (première connexion) -->
         <OnboardingTour
@@ -364,7 +374,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
@@ -382,6 +392,7 @@ import CRVLockedBanner from '@/components/crv/CRVLockedBanner.vue'
 import CRVSLABanner from '@/components/crv/CRVSLABanner.vue'
 import CRVTasksBoard from '@/components/crv/CRVTasksBoard.vue'
 import OnboardingTour from '@/components/Common/OnboardingTour.vue'
+import SLACauseRetardModal from '@/components/crv/SLACauseRetardModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -418,6 +429,57 @@ const showOnboarding = computed(() => {
   if (onboardingClosed.value) return false
   const r = authStore.currentUser?.fonction || authStore.currentUser?.role
   return ['AGENT_ESCALE', 'CHEF_EQUIPE', 'SUPERVISEUR'].includes(r)
+})
+
+// UX-5 : modal saisie cause retard
+const causeRetardPhase = ref(null)
+const exceededAutoPrompted = ref(new Set())
+
+function handleCauseRetard(phase) {
+  causeRetardPhase.value = phase
+}
+
+function onCauseRetardSaved() {
+  causeRetardPhase.value = null
+}
+
+// UX-5 : auto-ouvre le modal quand une tâche SLA passe EXCEEDED pour la 1ère fois
+function detectExceededPhase(phases) {
+  if (!phases) return null
+  const SLA_CODE_PREFIXES = ['CHECKIN_', 'BRIEFING_', 'BOARDING_', 'BAGAGES_', 'RAMP_', 'MSG_']
+  const now = new Date()
+  for (const p of phases) {
+    const code = p?.phase?.code || p?.code || ''
+    if (!SLA_CODE_PREFIXES.some(pref => code.startsWith(pref))) continue
+    if (p.statut === 'TERMINE' || p.statut === 'NON_REALISE') continue
+    const id = p.id || p._id
+    if (!id || exceededAutoPrompted.value.has(id)) continue
+    const slaMode = p?.phase?.slaMode || 'DUREE'
+    if (slaMode === 'DEADLINE') {
+      const ref = p.statut === 'EN_COURS' ? p.heureFinPrevue : p.heureDebutPrevue
+      if (ref && new Date(ref) <= now) return p
+    } else if (p.statut === 'EN_COURS' && p.heureDebutReelle && p?.phase?.dureeStandardMinutes) {
+      const elapsed = (now - new Date(p.heureDebutReelle)) / 60000
+      if (elapsed >= p.phase.dureeStandardMinutes) return p
+    }
+  }
+  return null
+}
+
+let exceededInterval = null
+onMounted(() => {
+  exceededInterval = setInterval(() => {
+    if (causeRetardPhase.value) return
+    if (crvStore.isLocked) return
+    const p = detectExceededPhase(crvStore.phases)
+    if (p) {
+      exceededAutoPrompted.value.add(p.id || p._id)
+      causeRetardPhase.value = p
+    }
+  }, 30_000)
+})
+onUnmounted(() => {
+  if (exceededInterval) clearInterval(exceededInterval)
 })
 
 // Actions des cartes CRVTasksBoard
