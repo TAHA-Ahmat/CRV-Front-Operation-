@@ -1,0 +1,78 @@
+/* ============================================================
+ * sla-motion.css — Motion design SLA global (UX-6)
+ *
+ * Fichier regroupant les animations et transitions SLA discrètes
+ * utilisées à travers l'application. Toutes les animations
+ * respectent `prefers-reduced-motion` pour l'accessibilité.
+ *
+ * Conventions :
+ * - Durées : 200-400ms pour l'éphémère, 1.5-2s pour le pulse de fond.
+ * - Easings : `ease-out` au démarrage, `ease-in-out` pour les boucles.
+ * - Toujours non-intrusif : pulse discret, pas de scintillement criard.
+ * - L'espace de nommage `sla-*` est réservé aux primitives SLA.
+ * ============================================================ */
+
+/* ── 1. Transition douce au changement de niveau SLA ───────── */
+.sla-badge-transition {
+  transition:
+    background-color 300ms ease,
+    color 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+
+/* ── 2. Pulse critique — appliqué aux badges EXCEEDED ─────── */
+@keyframes sla-pulse-critical {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.65; }
+}
+
+.sla-pulse-critical {
+  animation: sla-pulse-critical 1.6s ease-in-out infinite;
+}
+
+/* ── 3. Fade-in doux — pour cartes, bandeaux, lignes ───────── */
+@keyframes sla-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sla-fade-in {
+  animation: sla-fade-in 300ms ease-out both;
+}
+
+/* ── 4. Slide-down pour bandeaux qui apparaissent en tête ──── */
+@keyframes sla-slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sla-slide-down {
+  animation: sla-slide-down 380ms ease-out both;
+}
+
+/* ── 5. Micro-bounce sur chaque seconde — UNIQUEMENT sur     */
+/*      les countdowns EXCEEDED (autrement distrayant).       */
+@keyframes sla-countdown-tick {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.sla-countdown-exceeded .sla-countdown-timer {
+  animation: sla-countdown-tick 1s ease-in-out infinite;
+  transform-origin: center;
+  display: inline-block;
+}
+
+/* ── 6. Respect de prefers-reduced-motion (accessibilité) ── */
+@media (prefers-reduced-motion: reduce) {
+  .sla-badge-transition,
+  .sla-pulse-critical,
+  .sla-fade-in,
+  .sla-slide-down,
+  .sla-countdown-exceeded .sla-countdown-timer {
+    animation: none !important;
+    transition: none !important;
+  }
+}

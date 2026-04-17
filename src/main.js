@@ -6,6 +6,9 @@ import App from './App.vue'
 // AJOUTÉ DEPUIS STOCK THS : Tailwind CSS
 import './assets/main.css'
 
+// UX-6 : motion design SLA global (pulse, fade-in, stagger, prefers-reduced-motion)
+import './assets/sla-motion.css'
+
 // AJOUTÉ DEPUIS STOCK THS : Vue Toastification pour notifications
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
