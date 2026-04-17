@@ -23,6 +23,27 @@
         <!-- Bannière CRV verrouillé/validé/annulé -->
         <CRVLockedBanner />
 
+        <!-- Bandeau SLA persistant (toutes les étapes) -->
+        <CRVSLABanner
+          v-if="crvStore.currentCRV"
+          :crv="crvStore.currentCRV"
+          :phases="crvStore.phases"
+          @open-tasks="showTasksDrawer = true"
+        />
+
+        <!-- Drawer Tableau de bord tâches SLA -->
+        <div v-if="showTasksDrawer" class="tasks-drawer-overlay" @click.self="showTasksDrawer = false">
+          <div class="tasks-drawer">
+            <CRVTasksBoard
+              :phases="crvStore.phases"
+              :closable="true"
+              :disabled="crvStore.isLocked"
+              @close="showTasksDrawer = false"
+              @action="handleTaskAction"
+            />
+          </div>
+        </div>
+
         <!-- Indicateur de complétude -->
         <div v-if="crvStore.currentCRV" class="completude-section">
           <div class="completude-header">
@@ -346,6 +367,8 @@ import CRVCharges from '@/components/crv/CRVCharges.vue'
 import CRVEvenements from '@/components/crv/CRVEvenements.vue'
 import CRVValidation from '@/components/crv/CRVValidation.vue'
 import CRVLockedBanner from '@/components/crv/CRVLockedBanner.vue'
+import CRVSLABanner from '@/components/crv/CRVSLABanner.vue'
+import CRVTasksBoard from '@/components/crv/CRVTasksBoard.vue'
 import { validationAPI, crvAPI } from '@/services/api'
 import { canLockCRV } from '@/utils/permissions'
 
@@ -384,6 +407,22 @@ const isLoading = ref(false)
 const lockingCRV = ref(false)
 const stepValidationError = ref('')
 const successMessage = ref('')
+const showTasksDrawer = ref(false)
+
+// Actions des cartes CRVTasksBoard
+const handleTaskAction = async ({ type, phase }) => {
+  if (!phase) return
+  const phaseId = phase.id || phase._id
+  try {
+    if (type === 'start') {
+      await crvStore.demarrerPhase(phaseId)
+    } else if (type === 'end') {
+      await crvStore.terminerPhase(phaseId)
+    }
+  } catch (err) {
+    console.error('[CRVDepart] handleTaskAction erreur:', err.message)
+  }
+}
 
 // Rôle utilisateur pour vérification permissions verrouillage (Bug #7)
 const userRole = computed(() => authStore.currentUser?.fonction || authStore.currentUser?.role)
@@ -1489,6 +1528,44 @@ const handleLogout = async () => {
 
   .crv-progress {
     padding: 30px;
+  }
+}
+
+/* Drawer Tableau tâches */
+.tasks-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1100;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawer-fade 0.2s ease;
+}
+
+.tasks-drawer {
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  background: var(--bg-body);
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  animation: drawer-slide 0.25s ease;
+}
+
+@keyframes drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawer-slide {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .tasks-drawer {
+    padding: 12px;
   }
 }
 </style>
