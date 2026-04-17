@@ -355,4 +355,46 @@ function close() {
   .cr-icon { animation: none !important; }
   .cr-btn-primary:hover { transform: none !important; }
 }
+
+/* Responsive : plein écran mobile, centré tablette+ */
+@media (max-width: 767px) {
+  .cr-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+  .cr-modal {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .cr-head {
+    padding: 12px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .cr-body {
+    padding: 16px 14px;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .cr-foot {
+    padding: 12px 14px;
+    position: sticky;
+    bottom: 0;
+    flex-direction: column-reverse;
+  }
+  .cr-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  .cr-select,
+  .cr-textarea {
+    font-size: 16px; /* évite zoom iOS */
+    min-height: 44px;
+  }
+}
 </style>

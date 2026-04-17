@@ -395,15 +395,21 @@ export default {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+/* Mobile (< 768px) : plein écran */
+@media (max-width: 767px) {
   .pdf-modal-container {
     width: 100%;
     height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     border-radius: 0;
   }
 
   .pdf-modal-header {
     border-radius: 0;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
   }
 
   .header-title {
@@ -411,8 +417,17 @@ export default {
   }
 
   .action-btn {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.9rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    min-height: 40px;
+  }
+}
+
+/* Tablette (768px - 1023px) : large mais pas plein écran */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pdf-modal-container {
+    width: 95%;
+    height: 92vh;
   }
 }
 

@@ -212,18 +212,29 @@ code {
   font-size: 12px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  .modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
   .modal-container {
-    padding: 24px 20px;
-    max-width: 95%;
+    padding: 20px 16px;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 14px 14px 12px 12px;
   }
 
   .modal-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    gap: 8px;
   }
 
   .btn {
     width: 100%;
+    min-height: 44px;
   }
 }
 </style>

@@ -364,10 +364,34 @@ function close() {
   .ob-btn-primary:hover { transform: none !important; }
 }
 
-@media (max-width: 640px) {
-  .onboarding-modal { padding: 16px; }
+@media (max-width: 767px) {
+  .onboarding-overlay {
+    padding: 12px;
+    align-items: flex-end; /* bottom-sheet style */
+  }
+  .onboarding-modal {
+    padding: 16px;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 14px 14px 12px 12px;
+  }
   .ob-legend { grid-template-columns: 1fr; }
-  .ob-foot { flex-direction: column; align-items: stretch; }
-  .ob-foot-right { justify-content: flex-end; }
+  .ob-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .ob-foot-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .ob-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .ob-title { font-size: 17px; }
 }
 </style>

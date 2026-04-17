@@ -224,18 +224,39 @@ function submit() {
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  .modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
   .modal-container {
-    padding: 24px 20px;
-    max-width: 95%;
+    padding: 20px 16px;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 14px 14px 12px 12px;
+  }
+
+  .modal-title {
+    font-size: 18px;
   }
 
   .modal-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    gap: 8px;
   }
 
   .btn {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* évite zoom iOS */
+    min-height: 44px;
   }
 }
 </style>
