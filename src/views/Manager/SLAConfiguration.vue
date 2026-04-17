@@ -899,4 +899,94 @@ export default {
   color: var(--text-secondary, #888);
   font-size: 0.95rem;
 }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .sla-config-container {
+    padding: 12px 10px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-left h1 {
+    font-size: 1.2rem;
+  }
+
+  .btn-back {
+    min-height: 40px;
+  }
+
+  .defaults-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* Tabs : scroll horizontal nowrap */
+  .domain-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  /* Table SLA: wrapper scroll horizontal */
+  .sla-compagnies-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sla-table {
+    min-width: 640px;
+    font-size: 0.8rem;
+  }
+
+  .sla-table th,
+  .sla-table td {
+    padding: 8px 6px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-actions .btn,
+  .modal-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sla-config-container {
+    padding: 18px 16px;
+  }
+
+  .defaults-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 </style>
