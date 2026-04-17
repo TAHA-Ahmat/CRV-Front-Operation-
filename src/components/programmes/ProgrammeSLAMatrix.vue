@@ -4,6 +4,7 @@
       <h3 class="sla-matrix-title">SLA applicables</h3>
       <p class="sla-matrix-sub">
         Grille prévisionnelle : SLA qui seront appliqués aux CRV générés pour ce programme.
+        Les lignes <strong>« Fallback standard »</strong> signalent les compagnies sans config personnalisée.
       </p>
       <div v-if="loading" class="sla-matrix-loading">Chargement…</div>
       <div v-else-if="error" class="sla-matrix-error">{{ error }}</div>
@@ -31,8 +32,20 @@
             <td class="cell-cie">
               <span class="cie-iata">{{ row.codeIATA }}</span>
               <span class="cie-nom">{{ row.nom }}</span>
-              <span v-if="row.source === 'standard'" class="cie-badge cie-badge-standard">Standard</span>
-              <span v-else class="cie-badge cie-badge-contrat">Contrat</span>
+              <span
+                v-if="row.source === 'standard'"
+                class="cie-badge cie-badge-standard"
+                title="Aucune configuration SLA trouvée pour cette compagnie — fallback standard appliqué par défaut"
+              >
+                ⚠ Fallback standard
+              </span>
+              <span
+                v-else
+                class="cie-badge cie-badge-contrat"
+                title="Configuration SLA personnalisée trouvée pour cette compagnie"
+              >
+                ✓ Contrat configuré
+              </span>
             </td>
             <td class="cell-sla">
               <div class="sla-line">Ouv. : <strong>{{ row.checkin.ouverture }}min</strong></div>

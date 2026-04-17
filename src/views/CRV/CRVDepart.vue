@@ -38,6 +38,8 @@
               :phases="crvStore.phases"
               :closable="true"
               :disabled="crvStore.isLocked"
+              :code-iata="crvStore.currentCRV?.vol?.codeIATA || null"
+              :compagnie-nom="crvStore.currentCRV?.vol?.compagnie || crvStore.currentCRV?.vol?.nomCompagnie || null"
               @close="showTasksDrawer = false"
               @action="handleTaskAction"
             />
