@@ -1,6 +1,13 @@
 <template>
-  <div v-if="display" class="sla-countdown" :class="'sla-countdown-' + display.niveau">
-    <span class="sla-countdown-icon">{{ icons[display.niveau] || '⏱' }}</span>
+  <div
+    v-if="display"
+    class="sla-countdown sla-badge-transition"
+    :class="'sla-countdown-' + display.niveau"
+    :title="tooltip"
+    :aria-label="ariaLabel"
+    role="status"
+  >
+    <span class="sla-countdown-icon" aria-hidden="true">{{ icons[display.niveau] || '⏱' }}</span>
     <span class="sla-countdown-timer">{{ display.timer }}</span>
     <span class="sla-countdown-label">{{ display.label }}</span>
   </div>
@@ -8,6 +15,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { SLA_COLORS, SLA_LABELS, SLA_DESCRIPTIONS, tooltipText } from '@/constants/slaSemantique'
 
 /**
  * SLACountdown — Compte à rebours SLA temps réel
@@ -25,7 +33,32 @@ const props = defineProps({
   slaMinutes: { type: Number, default: null }
 })
 
-const icons = { ok: '🟢', warning: '🟡', critical: '🟠', exceeded: '🔴', pending: '⏳' }
+const icons = {
+  ok: SLA_COLORS.OK.icon,
+  warning: SLA_COLORS.WARNING.icon,
+  critical: SLA_COLORS.CRITICAL.icon,
+  exceeded: SLA_COLORS.EXCEEDED.icon,
+  pending: '⏳'
+}
+
+// Tooltip pédagogique — mapping statut minuscule vers niveau canonique
+const NIVEAU_MAP = { ok: 'OK', warning: 'WARNING', critical: 'CRITICAL', exceeded: 'EXCEEDED' }
+
+const tooltip = computed(() => {
+  const niv = display.value?.niveau
+  if (!niv) return ''
+  const canon = NIVEAU_MAP[niv]
+  if (!canon) return 'Phase en attente de démarrage'
+  return tooltipText(canon)
+})
+
+const ariaLabel = computed(() => {
+  const niv = display.value?.niveau
+  if (!niv) return ''
+  const canon = NIVEAU_MAP[niv]
+  if (!canon) return `Compte à rebours : ${display.value?.label || ''}`
+  return `SLA ${SLA_LABELS[canon]}. ${SLA_DESCRIPTIONS[canon]}. ${display.value?.label || ''}`
+})
 
 const now = ref(new Date())
 let interval = null
@@ -155,11 +188,19 @@ function formatCountdown(ms) {
   font-variant-numeric: tabular-nums;
 }
 
-.sla-countdown-ok { background: #e8f5e9; color: #2e7d32; }
-.sla-countdown-warning { background: #fff8e1; color: #f57f17; }
-.sla-countdown-critical { background: #fff3e0; color: #e65100; }
-.sla-countdown-exceeded { background: #ffebee; color: #c62828; animation: sla-pulse 1.5s infinite; }
-.sla-countdown-pending { background: #f5f5f5; color: #757575; }
+.sla-countdown-ok { background: rgba(34,197,94,0.12); color: #16a34a; }
+.sla-countdown-warning { background: rgba(245,158,11,0.14); color: #d97706; }
+.sla-countdown-critical { background: rgba(249,115,22,0.18); color: #ea580c; }
+.sla-countdown-exceeded {
+  background: rgba(239,68,68,0.18);
+  color: #dc2626;
+  animation: sla-pulse-critical 1.6s ease-in-out infinite;
+}
+.sla-countdown-pending { background: var(--bg-badge, #f3f4f6); color: var(--text-secondary, #6b7280); }
+
+.sla-badge-transition {
+  transition: background-color 300ms ease, color 300ms ease, box-shadow 300ms ease;
+}
 
 .sla-countdown-timer {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -172,8 +213,13 @@ function formatCountdown(ms) {
   opacity: 0.85;
 }
 
-@keyframes sla-pulse {
+@keyframes sla-pulse-critical {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sla-countdown-exceeded { animation: none !important; }
+  .sla-badge-transition { transition: none !important; }
 }
 </style>

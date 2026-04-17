@@ -37,21 +37,30 @@
 
     <div v-else class="tasks-grid">
       <div
-        v-for="task in filteredTasks"
+        v-for="(task, idx) in filteredTasks"
         :key="task.id || task._id"
-        class="task-card"
+        class="task-card sla-fade-in"
         :class="[
           'niveau-' + qualifyPhase(task),
           task.statut === 'TERMINE' ? 'task-done' : '',
-          task.statut === 'NON_REALISE' ? 'task-nonr' : ''
+          task.statut === 'NON_REALISE' ? 'task-nonr' : '',
+          qualifyPhase(task) === 'exceeded' ? 'task-exceeded-pulse' : ''
         ]"
+        :style="{ animationDelay: (idx * 50) + 'ms' }"
+        :title="taskTooltip(task)"
       >
         <div class="task-head">
-          <span class="task-icon">{{ getDomainIcon(task) }}</span>
+          <span class="task-icon" aria-hidden="true">{{ getDomainIcon(task) }}</span>
           <div class="task-titles">
             <h4 class="task-name">{{ getTaskLabel(task) }}</h4>
             <span class="task-code">{{ task.phase?.code || task.code || '—' }}</span>
           </div>
+          <SLABadge
+            :niveau="canonNiveau(task)"
+            :show-label="true"
+            size="sm"
+            class="task-sla-badge"
+          />
           <span class="task-statut-badge" :class="'statut-' + (task.statut || '').toLowerCase()">
             {{ formatStatut(task.statut) }}
           </span>
@@ -92,6 +101,16 @@
           >
             Terminer
           </button>
+          <!-- UX-5 : action suggestive saisie cause retard sur EXCEEDED -->
+          <button
+            v-if="qualifyPhase(task) === 'exceeded'"
+            class="btn-task btn-task-cause"
+            type="button"
+            :title="`Saisir la cause du retard sur ${getTaskLabel(task)}`"
+            @click="$emit('cause-retard', task)"
+          >
+            ⚠ Saisir la cause du retard
+          </button>
         </div>
       </div>
     </div>
@@ -116,14 +135,18 @@
  */
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import SLACountdown from './SLACountdown.vue'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { normalizeNiveau, tooltipText } from '@/constants/slaSemantique'
 
 const props = defineProps({
   phases: { type: Array, default: () => [] },
   closable: { type: Boolean, default: false },
-  disabled: { type: Boolean, default: false }
+  disabled: { type: Boolean, default: false },
+  compagnieNom: { type: String, default: null },
+  codeIATA: { type: String, default: null }
 })
 
-defineEmits(['close', 'action'])
+defineEmits(['close', 'action', 'cause-retard'])
 
 // ── Filtrage phases SLA fines ─────────────────────────
 const DOMAINES = [
@@ -263,6 +286,30 @@ function getTaskLabel(phase) {
 function isTerminal(phase) {
   return phase.statut === 'TERMINE' || phase.statut === 'NON_REALISE'
 }
+
+// Mapping statut tasksBoard → niveau canonique
+function canonNiveau(task) {
+  const q = qualifyPhase(task)
+  if (q === 'done' || q === 'skipped') return null
+  return normalizeNiveau(q) || 'OK'
+}
+
+// Tooltip combiné : sémantique SLA + contrat compagnie (UX-1 + UX-2)
+function taskTooltip(task) {
+  const q = qualifyPhase(task)
+  const canon = normalizeNiveau(q)
+  const parts = []
+  if (canon) {
+    parts.push(tooltipText(canon))
+  }
+  if (props.compagnieNom || props.codeIATA) {
+    const nom = props.compagnieNom || props.codeIATA
+    parts.push(`Source SLA : ${nom} (fallback standard si pas de config)`)
+  } else {
+    parts.push('Source SLA : contrat standard (aucune config compagnie)')
+  }
+  return parts.join('\n')
+}
 </script>
 
 <style scoped>
@@ -391,6 +438,54 @@ function isTerminal(phase) {
 .task-card.niveau-exceeded { border-left-color: #ef4444; box-shadow: 0 0 0 1px rgba(239,68,68,0.15); }
 .task-card.niveau-done { border-left-color: #94a3b8; opacity: 0.72; }
 .task-card.niveau-skipped { border-left-color: #cbd5e1; opacity: 0.55; }
+
+/* UX-6 Motion : fade-in des cartes */
+.sla-fade-in {
+  animation: sla-fade-in 320ms ease-out both;
+}
+
+@keyframes sla-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* UX-5 Motion : pulse discret sur tâches dépassées */
+.task-card.task-exceeded-pulse {
+  animation: sla-fade-in 320ms ease-out both, sla-pulse-critical 1.8s ease-in-out 320ms infinite;
+}
+
+@keyframes sla-pulse-critical {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(239,68,68,0.15); }
+  50%      { box-shadow: 0 0 0 3px rgba(239,68,68,0.28); }
+}
+
+.task-sla-badge {
+  margin-left: auto;
+  align-self: center;
+}
+
+/* Bouton UX-5 saisir cause retard */
+.btn-task-cause {
+  background: rgba(239,68,68,0.14);
+  color: #dc2626;
+  border: 1px solid rgba(239,68,68,0.35);
+  font-weight: 700;
+  margin-left: auto;
+  transition: all 0.2s ease;
+}
+.btn-task-cause:hover {
+  background: rgba(239,68,68,0.22);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sla-fade-in,
+  .task-card.task-exceeded-pulse,
+  .btn-task-cause {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 
 .task-head {
   display: flex;

@@ -1,15 +1,25 @@
 <template>
-  <div v-if="crv" class="crv-sla-banner" :class="bannerClass">
+  <div v-if="crv" class="crv-sla-banner sla-banner-slide-in" :class="bannerClass">
     <div class="banner-row-main">
       <!-- SLA CRV global -->
       <div class="banner-block banner-block-main">
-        <span class="banner-icon">{{ niveauIcon }}</span>
+        <SLABadge
+          :niveau="slaCanonNiveau"
+          :show-label="false"
+          size="lg"
+          class="banner-badge"
+        />
         <div class="banner-text">
           <div class="banner-label">SLA CRV</div>
           <div class="banner-value">
             <span v-if="slaStatus" class="banner-countdown">{{ slaStatus.label }}</span>
             <span v-else class="banner-dim">—</span>
             <span v-if="slaStatus" class="banner-sub">{{ slaStatus.etape }} · {{ slaStatus.source }}</span>
+          </div>
+          <!-- Contrat compagnie (UX-2) -->
+          <div v-if="contratInfo" class="banner-contrat" :title="contratTooltip">
+            <span class="contrat-icon" aria-hidden="true">📑</span>
+            <span class="contrat-text">{{ contratInfo }}</span>
           </div>
         </div>
       </div>
@@ -18,14 +28,25 @@
       <div class="banner-block">
         <div class="banner-label">Tâches SLA</div>
         <div class="banner-tasks">
-          <span class="task-chip task-ok" :title="`${tasksCounts.ok} à l'heure`">
-            <span class="chip-dot"></span>{{ tasksCounts.ok }} à l'heure
+          <span
+            class="task-chip task-ok"
+            :title="`${tasksCounts.ok} tâche(s) dans le temps — moins de 75% du délai contractuel écoulé`"
+          >
+            <span class="chip-dot" aria-hidden="true"></span>{{ tasksCounts.ok }} dans le temps
           </span>
-          <span v-if="tasksCounts.alerte > 0" class="task-chip task-warning" :title="`${tasksCounts.alerte} en alerte`">
-            <span class="chip-dot"></span>{{ tasksCounts.alerte }} en alerte
+          <span
+            v-if="tasksCounts.alerte > 0"
+            class="task-chip task-warning"
+            :title="`${tasksCounts.alerte} tâche(s) en Attention ou Critique — 75% à 100% du délai écoulé`"
+          >
+            <span class="chip-dot" aria-hidden="true"></span>{{ tasksCounts.alerte }} en alerte
           </span>
-          <span v-if="tasksCounts.depasse > 0" class="task-chip task-exceeded" :title="`${tasksCounts.depasse} dépassée(s)`">
-            <span class="chip-dot"></span>{{ tasksCounts.depasse }} dépassée{{ tasksCounts.depasse > 1 ? 's' : '' }}
+          <span
+            v-if="tasksCounts.depasse > 0"
+            class="task-chip task-exceeded"
+            :title="`${tasksCounts.depasse} tâche(s) Dépassée(s) — délai contractuel dépassé, saisir la cause`"
+          >
+            <span class="chip-dot" aria-hidden="true"></span>{{ tasksCounts.depasse }} dépassée{{ tasksCounts.depasse > 1 ? 's' : '' }}
           </span>
           <span v-if="totalTasks === 0" class="banner-dim">Aucune phase SLA</span>
         </div>
@@ -75,6 +96,8 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSLA } from '@/composables/useSLA'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { normalizeNiveau } from '@/constants/slaSemantique'
 
 const props = defineProps({
   crv: { type: Object, default: null },
@@ -218,10 +241,36 @@ const bannerClass = computed(() => {
   return 'banner-ok'
 })
 
-const niveauIcon = computed(() => {
-  if (bannerClass.value === 'banner-critical') return '🔴'
-  if (bannerClass.value === 'banner-warning') return '🟠'
-  return '🟢'
+// Niveau canonique pour SLABadge (prend le pire entre global CRV et tâches)
+const slaCanonNiveau = computed(() => {
+  if (slaStatus.value?.niveau === 'EXCEEDED' || tasksCounts.value.depasse > 0) return 'EXCEEDED'
+  if (slaStatus.value?.niveau === 'CRITICAL' || tasksCounts.value.alerte > 0) return 'CRITICAL'
+  if (slaStatus.value?.niveau === 'WARNING') return 'WARNING'
+  return normalizeNiveau(slaStatus.value?.niveau) || 'OK'
+})
+
+// ── Contrat compagnie (UX-2) ───────────────────────────────
+const contratInfo = computed(() => {
+  const codeIATA = props.crv?.vol?.codeIATA
+  const nomCompagnie = props.crv?.vol?.compagnie || props.crv?.vol?.nomCompagnie
+  const source = slaStatus.value?.source
+  if (!source && !codeIATA) return null
+  // Si fallback standard
+  if (source === 'standard' || !codeIATA) {
+    return 'Contrat : Standard (fallback, aucune config compagnie)'
+  }
+  if (nomCompagnie && codeIATA) {
+    return `Contrat : ${nomCompagnie} — réf. ${codeIATA}`
+  }
+  if (codeIATA) {
+    return `Contrat : ${codeIATA}`
+  }
+  return null
+})
+
+const contratTooltip = computed(() => {
+  if (!contratInfo.value) return ''
+  return 'Source SLA appliquée à ce CRV. Les seuils viennent de la config compagnie ou du fallback standard si aucun contrat.'
 })
 </script>
 
@@ -246,6 +295,45 @@ const niveauIcon = computed(() => {
 @keyframes banner-pulse {
   0%, 100% { box-shadow: var(--shadow-md); }
   50% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), var(--shadow-md); }
+}
+
+/* Slide-down du bandeau à l'apparition (UX-6) */
+.sla-banner-slide-in {
+  animation: sla-banner-slide-in 380ms ease-out both;
+}
+
+@keyframes sla-banner-slide-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.banner-badge {
+  flex-shrink: 0;
+}
+
+.banner-contrat {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  font-style: italic;
+  cursor: help;
+}
+
+.contrat-icon {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.contrat-text {
+  letter-spacing: 0.2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-critical { animation: none !important; }
+  .sla-banner-slide-in { animation: none !important; }
 }
 
 .banner-row-main {

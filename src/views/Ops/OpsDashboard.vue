@@ -73,20 +73,27 @@
       </div>
       <div v-else class="urgences-list">
         <div
-          v-for="urg in urgencesTaches"
+          v-for="(urg, idx) in urgencesTaches"
           :key="urg.crvId + '_' + urg.phaseId"
-          class="urgence-item"
-          :class="'niveau-' + urg.niveau"
+          class="urgence-item sla-fade-in"
+          :class="['niveau-' + urg.niveau, urg.niveau === 'exceeded' ? 'urgence-exceeded-pulse' : '']"
+          :style="{ animationDelay: (idx * 50) + 'ms' }"
+          :title="urg.tooltip"
         >
           <div class="urg-left">
             <div class="urg-crv">{{ urg.numeroCRV }}</div>
             <div class="urg-task">
-              <span class="urg-icon">{{ urg.icon }}</span>
+              <span class="urg-icon" aria-hidden="true">{{ urg.icon }}</span>
               <span class="urg-label">{{ urg.libelle }}</span>
             </div>
           </div>
           <div class="urg-middle">
-            <span class="urg-timer" :class="'timer-' + urg.niveau">{{ urg.info }}</span>
+            <SLABadge
+              :niveau="urg.niveau.toUpperCase()"
+              :show-label="true"
+              :custom-label="urg.info"
+              size="sm"
+            />
           </div>
           <div class="urg-actions">
             <button class="btn-open-crv" @click="openCrv(urg)">Ouvrir CRV</button>
@@ -224,6 +231,11 @@
 import { useOpsStore } from '@/stores/opsStore'
 import { crvAPI } from '@/services/api'
 import { useSLA } from '@/composables/useSLA'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { tooltipText as slaTooltipText } from '@/constants/slaSemantique'
+
+// Mapping niveau minuscule → canonique (pour tooltips)
+const NIVEAU_TO_CANON = { ok: 'OK', warning: 'WARNING', critical: 'CRITICAL', exceeded: 'EXCEEDED' }
 
 const SLA_CODE_PREFIXES = ['CHECKIN_', 'BRIEFING_', 'BOARDING_', 'BAGAGES_', 'RAMP_', 'MSG_']
 const DOMAIN_ICONS = {
@@ -298,6 +310,8 @@ function phaseInfo(phase) {
 
 export default {
   name: 'OpsDashboard',
+
+  components: { SLABadge },
 
   setup() {
     const opsStore = useOpsStore()
@@ -418,6 +432,16 @@ export default {
               if (!isPhaseSLA(phase)) continue
               const niveau = qualifyPhaseNiveau(phase)
               if (niveau === 'critical' || niveau === 'exceeded') {
+                const codeIATA = fullCrv.vol?.codeIATA || crv.vol?.codeIATA
+                const nomCompagnie = fullCrv.vol?.compagnie || fullCrv.vol?.nomCompagnie || crv.vol?.compagnie
+                const sem = NIVEAU_TO_CANON[niveau] || null
+                const tooltipParts = []
+                if (sem) tooltipParts.push(slaTooltipText(sem))
+                if (codeIATA) {
+                  tooltipParts.push(`Contrat : ${nomCompagnie || codeIATA}${codeIATA ? ' (' + codeIATA + ')' : ''}`)
+                } else {
+                  tooltipParts.push('Contrat : Standard (fallback)')
+                }
                 urgs.push({
                   crvId: id,
                   phaseId: phase.id || phase._id,
@@ -426,7 +450,8 @@ export default {
                   libelle: phase?.phase?.libelle || phase?.phase?.code || 'Tâche',
                   icon: phaseIcon(phase),
                   niveau,
-                  info: phaseInfo(phase)
+                  info: phaseInfo(phase),
+                  tooltip: tooltipParts.join('\n')
                 })
               }
             }
@@ -1014,6 +1039,27 @@ export default {
 .urgence-item.niveau-exceeded {
   border-left: 4px solid #ef4444;
   background: rgba(239, 68, 68, 0.04);
+}
+
+.urgence-item.sla-fade-in {
+  animation: urg-fade-in 320ms ease-out both;
+}
+@keyframes urg-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.urgence-item.urgence-exceeded-pulse {
+  animation: urg-fade-in 320ms ease-out both, urg-pulse 1.8s ease-in-out 320ms infinite;
+}
+@keyframes urg-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%      { box-shadow: 0 0 0 2px rgba(239,68,68,0.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .urgence-item.sla-fade-in,
+  .urgence-item.urgence-exceeded-pulse {
+    animation: none !important;
+  }
 }
 
 .urg-left {

@@ -138,16 +138,22 @@
                   <div
                     class="sla-info"
                     :class="crvSlaStatusMap[crv._id]?.cssClass || 'sla-none'"
+                    :title="slaCellTooltip(crv)"
                     @mouseenter="openSlaPopover(crv)"
                     @mouseleave="closeSlaPopover(crv)"
                     @click="toggleSlaPopover(crv)"
                   >
                     <template v-if="crvSlaStatusMap[crv._id]">
-                      <span class="sla-label">{{ crvSlaStatusMap[crv._id].label }}</span>
+                      <SLABadge
+                        :niveau="crvSlaStatusMap[crv._id].niveau"
+                        :show-label="true"
+                        :custom-label="crvSlaStatusMap[crv._id].label"
+                        size="sm"
+                      />
                       <span
                         v-if="crvTasksAlertesCount[crv._id] > 0"
                         class="sla-tasks-count"
-                        :title="crvTasksAlertesCount[crv._id] + ' tâche(s) en alerte'"
+                        :title="crvTasksAlertesCount[crv._id] + ' tâche(s) en alerte (75% du délai ou plus)'"
                       >
                         · {{ crvTasksAlertesCount[crv._id] }} tâche{{ crvTasksAlertesCount[crv._id] > 1 ? 's' : '' }} en alerte
                       </span>
@@ -164,11 +170,22 @@
                         <strong>Tâches SLA en alerte</strong>
                         <span v-if="slaPopoverLoading" class="sla-pop-loading">Chargement…</span>
                       </div>
+                      <!-- UX-2 : contrat applicable visible dans le popover -->
+                      <div class="sla-popover-contrat" :title="contratPopoverTooltip(crv)">
+                        <span aria-hidden="true">📑</span>
+                        <span>{{ contratPopoverText(crv) }}</span>
+                      </div>
                       <div v-if="slaPopoverTasks.length === 0 && !slaPopoverLoading" class="sla-popover-empty">
                         Aucune tâche en alerte
                       </div>
                       <ul v-else class="sla-popover-list">
-                        <li v-for="task in slaPopoverTasks" :key="task.id" class="sla-popover-item" :class="task.cssClass">
+                        <li
+                          v-for="task in slaPopoverTasks"
+                          :key="task.id"
+                          class="sla-popover-item"
+                          :class="task.cssClass"
+                          :title="task.tooltip"
+                        >
                           <span class="pop-task-name">{{ task.libelle }}</span>
                           <span class="pop-task-rest">{{ task.info }}</span>
                         </li>
@@ -493,6 +510,8 @@ import { crvAPI } from '@/services/api'
 import { canEdit, canCancelCRV, canDeleteCRV } from '@/utils/permissions'
 import { useSLA } from '@/composables/useSLA'
 import ArchiveButton from '@/components/Common/ArchiveButton.vue'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { tooltipText, normalizeNiveau } from '@/constants/slaSemantique'
 
 const router = useRouter()
 const crvStore = useCRVStore()
@@ -631,13 +650,45 @@ function computePhaseInfo(phase) {
       info = `${elapsed}min en cours`
     }
   }
+  const canon = normalizeNiveau(niv)
   return {
     id: phase.id || phase._id,
     libelle: phase?.phase?.libelle || phase?.phase?.code || 'Tâche',
     cssClass: 'niveau-' + niv,
     niveau: niv,
-    info
+    info,
+    tooltip: canon ? tooltipText(canon) : 'Tâche SLA'
   }
+}
+
+// UX-1 + UX-2 : tooltip cellule SLA + contrat applicable
+function slaCellTooltip(crv) {
+  const status = crvSlaStatusMap.value[crv._id]
+  if (!status) return 'Aucun SLA actif sur ce CRV'
+  const parts = []
+  const canon = normalizeNiveau(status.niveau)
+  if (canon) parts.push(tooltipText(canon))
+  if (status.etape) parts.push(status.etape)
+  if (status.source) parts.push('Source : ' + status.source)
+  return parts.join('\n')
+}
+
+function contratPopoverText(crv) {
+  const status = crvSlaStatusMap.value[crv._id]
+  const codeIATA = crv?.vol?.codeIATA
+  const nomCompagnie = crv?.vol?.compagnie || crv?.vol?.nomCompagnie
+  if (!status || status.source === 'standard' || !codeIATA) {
+    return 'Contrat applicable : Standard (fallback)'
+  }
+  return `Contrat applicable : ${nomCompagnie || codeIATA}${codeIATA ? ' — ' + codeIATA : ''}`
+}
+
+function contratPopoverTooltip(crv) {
+  const status = crvSlaStatusMap.value[crv._id]
+  if (!status || status.source === 'standard') {
+    return 'Aucune configuration compagnie trouvée — le système utilise les seuils SLA standard par défaut.'
+  }
+  return 'Seuils SLA appliqués : issus de la configuration compagnie (SLAConfig).'
 }
 
 async function loadCrvPhasesForPopover(crvId) {
@@ -2008,6 +2059,20 @@ const executeExport = async () => {
   margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.sla-popover-contrat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: var(--bg-body, #f9fafb);
+  border-radius: 6px;
+  cursor: help;
 }
 
 .sla-pop-loading {

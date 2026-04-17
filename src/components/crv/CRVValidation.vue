@@ -1,6 +1,15 @@
 <template>
   <div class="crv-validation-component card">
-    <h3 class="section-title">Soumission du CRV</h3>
+    <div class="section-title-row">
+      <h3 class="section-title">Soumission du CRV</h3>
+      <!-- Badge SLA final (UX-1) — source unique : useSLA -->
+      <SLABadge
+        v-if="slaNiveauFinal"
+        :niveau="slaNiveauFinal"
+        :show-label="true"
+        size="md"
+      />
+    </div>
 
     <div v-if="!validated" class="validation-form">
       <div class="form-group">
@@ -101,6 +110,8 @@
 import { ref, watch, computed } from 'vue'
 import { ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS } from '@/config/crvEnums'
 import { crvAPI } from '@/services/api'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { useSLA } from '@/composables/useSLA'
 
 // Fonctions autorisées pour la validation — alignées sur ROLE_PERSONNEL backend
 const fonctionsValidation = [
@@ -131,7 +142,20 @@ const props = defineProps({
   crvId: {
     type: String,
     default: null
+  },
+  // UX-1 : CRV complet fourni par le parent pour le badge SLA final
+  crv: {
+    type: Object,
+    default: null
   }
+})
+
+const { calculerSLACRV } = useSLA()
+
+const slaNiveauFinal = computed(() => {
+  if (!props.crv) return null
+  const status = calculerSLACRV(props.crv)
+  return status?.niveau || null
 })
 
 const emit = defineEmits(['update:modelValue', 'validate'])
@@ -208,6 +232,15 @@ const downloadPDF = async () => {
   margin-bottom: 20px;
   background: #fef3c7;
   border: 2px solid #f59e0b;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .validation-form {
