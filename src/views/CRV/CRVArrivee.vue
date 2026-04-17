@@ -1537,148 +1537,10 @@ const handleLogout = async () => {
 }
 
 /* ========================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (breakpoints Tailwind: md=768px, lg=1024px)
    ======================================== */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
-  .header-content {
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .header-left {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .app-header h1 {
-    font-size: 18px;
-  }
-
-  .btn-back {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-
-  .user-info {
-    display: none;
-  }
-
-  .crv-main {
-    padding: 16px 12px;
-  }
-
-  .crv-progress {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .progress-steps {
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-
-  .progress-steps::before {
-    display: none;
-  }
-
-  .step {
-    flex: 0 0 calc(33.33% - 8px);
-    margin-bottom: 8px;
-  }
-
-  .step-number {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-
-  .step-label {
-    font-size: 10px;
-    max-width: 60px;
-  }
-
-  .step-actions {
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 20px;
-  }
-
-  .step-actions .btn {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .completude-section,
-  .phases-progress-indicator {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .completude-value {
-    font-size: 20px;
-  }
-
-  .completude-bar {
-    height: 16px;
-  }
-
-  .status-badge {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-}
-
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .header-content {
-    padding: 16px 20px;
-  }
-
-  .app-header h1 {
-    font-size: 20px;
-  }
-
-  .crv-main {
-    padding: 20px 16px;
-  }
-
-  .crv-progress {
-    padding: 20px;
-  }
-
-  .step-number {
-    width: 36px;
-    height: 36px;
-  }
-
-  .step-label {
-    font-size: 11px;
-  }
-
-  .step-actions {
-    gap: 12px;
-  }
-}
-
-/* Desktop (1024px+) */
-@media (min-width: 1025px) {
-  .crv-main {
-    padding: 30px 20px;
-  }
-
-  .crv-progress {
-    padding: 30px;
-    margin-bottom: 30px;
-  }
-}
-
-/* Drawer Tableau tâches */
+/* Drawer Tableau tâches (partagé mobile/tablette/desktop) */
 .tasks-drawer-overlay {
   position: fixed;
   inset: 0;
@@ -1710,9 +1572,202 @@ const handleLogout = async () => {
   to { transform: translateX(0); opacity: 1; }
 }
 
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .header-content {
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .header-left {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .app-header h1 {
+    font-size: 18px;
+  }
+
+  .btn-back {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .crv-main {
+    padding: 12px 10px 80px; /* padding-bottom pour sticky actions */
+  }
+
+  .crv-progress {
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+  }
+
+  /* Stepper compact horizontal scroll mobile */
+  .progress-steps {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding-bottom: 6px;
+    justify-content: flex-start;
+    scrollbar-width: thin;
+  }
+
+  .progress-steps::before {
+    display: none;
+  }
+
+  .step {
+    flex: 0 0 auto;
+    min-width: 64px;
+  }
+
+  .step-number {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    max-width: 64px;
+    line-height: 1.15;
+  }
+
+  /* Sticky bottom actions mobile */
+  .step-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 12px;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    z-index: 40;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  .step-actions .btn {
+    width: 100%;
+    min-width: auto;
+    min-height: 44px;
+  }
+
+  .completude-section,
+  .phases-progress-indicator {
+    padding: 14px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+  }
+
+  .completude-value {
+    font-size: 20px;
+  }
+
+  .completude-bar {
+    height: 14px;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .horaires-prevus {
+    padding: 14px;
+  }
+
+  .horaires-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .horaire-value {
+    font-size: 18px;
+  }
+
   .tasks-drawer {
     padding: 12px;
+    max-width: 100%;
+  }
+}
+
+/* Tablet portrait (768px - 1023px = md:) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .header-content {
+    padding: 14px 18px;
+  }
+
+  .app-header h1 {
+    font-size: 20px;
+  }
+
+  .crv-main {
+    padding: 20px 16px;
+  }
+
+  .crv-progress {
+    padding: 18px;
+  }
+
+  /* Stepper compact horizontal tablette */
+  .progress-steps {
+    gap: 4px;
+  }
+
+  .progress-steps::before {
+    left: 28px;
+    right: 28px;
+    top: 18px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .step-label {
+    font-size: 11px;
+    max-width: 72px;
+  }
+
+  .step-actions {
+    gap: 12px;
+  }
+
+  .step-actions .btn {
+    min-height: 44px;
+  }
+
+  .tasks-drawer {
+    max-width: 85%;
+    padding: 18px;
+  }
+}
+
+/* Desktop (≥ 1024px = lg:) */
+@media (min-width: 1024px) {
+  .crv-main {
+    padding: 30px 20px;
+  }
+
+  .crv-progress {
+    padding: 30px;
+    margin-bottom: 30px;
   }
 }
 </style>

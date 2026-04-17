@@ -205,10 +205,10 @@ const emitUpdate = () => {
 /* RESPONSIVE DESIGN                            */
 /* ============================================ */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .crv-header-component {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .section-header {
@@ -234,13 +234,18 @@ const emitUpdate = () => {
   .form-input {
     font-size: 16px; /* Évite le zoom iOS */
     padding: 12px;
+    min-height: 44px;
   }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablet (768px - 1023px = md:) : 2 colonnes */
+@media (min-width: 768px) and (max-width: 1023px) {
   .form-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-input {
+    min-height: 42px;
   }
 }
 </style>

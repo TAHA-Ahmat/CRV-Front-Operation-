@@ -1388,8 +1388,8 @@ const handleLogout = async () => {
 /* RESPONSIVE DESIGN                            */
 /* ============================================ */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
+/* Mobile (< 768px = Tailwind md) */
+@media (max-width: 767px) {
   .header-content {
     flex-direction: column;
     gap: 12px;
@@ -1441,19 +1441,24 @@ const handleLogout = async () => {
   }
 
   .crv-main {
-    padding: 16px 12px;
+    padding: 12px 10px 80px;
   }
 
   .crv-progress {
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+    border-radius: 10px;
   }
 
   .progress-steps {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    justify-content: flex-start;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
   }
 
   .progress-steps::before {
@@ -1461,19 +1466,20 @@ const handleLogout = async () => {
   }
 
   .step {
-    flex: 0 0 calc(33.33% - 10px);
-    min-width: 70px;
+    flex: 0 0 auto;
+    min-width: 64px;
   }
 
   .step-number {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
   }
 
   .step-label {
     font-size: 10px;
-    max-width: 60px;
+    max-width: 64px;
+    line-height: 1.15;
   }
 
   .completude-section {
@@ -1531,16 +1537,24 @@ const handleLogout = async () => {
   }
 
   .step-actions {
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 20px;
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px;
     margin-top: 20px;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    z-index: 40;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
   }
 
   .step-actions .btn {
     width: 100%;
     min-width: unset;
     padding: 12px;
+    min-height: 44px;
   }
 
   .step-validation-error {
@@ -1556,10 +1570,10 @@ const handleLogout = async () => {
   }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablet portrait (768px - 1023px = md:) */
+@media (min-width: 768px) and (max-width: 1023px) {
   .header-content {
-    padding: 16px 20px;
+    padding: 14px 18px;
   }
 
   .header-left h1 {
@@ -1567,11 +1581,15 @@ const handleLogout = async () => {
   }
 
   .crv-main {
-    padding: 24px 16px;
+    padding: 20px 16px;
   }
 
   .crv-progress {
-    padding: 24px;
+    padding: 20px;
+  }
+
+  .progress-steps {
+    gap: 4px;
   }
 
   .step-number {
@@ -1581,12 +1599,12 @@ const handleLogout = async () => {
 
   .step-label {
     font-size: 11px;
-    max-width: 70px;
+    max-width: 72px;
   }
 
   .progress-steps::before {
-    left: 30px;
-    right: 30px;
+    left: 28px;
+    right: 28px;
     top: 18px;
   }
 
@@ -1596,11 +1614,16 @@ const handleLogout = async () => {
 
   .step-actions .btn {
     min-width: 100px;
+    min-height: 44px;
+  }
+
+  .tasks-drawer {
+    max-width: 85%;
   }
 }
 
-/* Desktop (1025px+) */
-@media (min-width: 1025px) {
+/* Desktop (≥ 1024px) */
+@media (min-width: 1024px) {
   .crv-main {
     padding: 30px 20px;
   }
@@ -1642,9 +1665,10 @@ const handleLogout = async () => {
   to { transform: translateX(0); opacity: 1; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .tasks-drawer {
     padding: 12px;
+    max-width: 100%;
   }
 }
 </style>
