@@ -51,6 +51,13 @@
               />
             </div>
 
+            <div class="filter-group filter-sla">
+              <label>
+                <input type="checkbox" v-model="filters.urgencesOnly" />
+                Urgences SLA uniquement
+              </label>
+            </div>
+
             <div class="filter-group">
               <label>&nbsp;</label>
               <button @click="resetFilters" class="btn btn-secondary">
@@ -85,6 +92,15 @@
                 <th>Type</th>
                 <th>Statut</th>
                 <th>Complétude</th>
+                <th
+                  class="th-sortable"
+                  :class="{ 'sorted-desc': slaSort === 'desc', 'sorted-asc': slaSort === 'asc' }"
+                  @click="toggleSlaSort"
+                  title="Trier par niveau SLA"
+                >
+                  SLA
+                  <span class="sort-indicator">{{ slaSort === 'desc' ? '▼' : slaSort === 'asc' ? '▲' : '⇅' }}</span>
+                </th>
                 <th>Créé par</th>
                 <th>Date</th>
                 <th>Archivage</th>
@@ -92,7 +108,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="crv in crvList" :key="crv._id">
+              <tr v-for="crv in filteredSortedCRVList" :key="crv._id">
                 <td class="crv-number">{{ crv.numeroCRV }}</td>
                 <td>
                   <span v-if="crv.vol">{{ crv.vol.numeroVol }}</span>
@@ -116,6 +132,48 @@
                       :class="getCompletudeClass(crv.completude)"
                     ></div>
                     <span class="completude-text">{{ crv.completude }}%</span>
+                  </div>
+                </td>
+                <td class="sla-cell">
+                  <div
+                    class="sla-info"
+                    :class="crvSlaStatusMap[crv._id]?.cssClass || 'sla-none'"
+                    @mouseenter="openSlaPopover(crv)"
+                    @mouseleave="closeSlaPopover(crv)"
+                    @click="toggleSlaPopover(crv)"
+                  >
+                    <template v-if="crvSlaStatusMap[crv._id]">
+                      <span class="sla-label">{{ crvSlaStatusMap[crv._id].label }}</span>
+                      <span
+                        v-if="crvTasksAlertesCount[crv._id] > 0"
+                        class="sla-tasks-count"
+                        :title="crvTasksAlertesCount[crv._id] + ' tâche(s) en alerte'"
+                      >
+                        · {{ crvTasksAlertesCount[crv._id] }} tâche{{ crvTasksAlertesCount[crv._id] > 1 ? 's' : '' }} en alerte
+                      </span>
+                    </template>
+                    <span v-else class="sla-none-label">—</span>
+
+                    <!-- Popover -->
+                    <div
+                      v-if="openedPopoverCrvId === crv._id"
+                      class="sla-popover"
+                      @click.stop
+                    >
+                      <div class="sla-popover-header">
+                        <strong>Tâches SLA en alerte</strong>
+                        <span v-if="slaPopoverLoading" class="sla-pop-loading">Chargement…</span>
+                      </div>
+                      <div v-if="slaPopoverTasks.length === 0 && !slaPopoverLoading" class="sla-popover-empty">
+                        Aucune tâche en alerte
+                      </div>
+                      <ul v-else class="sla-popover-list">
+                        <li v-for="task in slaPopoverTasks" :key="task.id" class="sla-popover-item" :class="task.cssClass">
+                          <span class="pop-task-name">{{ task.libelle }}</span>
+                          <span class="pop-task-rest">{{ task.info }}</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </td>
                 <td>
@@ -427,12 +485,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCRVStore } from '@/stores/crvStore'
 import { useAuthStore } from '@/stores/authStore'
 import { crvAPI } from '@/services/api'
 import { canEdit, canCancelCRV, canDeleteCRV } from '@/utils/permissions'
+import { useSLA } from '@/composables/useSLA'
 import ArchiveButton from '@/components/Common/ArchiveButton.vue'
 
 const router = useRouter()
@@ -456,8 +515,172 @@ const pagination = reactive({
 const filters = reactive({
   statut: '',
   dateDebut: '',
-  dateFin: ''
+  dateFin: '',
+  urgencesOnly: false
 })
+
+// ── SLA : tri et statut par CRV ───────────────────────
+const { init: initSLA, calculerSLACRV } = useSLA()
+const slaSort = ref(null) // null | 'asc' | 'desc'
+
+// Tick 1min pour rafraîchir les labels SLA (temps réel)
+const slaTick = ref(0)
+let slaInterval = null
+
+// Niveaux ordonnés pour le tri (pire → meilleur)
+const SLA_NIVEAU_ORDER = { EXCEEDED: 4, CRITICAL: 3, WARNING: 2, OK: 1 }
+
+const crvSlaStatusMap = computed(() => {
+  // eslint-disable-next-line no-unused-expressions
+  slaTick.value
+  const map = {}
+  for (const crv of crvList.value) {
+    const status = calculerSLACRV(crv)
+    if (status) map[crv._id] = status
+  }
+  return map
+})
+
+// Tri
+const toggleSlaSort = () => {
+  if (slaSort.value === null) slaSort.value = 'desc'
+  else if (slaSort.value === 'desc') slaSort.value = 'asc'
+  else slaSort.value = null
+}
+
+const filteredSortedCRVList = computed(() => {
+  let list = [...crvList.value]
+  // Filtre urgences
+  if (filters.urgencesOnly) {
+    list = list.filter(c => {
+      const s = crvSlaStatusMap.value[c._id]
+      return s && (s.niveau === 'CRITICAL' || s.niveau === 'EXCEEDED')
+    })
+  }
+  // Tri SLA
+  if (slaSort.value) {
+    list.sort((a, b) => {
+      const sa = crvSlaStatusMap.value[a._id]
+      const sb = crvSlaStatusMap.value[b._id]
+      const va = sa ? SLA_NIVEAU_ORDER[sa.niveau] || 0 : 0
+      const vb = sb ? SLA_NIVEAU_ORDER[sb.niveau] || 0 : 0
+      return slaSort.value === 'desc' ? vb - va : va - vb
+    })
+  }
+  return list
+})
+
+// ── Popover SLA : chargement détails phases ──────────
+const openedPopoverCrvId = ref(null)
+const slaPopoverTasks = ref([])
+const slaPopoverLoading = ref(false)
+const crvTasksAlertesCount = ref({}) // { crvId: count }
+let popoverHoverTimer = null
+
+const SLA_CODE_PREFIXES = ['CHECKIN_', 'BRIEFING_', 'BOARDING_', 'BAGAGES_', 'RAMP_', 'MSG_']
+
+function isPhaseSLA(phase) {
+  const code = phase?.phase?.code || phase?.code || ''
+  return code && SLA_CODE_PREFIXES.some(p => code.startsWith(p))
+}
+
+function qualifyPhaseNiveau(phase) {
+  const statut = phase.statut
+  if (statut === 'TERMINE' || statut === 'NON_REALISE') return 'ok'
+  const slaMode = phase?.phase?.slaMode || 'DUREE'
+  const now = new Date()
+  if (slaMode === 'DEADLINE') {
+    if (statut === 'NON_COMMENCE' && phase.heureDebutPrevue) {
+      const diffMin = (new Date(phase.heureDebutPrevue) - now) / 60000
+      if (diffMin > 15) return 'ok'
+      if (diffMin > 5) return 'warning'
+      if (diffMin > 0) return 'critical'
+      return 'exceeded'
+    }
+    if (statut === 'EN_COURS' && phase.heureFinPrevue) {
+      const diffMin = (new Date(phase.heureFinPrevue) - now) / 60000
+      if (diffMin > 10) return 'ok'
+      if (diffMin > 3) return 'warning'
+      if (diffMin > 0) return 'critical'
+      return 'exceeded'
+    }
+  }
+  if (statut === 'EN_COURS' && phase.heureDebutReelle && phase?.phase?.dureeStandardMinutes) {
+    const elapsed = (now - new Date(phase.heureDebutReelle)) / 60000
+    const ratio = elapsed / phase.phase.dureeStandardMinutes
+    if (ratio >= 1) return 'exceeded'
+    if (ratio >= 0.9) return 'critical'
+    if (ratio >= 0.75) return 'warning'
+  }
+  return 'ok'
+}
+
+function computePhaseInfo(phase) {
+  const niv = qualifyPhaseNiveau(phase)
+  let info = ''
+  const now = new Date()
+  if (phase.statut === 'NON_COMMENCE' && phase.heureDebutPrevue) {
+    const diffMin = Math.round((new Date(phase.heureDebutPrevue) - now) / 60000)
+    info = diffMin >= 0 ? `dans ${diffMin}min` : `+${Math.abs(diffMin)}min retard`
+  } else if (phase.statut === 'EN_COURS') {
+    if (phase.heureFinPrevue) {
+      const diffMin = Math.round((new Date(phase.heureFinPrevue) - now) / 60000)
+      info = diffMin >= 0 ? `fin dans ${diffMin}min` : `+${Math.abs(diffMin)}min retard fin`
+    } else if (phase.heureDebutReelle) {
+      const elapsed = Math.round((now - new Date(phase.heureDebutReelle)) / 60000)
+      info = `${elapsed}min en cours`
+    }
+  }
+  return {
+    id: phase.id || phase._id,
+    libelle: phase?.phase?.libelle || phase?.phase?.code || 'Tâche',
+    cssClass: 'niveau-' + niv,
+    niveau: niv,
+    info
+  }
+}
+
+async function loadCrvPhasesForPopover(crvId) {
+  slaPopoverLoading.value = true
+  slaPopoverTasks.value = []
+  try {
+    const response = await crvAPI.getById(crvId)
+    const data = response?.data?.data || response?.data || {}
+    const phases = data.phases || []
+    const slaPhases = phases.filter(isPhaseSLA).map(computePhaseInfo)
+    const alertes = slaPhases.filter(p => ['warning', 'critical', 'exceeded'].includes(p.niveau))
+    crvTasksAlertesCount.value = { ...crvTasksAlertesCount.value, [crvId]: alertes.length }
+    slaPopoverTasks.value = alertes
+  } catch (err) {
+    console.warn('[CRVList] SLA popover erreur:', err.message)
+  } finally {
+    slaPopoverLoading.value = false
+  }
+}
+
+const openSlaPopover = (crv) => {
+  if (popoverHoverTimer) clearTimeout(popoverHoverTimer)
+  popoverHoverTimer = setTimeout(() => {
+    openedPopoverCrvId.value = crv._id
+    loadCrvPhasesForPopover(crv._id)
+  }, 300)
+}
+
+const closeSlaPopover = () => {
+  if (popoverHoverTimer) clearTimeout(popoverHoverTimer)
+  popoverHoverTimer = setTimeout(() => {
+    openedPopoverCrvId.value = null
+  }, 200)
+}
+
+const toggleSlaPopover = (crv) => {
+  if (openedPopoverCrvId.value === crv._id) {
+    openedPopoverCrvId.value = null
+  } else {
+    openedPopoverCrvId.value = crv._id
+    loadCrvPhasesForPopover(crv._id)
+  }
+}
 
 // MVS-2: États modaux
 const selectedCRV = ref(null)
@@ -482,6 +705,13 @@ const exportFilters = reactive({
 // Chargement initial
 onMounted(() => {
   loadCRVList()
+  initSLA()
+  slaInterval = setInterval(() => { slaTick.value++ }, 60000)
+})
+
+onUnmounted(() => {
+  if (slaInterval) clearInterval(slaInterval)
+  if (popoverHoverTimer) clearTimeout(popoverHoverTimer)
 })
 
 // Charger la liste des CRV
@@ -1689,5 +1919,149 @@ const executeExport = async () => {
   .crv-main {
     padding: 30px 20px;
   }
+}
+
+/* ── SLA : filtre + colonne + popover ─────────────── */
+.filter-sla {
+  justify-content: flex-end;
+}
+.filter-sla label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.filter-sla input[type="checkbox"] {
+  width: auto;
+  min-width: 0;
+}
+
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.th-sortable:hover { color: var(--color-primary, #2563eb); }
+.sort-indicator {
+  display: inline-block;
+  font-size: 10px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+.th-sortable.sorted-desc .sort-indicator,
+.th-sortable.sorted-asc .sort-indicator {
+  opacity: 1;
+  color: var(--color-primary, #2563eb);
+}
+
+.sla-cell { position: relative; }
+
+.sla-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: help;
+  white-space: nowrap;
+  position: relative;
+}
+.sla-info.sla-ok { background: rgba(34,197,94,0.12); color: #16a34a; }
+.sla-info.sla-warning { background: rgba(245,158,11,0.15); color: #d97706; }
+.sla-info.sla-critical { background: rgba(249,115,22,0.18); color: #ea580c; }
+.sla-info.sla-exceeded { background: rgba(239,68,68,0.18); color: #dc2626; font-weight: 700; }
+.sla-info.sla-none { background: transparent; color: var(--text-tertiary); cursor: default; }
+.sla-tasks-count {
+  font-weight: 500;
+  font-size: 11px;
+  opacity: 0.9;
+}
+.sla-none-label { font-weight: 400; }
+
+.sla-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  min-width: 260px;
+  max-width: 360px;
+  background: var(--bg-modal, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  padding: 10px 12px;
+  z-index: 200;
+  font-weight: 400;
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: normal;
+}
+
+.sla-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.sla-pop-loading {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.sla-popover-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.sla-popover-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.sla-popover-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--bg-body, #f9fafb);
+  font-size: 12px;
+}
+.sla-popover-item.niveau-warning { background: rgba(245,158,11,0.08); }
+.sla-popover-item.niveau-critical { background: rgba(249,115,22,0.1); }
+.sla-popover-item.niveau-exceeded { background: rgba(239,68,68,0.12); }
+
+.pop-task-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pop-task-rest {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 </style>
