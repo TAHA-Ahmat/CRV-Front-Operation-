@@ -743,13 +743,27 @@ onUnmounted(() => {
   .refresh-icon { transition: none !important; }
 }
 
-@media (max-width: 640px) {
-  .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .agents-grid { grid-template-columns: 1fr; }
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi-card { padding: 12px 14px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-label { font-size: 10px; }
+  .agents-grid { grid-template-columns: 1fr; gap: 12px; }
   .agent-kpis { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .agent-crv-item {
     grid-template-columns: 1fr;
     gap: 6px;
   }
+  .btn-refresh,
+  .btn-secondary {
+    min-height: 44px;
+  }
+}
+
+/* Tablette (768px - 1023px) : 2 colonnes agents */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kpi-row { grid-template-columns: repeat(4, 1fr); }
+  .agents-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

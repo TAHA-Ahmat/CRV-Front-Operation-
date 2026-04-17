@@ -615,20 +615,22 @@ export default {
 }
 
 /* ─── STATS GRID ─────────────────────────────────────────────── */
+/* mobile = 2 cols, tablette md = 4 cols, lg = 7 cols */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 @media (min-width: 768px) {
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .stats-grid {
     grid-template-columns: repeat(7, 1fr);
   }
@@ -1128,22 +1130,32 @@ export default {
 .btn-open-crv:hover { background: #1d4ed8; }
 
 /* ─── RESPONSIVE ─────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .ops-dashboard {
-    padding: 16px 8px;
+    padding: 14px 10px;
   }
 
   .ops-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 
   .ops-title {
     font-size: 20px;
   }
 
+  .stat-card {
+    padding: 12px;
+  }
+
   .stat-value {
     font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 10px;
   }
 
   .events-feed {
@@ -1161,6 +1173,22 @@ export default {
 
   .btn-open-crv {
     width: 100%;
+    min-height: 40px;
+  }
+
+  .btn-refresh {
+    min-height: 44px;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ops-dashboard {
+    padding: 20px 16px;
+  }
+
+  .stat-value {
+    font-size: 24px;
   }
 }
 </style>
