@@ -84,7 +84,9 @@
             <button v-if="!isQualite" @click="goToNewCRV" class="btn btn-primary">Créer un CRV</button>
           </div>
 
-          <table v-else class="crv-table">
+          <!-- Vue desktop + tablette (≥ 768px) : tableau -->
+          <div v-else class="table-wrapper hidden md:block">
+          <table class="crv-table">
             <thead>
               <tr>
                 <th>N° CRV</th>
@@ -277,6 +279,87 @@
               </tr>
             </tbody>
           </table>
+          </div>
+
+          <!-- Vue mobile (< 768px) : cartes empilées -->
+          <div v-if="!loading && !error && crvList.length > 0" class="md:hidden crv-cards-mobile">
+            <div
+              v-for="crv in filteredSortedCRVList"
+              :key="'mc-' + crv._id"
+              class="crv-card"
+              @click="viewCRV(crv)"
+            >
+              <div class="crv-card-top">
+                <div class="crv-card-ids">
+                  <div class="crv-card-number">{{ crv.numeroCRV }}</div>
+                  <div class="crv-card-vol">
+                    <span v-if="crv.vol">{{ crv.vol.numeroVol }}</span>
+                    <span v-else class="text-muted">—</span>
+                    <span class="crv-card-type-badge" :class="getTypeBadgeClass(crv.vol?.typeOperation)">
+                      {{ formatType(crv.vol?.typeOperation) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="crv-card-sla">
+                  <SLABadge
+                    v-if="crvSlaStatusMap[crv._id]"
+                    :niveau="crvSlaStatusMap[crv._id].niveau"
+                    :show-label="true"
+                    :custom-label="crvSlaStatusMap[crv._id].label"
+                    size="sm"
+                  />
+                  <span v-else class="text-muted text-xs">—</span>
+                </div>
+              </div>
+
+              <div class="crv-card-meta">
+                <span class="status-badge" :class="getStatusClass(crv.statut)">
+                  {{ formatStatus(crv.statut) }}
+                </span>
+                <div class="completude-bar">
+                  <div
+                    class="completude-fill"
+                    :style="{ width: crv.completude + '%' }"
+                    :class="getCompletudeClass(crv.completude)"
+                  ></div>
+                  <span class="completude-text">{{ crv.completude }}%</span>
+                </div>
+              </div>
+
+              <div class="crv-card-footer">
+                <span class="crv-card-date">{{ formatDate(crv.dateCreation) }}</span>
+                <div class="crv-card-actions" @click.stop>
+                  <button
+                    @click="viewCRV(crv)"
+                    class="btn-action btn-view"
+                  >
+                    {{ canEditCRV(crv) ? 'Modifier' : 'Voir' }}
+                  </button>
+                  <button
+                    v-if="canAnnulerCRV(crv)"
+                    @click="openAnnulerModal(crv)"
+                    class="btn-action btn-cancel"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    v-if="canReactiverCRV(crv)"
+                    @click="openReactiverModal(crv)"
+                    class="btn-action btn-reactivate"
+                  >
+                    Réactiver
+                  </button>
+                  <button
+                    v-if="canSupprimerCRV(crv)"
+                    @click="openSupprimerModal(crv)"
+                    class="btn-action btn-delete"
+                  >
+                    Suppr.
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Pagination -->
           <div v-if="pagination.pages > 1" class="pagination">
@@ -1807,8 +1890,115 @@ const executeExport = async () => {
 /* RESPONSIVE DESIGN                            */
 /* ============================================ */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
+/* Table wrapper responsive — scroll horizontal sur tablette */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Vue cartes mobile */
+.crv-cards-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crv-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.crv-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.crv-card:active {
+  transform: scale(0.995);
+}
+
+.crv-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.crv-card-ids {
+  min-width: 0;
+  flex: 1;
+}
+
+.crv-card-number {
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 15px;
+}
+
+.crv-card-vol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.crv-card-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.crv-card-sla {
+  flex-shrink: 0;
+}
+
+.crv-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.crv-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.crv-card-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.crv-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.crv-card-actions .btn-action {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Mobile (jusqu'à 767px = breakpoint md Tailwind) */
+@media (max-width: 767px) {
   .crv-main {
     padding: 16px 12px;
   }
@@ -1833,6 +2023,7 @@ const executeExport = async () => {
   .header-actions .btn-export {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
   }
 
   .filters-card {
@@ -1851,41 +2042,14 @@ const executeExport = async () => {
   .filter-group select,
   .filter-group input {
     width: 100%;
+    min-height: 44px;
   }
 
   .table-card {
     padding: 12px;
-    overflow-x: auto;
-  }
-
-  .crv-table {
-    font-size: 11px;
-    min-width: 800px;
-  }
-
-  .crv-table th,
-  .crv-table td {
-    padding: 8px 6px;
-  }
-
-  .type-badge,
-  .status-badge {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-
-  .completude-bar {
-    width: 60px;
-    height: 16px;
-  }
-
-  .completude-text {
-    font-size: 9px;
-  }
-
-  .btn-action {
-    padding: 4px 8px;
-    font-size: 11px;
+    background: transparent;
+    box-shadow: none;
+    border: none;
   }
 
   .pagination {
@@ -1893,13 +2057,24 @@ const executeExport = async () => {
     gap: 12px;
   }
 
+  .btn-page {
+    min-height: 44px;
+    width: 100%;
+    text-align: center;
+  }
+
   .modal-content {
-    margin: 16px;
-    max-height: calc(100vh - 32px);
+    margin: 8px;
+    max-height: calc(100vh - 16px);
+    border-radius: 10px;
   }
 
   .modal-header {
     padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-modal);
+    z-index: 2;
   }
 
   .modal-header h2 {
@@ -1912,11 +2087,15 @@ const executeExport = async () => {
 
   .modal-footer {
     padding: 14px 16px;
-    flex-direction: column;
+    flex-direction: column-reverse;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-modal);
   }
 
   .modal-footer .btn {
     width: 100%;
+    min-height: 44px;
   }
 
   .date-range {
@@ -1934,10 +2113,23 @@ const executeExport = async () => {
     bottom: 16px;
     text-align: center;
   }
+
+  /* Popover : full width mobile */
+  .sla-popover {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    top: auto;
+    margin-top: 0;
+    max-width: none;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablet (768px - 1023px = md:) */
+@media (min-width: 768px) and (max-width: 1023px) {
   .crv-main {
     padding: 24px 16px;
   }
@@ -1957,16 +2149,22 @@ const executeExport = async () => {
   }
 
   .table-card {
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .crv-table {
     min-width: 900px;
+    font-size: 13px;
+  }
+
+  .crv-table th,
+  .crv-table td {
+    padding: 10px 8px;
   }
 }
 
-/* Desktop (1025px+) */
-@media (min-width: 1025px) {
+/* Desktop (1024px+ = lg:) */
+@media (min-width: 1024px) {
   .crv-main {
     padding: 30px 20px;
   }
