@@ -46,6 +46,13 @@
           </div>
         </div>
 
+        <!-- UX-3 : Onboarding SLA (première connexion) -->
+        <OnboardingTour
+          v-if="showOnboarding"
+          storage-key="crv-onboarding-sla-vu"
+          @close="onboardingClosed = true"
+        />
+
         <!-- Indicateur de complétude -->
         <div v-if="crvStore.currentCRV" class="completude-section">
           <div class="completude-header">
@@ -371,6 +378,7 @@ import CRVValidation from '@/components/crv/CRVValidation.vue'
 import CRVLockedBanner from '@/components/crv/CRVLockedBanner.vue'
 import CRVSLABanner from '@/components/crv/CRVSLABanner.vue'
 import CRVTasksBoard from '@/components/crv/CRVTasksBoard.vue'
+import OnboardingTour from '@/components/Common/OnboardingTour.vue'
 import { validationAPI, crvAPI } from '@/services/api'
 import { canLockCRV } from '@/utils/permissions'
 
@@ -410,6 +418,14 @@ const lockingCRV = ref(false)
 const stepValidationError = ref('')
 const successMessage = ref('')
 const showTasksDrawer = ref(false)
+
+// UX-3 : onboarding SLA première connexion
+const onboardingClosed = ref(false)
+const showOnboarding = computed(() => {
+  if (onboardingClosed.value) return false
+  const r = authStore.currentUser?.fonction || authStore.currentUser?.role
+  return ['AGENT_ESCALE', 'CHEF_EQUIPE', 'SUPERVISEUR'].includes(r)
+})
 
 // Actions des cartes CRVTasksBoard
 const handleTaskAction = async ({ type, phase }) => {
