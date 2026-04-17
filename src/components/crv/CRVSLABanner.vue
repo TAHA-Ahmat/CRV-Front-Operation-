@@ -288,6 +288,27 @@ const contratTooltip = computed(() => {
   transition: border-color 0.3s;
 }
 
+/* Tablette : compact horizontal (md: 768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .crv-sla-banner {
+    padding: 12px 14px;
+  }
+  .banner-row-main {
+    gap: 14px;
+  }
+  .banner-countdown {
+    font-size: 16px;
+  }
+  .task-chip {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  .btn-tasks-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
 .banner-ok { border-left: 4px solid #22c55e; }
 .banner-warning { border-left: 4px solid #f59e0b; }
 .banner-critical { border-left: 4px solid #ef4444; animation: banner-pulse 2.5s infinite; }
@@ -489,23 +510,61 @@ const contratTooltip = computed(() => {
   font-size: 14px;
 }
 
-@media (max-width: 768px) {
-  .banner-row-main {
-    gap: 16px;
+/* Mobile (< 768px) : stack vertical compact */
+@media (max-width: 767px) {
+  .crv-sla-banner {
+    padding: 12px 14px;
+    border-radius: 10px;
+    position: static; /* évite le sticky qui prend trop d'espace mobile */
   }
+
+  .banner-row-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
   .banner-block {
     flex: 1 1 auto;
+    gap: 10px;
   }
+
+  .banner-block-main {
+    align-items: flex-start;
+  }
+
+  .banner-label {
+    font-size: 10px;
+  }
+
+  .banner-countdown {
+    font-size: 16px;
+  }
+
+  .banner-sub {
+    font-size: 11px;
+  }
+
+  .banner-tasks {
+    gap: 6px;
+  }
+
+  .task-chip {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
   .banner-actions {
     margin-left: 0;
     width: 100%;
   }
+
   .btn-tasks-toggle {
     width: 100%;
     justify-content: center;
-  }
-  .banner-countdown {
-    font-size: 16px;
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 13px;
   }
 }
 </style>

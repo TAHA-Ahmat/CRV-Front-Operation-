@@ -611,12 +611,60 @@ function taskTooltip(task) {
 
 .btn-task-end:hover { background: #15803d; }
 
-@media (max-width: 640px) {
+/* Mobile (< 768px) : cartes empilées */
+@media (max-width: 767px) {
+  .tasks-board {
+    padding: 14px;
+    border-radius: 10px;
+  }
+  .tasks-header {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tasks-title {
+    font-size: 15px;
+  }
+  .domain-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .domain-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
   .tasks-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .task-card {
+    padding: 12px;
   }
   .task-times {
     gap: 8px;
+    flex-wrap: wrap;
+  }
+  .task-foot {
+    flex-wrap: wrap;
+  }
+  .btn-task {
+    min-height: 40px;
+    padding: 8px 12px;
+    flex: 1 1 auto;
+  }
+  .btn-task-cause {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+}
+
+/* Tablette (768px - 1023px = md:) : 2 colonnes */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tasks-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
