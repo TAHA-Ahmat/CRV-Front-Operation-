@@ -288,6 +288,12 @@
             </div>
           </div>
 
+          <!-- Grille SLA prévisionnelle (M7) -->
+          <ProgrammeSLAMatrix
+            v-if="selectedProgramme && compagniesDuProgramme.length > 0"
+            :compagnies="compagniesDuProgramme"
+          />
+
           <!-- Header vols avec toggle vue -->
           <div class="vols-header">
             <div class="vols-header-left">
@@ -727,6 +733,7 @@ import { canValidateProgramme, canDeleteProgramme } from '@/utils/permissions'
 import { normalizeRole } from '@/config/roles'
 import ProgrammeVolPDF from '@/components/flights/ProgrammeVolPDF.vue'
 import ArchiveButton from '@/components/Common/ArchiveButton.vue'
+import ProgrammeSLAMatrix from '@/components/programmes/ProgrammeSLAMatrix.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -872,6 +879,27 @@ const nombreSemaines = computed(() => {
 // Total vols sur toute la période
 const totalVolsPeriode = computed(() => {
   return volsParSemaine.value * nombreSemaines.value
+})
+
+// Liste des codes IATA compagnies du programme (pour la grille SLA M7)
+// Dérivée de selectedProgramme.compagnies ET des vols chargés (codeIATA extrait du numeroVol si besoin)
+const compagniesDuProgramme = computed(() => {
+  const set = new Set()
+  // 1. Compagnies déclarées dans le programme
+  for (const c of (selectedProgramme.value?.compagnies || [])) {
+    if (c) set.add(String(c).toUpperCase())
+  }
+  // 2. Compagnies dérivées des vols (codeIATA explicite ou préfixe du numeroVol)
+  for (const v of vols.value) {
+    if (v.codeIATA) {
+      set.add(String(v.codeIATA).toUpperCase())
+    } else if (v.numeroVol) {
+      // Extraction robuste : 2 premières lettres alpha du numéro de vol
+      const match = String(v.numeroVol).toUpperCase().match(/^([A-Z]{2,3})\d/)
+      if (match) set.add(match[1])
+    }
+  }
+  return Array.from(set)
 })
 
 // ============================================
