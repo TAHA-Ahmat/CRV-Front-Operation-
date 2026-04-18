@@ -30,59 +30,61 @@
         </svg>
       </button>
 
-      <!-- Menu de Navigation selon le rôle (6 rôles backend) -->
+      <!-- Menu de Navigation selon le rôle (6 rôles backend)
+           REFONTE UX : 3-6 liens max par rôle. Le reste est accessible via l'Accueil adaptatif. -->
       <nav class="desktop-nav">
 
-        <!-- RÔLES OPÉRATIONNELS : AGENT_ESCALE, CHEF_EQUIPE, SUPERVISEUR, MANAGER -->
-        <template v-if="isOperationnel">
+        <!-- AGENT_ESCALE : Accueil / Mes CRV / Nouveau CRV -->
+        <template v-if="isAgentEscale">
           <router-link to="/services" class="nav-link">Accueil</router-link>
           <router-link to="/crv/liste" class="nav-link">Mes CRV</router-link>
           <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
-          <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
-          <router-link to="/programmes-vol" class="nav-link">Programmes</router-link>
         </template>
 
-        <!-- Lien Avions : SUPERVISEUR + MANAGER + QUALITE (référentiel/config) -->
-        <template v-if="canAccessAvions">
-          <router-link to="/avions" class="nav-link">Avions</router-link>
-        </template>
-
-        <!-- SUPERVISEUR & MANAGER : Menu supplémentaire validation -->
-        <template v-if="canValidate">
-          <router-link to="/validation" class="nav-link">À valider</router-link>
-        </template>
-
-        <!-- UX-4 : Vue chef d'équipe (CHEF_EQUIPE + SUPERVISEUR + MANAGER) -->
-        <template v-if="isChefEquipe || isSuperviseur || isManager">
+        <!-- CHEF_EQUIPE : Accueil / Mes CRV / Nouveau CRV / Équipe -->
+        <template v-if="isChefEquipe">
+          <router-link to="/services" class="nav-link">Accueil</router-link>
+          <router-link to="/crv/liste" class="nav-link">Mes CRV</router-link>
+          <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
           <router-link to="/dashboard-chef" class="nav-link">Équipe</router-link>
         </template>
 
-        <!-- MANAGER : Dashboard complet -->
-        <template v-if="isManager">
-          <router-link to="/dashboard-manager" class="nav-link">Dashboard</router-link>
-          <router-link to="/statistiques" class="nav-link">Stats</router-link>
-        </template>
-
-        <!-- QUALITE : Lecture seule (pas de "Nouveau CRV") -->
-        <template v-if="isQualite">
+        <!-- SUPERVISEUR : Accueil / OPS / À valider / Équipe -->
+        <template v-if="isSuperviseur">
           <router-link to="/services" class="nav-link">Accueil</router-link>
-          <router-link to="/crv/liste" class="nav-link">Consulter CRV</router-link>
-          <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
-          <router-link to="/programmes-vol" class="nav-link">Programmes</router-link>
-          <router-link to="/statistiques" class="nav-link">Stats</router-link>
-        </template>
-
-        <!-- OPS CONTROL CENTER : ADMIN, MANAGER, SUPERVISEUR -->
-        <template v-if="canAccessOps">
           <router-link to="/ops" class="nav-link nav-link-ops">
             <svg class="ops-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
             OPS
           </router-link>
+          <router-link to="/validation" class="nav-link">À valider</router-link>
+          <router-link to="/dashboard-chef" class="nav-link">Équipe</router-link>
         </template>
 
-        <!-- ADMIN : Gestion système uniquement (pas de CRV, pas d'OPS) -->
+        <!-- MANAGER : Accueil / OPS / À valider / Équipe / Stats / Config SLA -->
+        <template v-if="isManager">
+          <router-link to="/services" class="nav-link">Accueil</router-link>
+          <router-link to="/ops" class="nav-link nav-link-ops">
+            <svg class="ops-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            OPS
+          </router-link>
+          <router-link to="/validation" class="nav-link">À valider</router-link>
+          <router-link to="/dashboard-chef" class="nav-link">Équipe</router-link>
+          <router-link to="/statistiques" class="nav-link">Stats</router-link>
+          <router-link to="/sla-configuration" class="nav-link">Config SLA</router-link>
+        </template>
+
+        <!-- QUALITE : Accueil / Consulter CRV / Stats -->
+        <template v-if="isQualite">
+          <router-link to="/services" class="nav-link">Accueil</router-link>
+          <router-link to="/crv/liste" class="nav-link">Consulter CRV</router-link>
+          <router-link to="/statistiques" class="nav-link">Stats</router-link>
+        </template>
+
+        <!-- ADMIN : Admin / Utilisateurs / Paramètres -->
         <template v-if="isAdmin">
           <router-link to="/dashboard-admin" class="nav-link">Admin</router-link>
           <router-link to="/users" class="nav-link">Utilisateurs</router-link>
@@ -127,42 +129,42 @@
       </div>
     </div>
 
-    <!-- Menu Mobile (Slide down) -->
+    <!-- Menu Mobile (Slide down) - aligné sur la navbar desktop (3-6 liens max par rôle) -->
     <nav v-if="mobileMenuOpen" class="mobile-nav">
-      <!-- RÔLES OPÉRATIONNELS -->
-      <template v-if="isOperationnel">
+      <!-- AGENT_ESCALE -->
+      <template v-if="isAgentEscale">
         <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Accueil</router-link>
         <router-link to="/crv/liste" class="mobile-nav-link" @click="closeMobileMenu">Mes CRV</router-link>
         <router-link to="/crv/nouveau" class="mobile-nav-link" @click="closeMobileMenu">Nouveau CRV</router-link>
-        <router-link to="/bulletins" class="mobile-nav-link" @click="closeMobileMenu">Bulletins</router-link>
-        <router-link to="/programmes-vol" class="mobile-nav-link" @click="closeMobileMenu">Programmes Vol</router-link>
       </template>
-      <!-- Lien Avions : SUPERVISEUR + MANAGER + QUALITE -->
-      <template v-if="canAccessAvions">
-        <router-link to="/avions" class="mobile-nav-link" @click="closeMobileMenu">Avions</router-link>
-      </template>
-      <template v-if="canValidate">
-        <router-link to="/validation" class="mobile-nav-link" @click="closeMobileMenu">À valider</router-link>
-      </template>
-      <!-- UX-4 : vue chef d'équipe (mobile) -->
-      <template v-if="isChefEquipe || isSuperviseur || isManager">
+      <!-- CHEF_EQUIPE -->
+      <template v-if="isChefEquipe">
+        <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Accueil</router-link>
+        <router-link to="/crv/liste" class="mobile-nav-link" @click="closeMobileMenu">Mes CRV</router-link>
+        <router-link to="/crv/nouveau" class="mobile-nav-link" @click="closeMobileMenu">Nouveau CRV</router-link>
         <router-link to="/dashboard-chef" class="mobile-nav-link" @click="closeMobileMenu">Équipe</router-link>
       </template>
+      <!-- SUPERVISEUR -->
+      <template v-if="isSuperviseur">
+        <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Accueil</router-link>
+        <router-link to="/ops" class="mobile-nav-link" @click="closeMobileMenu">OPS Control Center</router-link>
+        <router-link to="/validation" class="mobile-nav-link" @click="closeMobileMenu">À valider</router-link>
+        <router-link to="/dashboard-chef" class="mobile-nav-link" @click="closeMobileMenu">Équipe</router-link>
+      </template>
+      <!-- MANAGER -->
       <template v-if="isManager">
-        <router-link to="/dashboard-manager" class="mobile-nav-link" @click="closeMobileMenu">Dashboard</router-link>
+        <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Accueil</router-link>
+        <router-link to="/ops" class="mobile-nav-link" @click="closeMobileMenu">OPS Control Center</router-link>
+        <router-link to="/validation" class="mobile-nav-link" @click="closeMobileMenu">À valider</router-link>
+        <router-link to="/dashboard-chef" class="mobile-nav-link" @click="closeMobileMenu">Équipe</router-link>
         <router-link to="/statistiques" class="mobile-nav-link" @click="closeMobileMenu">Statistiques</router-link>
+        <router-link to="/sla-configuration" class="mobile-nav-link" @click="closeMobileMenu">Config SLA</router-link>
       </template>
       <!-- QUALITE -->
       <template v-if="isQualite">
         <router-link to="/services" class="mobile-nav-link" @click="closeMobileMenu">Accueil</router-link>
         <router-link to="/crv/liste" class="mobile-nav-link" @click="closeMobileMenu">Consulter CRV</router-link>
-        <router-link to="/bulletins" class="mobile-nav-link" @click="closeMobileMenu">Bulletins</router-link>
-        <router-link to="/programmes-vol" class="mobile-nav-link" @click="closeMobileMenu">Programmes Vol</router-link>
         <router-link to="/statistiques" class="mobile-nav-link" @click="closeMobileMenu">Statistiques</router-link>
-      </template>
-      <!-- OPS CONTROL CENTER Mobile -->
-      <template v-if="canAccessOps">
-        <router-link to="/ops" class="mobile-nav-link" @click="closeMobileMenu">OPS Control Center</router-link>
       </template>
       <!-- ADMIN -->
       <template v-if="isAdmin">
