@@ -10,9 +10,11 @@ import { ROLES } from '@/config/roles';
 
 const managerRoutes = [
   {
+    // Redirection vers l'Accueil adaptatif (Services.vue) — l'ex-placeholder Manager/Dashboard.vue est supprimé.
+    // L'Accueil adaptatif expose les cartes Manager (OPS, Validation, Équipe, Stats, Config SLA, etc.).
     path: '/dashboard-manager',
     name: 'DashboardManager',
-    component: () => import('@/views/Manager/Dashboard.vue'),
+    redirect: '/services',
     meta: {
       requiresAuth: true,
       allowedRoles: [ROLES.MANAGER, ROLES.SUPERVISEUR]
