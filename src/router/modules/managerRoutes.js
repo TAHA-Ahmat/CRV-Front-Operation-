@@ -24,8 +24,8 @@ const managerRoutes = [
     component: () => import('@/views/Manager/ValidationCRV.vue'),
     meta: {
       requiresAuth: true,
-      // Opérationnels uniquement (ADMIN = infrastructure, QUALITE = lecture seule)
-      allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER]
+      // Validation superviseur : SUP + MGR uniquement (action de validation métier)
+      allowedRoles: [ROLES.SUPERVISEUR, ROLES.MANAGER]
     }
   },
   {
