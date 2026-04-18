@@ -4,7 +4,7 @@
  * Source de vérité : TRANSMISSION_BACKEND_FRONTEND.md
  *
  * Rôles autorisés :
- * - ADMIN → Accès exclusif (gestion utilisateurs, logs, paramètres)
+ * - ADMIN → Accès exclusif (gestion utilisateurs, paramètres)
  *
  * IMPORTANT :
  * - ADMIN n'a PAS accès aux routes CRV
@@ -46,15 +46,6 @@ const adminRoutes = [
     path: '/users/:id/edit',
     name: 'UserEdit',
     component: () => import('@/views/Admin/UserEdit.vue'),
-    meta: {
-      requiresAuth: true,
-      allowedRoles: [ROLES.ADMIN]
-    }
-  },
-  {
-    path: '/logs',
-    name: 'SystemLogs',
-    component: () => import('@/views/Admin/Logs.vue'),
     meta: {
       requiresAuth: true,
       allowedRoles: [ROLES.ADMIN]

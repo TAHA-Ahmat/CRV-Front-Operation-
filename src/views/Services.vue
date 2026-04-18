@@ -51,16 +51,6 @@
             </div>
             <div class="service-arrow">→</div>
           </div>
-
-          <!-- Carte 4: Archives -->
-          <div class="service-card" @click="goToArchives">
-            <div class="service-icon">📁</div>
-            <div class="service-content">
-              <h2>Archives</h2>
-              <p>Accéder aux CRV archivés sur Google Drive</p>
-            </div>
-            <div class="service-arrow">→</div>
-          </div>
         </div>
       </div>
     </main>
@@ -90,7 +80,6 @@ const goToNewCRV = () => router.push('/crv/nouveau')
 const goToList = () => router.push('/crv/liste')
 const goToBulletins = () => router.push('/bulletins')
 const goToProgrammes = () => router.push('/programmes-vol')
-const goToArchives = () => router.push('/archives')
 </script>
 
 <style scoped>
