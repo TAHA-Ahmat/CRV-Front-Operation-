@@ -63,6 +63,16 @@ const managerRoutes = [
       // Consultation : opérationnels + QUALITE, modification config SUPERVISEUR+
       allowedRoles: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE]
     }
+  },
+  {
+    path: '/sla-configuration',
+    name: 'SLAConfiguration',
+    component: () => import('@/views/Manager/SLAConfiguration.vue'),
+    meta: {
+      requiresAuth: true,
+      // Configuration SLA : MANAGER uniquement (paramétrage métier global)
+      allowedRoles: [ROLES.MANAGER]
+    }
   }
 ];
 

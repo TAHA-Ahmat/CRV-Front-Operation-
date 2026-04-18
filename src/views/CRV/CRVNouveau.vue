@@ -1403,7 +1403,8 @@ const rechercher = () => {
 }
 
 /* Responsive */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .mode-selector {
     grid-template-columns: 1fr;
   }
@@ -1414,12 +1415,30 @@ const rechercher = () => {
 
   .filter-row {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .actions-section {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     text-align: center;
+  }
+
+  .actions-section button,
+  .actions-section .btn {
+    min-height: 44px;
+    width: 100%;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .type-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filter-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

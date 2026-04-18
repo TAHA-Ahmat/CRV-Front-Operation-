@@ -104,6 +104,20 @@ const crvRoutes = [
         ROLES.MANAGER
       ]
     }
+  },
+  // UX-4 : vue chef d'équipe — agrégat SLA par agent
+  {
+    path: '/dashboard-chef',
+    name: 'ChefEquipeDashboard',
+    component: () => import('@/views/CRV/ChefEquipeDashboard.vue'),
+    meta: {
+      requiresAuth: true,
+      allowedRoles: [
+        ROLES.CHEF_EQUIPE,
+        ROLES.SUPERVISEUR,
+        ROLES.MANAGER
+      ]
+    }
   }
 ];
 

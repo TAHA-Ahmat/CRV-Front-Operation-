@@ -1121,7 +1121,19 @@ export const slaAPI = {
    * SLA d'une phase spécifique
    * GET /api/sla/phase/:id
    */
-  getPhaseSla: (id) => api.get(`/sla/phase/${id}`)
+  getPhaseSla: (id) => api.get(`/sla/phase/${id}`),
+
+  /**
+   * Lister toutes les configurations SLA par compagnie
+   * GET /api/sla/compagnies
+   */
+  getCompagnies: () => api.get('/sla/compagnies'),
+
+  /**
+   * Récupérer la configuration SLA d'une compagnie par codeIATA
+   * GET /api/sla/compagnies/:codeIATA
+   */
+  getCompagnie: (codeIATA) => api.get(`/sla/compagnies/${codeIATA}`)
 }
 
 // ============================================

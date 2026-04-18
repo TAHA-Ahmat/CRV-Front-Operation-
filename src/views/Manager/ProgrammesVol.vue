@@ -288,6 +288,12 @@
             </div>
           </div>
 
+          <!-- Grille SLA prévisionnelle (M7) -->
+          <ProgrammeSLAMatrix
+            v-if="selectedProgramme && compagniesDuProgramme.length > 0"
+            :compagnies="compagniesDuProgramme"
+          />
+
           <!-- Header vols avec toggle vue -->
           <div class="vols-header">
             <div class="vols-header-left">
@@ -727,6 +733,7 @@ import { canValidateProgramme, canDeleteProgramme } from '@/utils/permissions'
 import { normalizeRole } from '@/config/roles'
 import ProgrammeVolPDF from '@/components/flights/ProgrammeVolPDF.vue'
 import ArchiveButton from '@/components/Common/ArchiveButton.vue'
+import ProgrammeSLAMatrix from '@/components/programmes/ProgrammeSLAMatrix.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -872,6 +879,27 @@ const nombreSemaines = computed(() => {
 // Total vols sur toute la période
 const totalVolsPeriode = computed(() => {
   return volsParSemaine.value * nombreSemaines.value
+})
+
+// Liste des codes IATA compagnies du programme (pour la grille SLA M7)
+// Dérivée de selectedProgramme.compagnies ET des vols chargés (codeIATA extrait du numeroVol si besoin)
+const compagniesDuProgramme = computed(() => {
+  const set = new Set()
+  // 1. Compagnies déclarées dans le programme
+  for (const c of (selectedProgramme.value?.compagnies || [])) {
+    if (c) set.add(String(c).toUpperCase())
+  }
+  // 2. Compagnies dérivées des vols (codeIATA explicite ou préfixe du numeroVol)
+  for (const v of vols.value) {
+    if (v.codeIATA) {
+      set.add(String(v.codeIATA).toUpperCase())
+    } else if (v.numeroVol) {
+      // Extraction robuste : 2 premières lettres alpha du numéro de vol
+      const match = String(v.numeroVol).toUpperCase().match(/^([A-Z]{2,3})\d/)
+      if (match) set.add(match[1])
+    }
+  }
+  return Array.from(set)
 })
 
 // ============================================
@@ -2657,5 +2685,106 @@ onMounted(() => {
 
 .mr-2 {
   margin-right: 0.5rem;
+}
+
+/* ============================================
+   RESPONSIVE GLOBAL — tablette + mobile
+   ============================================ */
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .main-content {
+    padding: 14px 10px;
+  }
+
+  .page-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-header-bar h1 {
+    font-size: 20px;
+  }
+
+  .workflow-indicator {
+    padding: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .workflow-step {
+    gap: 6px;
+  }
+
+  .step-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .step-label {
+    font-size: 12px;
+  }
+
+  .workflow-arrow {
+    font-size: 16px;
+  }
+
+  .filters-card {
+    padding: 14px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .programmes-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .programme-card {
+    padding: 14px;
+  }
+
+  .programme-title h3 {
+    font-size: 16px;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main-content {
+    padding: 20px 16px;
+  }
+
+  .programmes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .filters-row {
+    gap: 14px;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    min-width: 130px;
+    min-height: 42px;
+  }
 }
 </style>

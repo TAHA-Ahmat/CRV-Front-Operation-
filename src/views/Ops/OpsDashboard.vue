@@ -47,6 +47,62 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
+         CARTE — Urgences SLA par tâche (agrégat tous CRV)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="ops-urgences-section">
+      <div class="ops-urgences-header">
+        <h2 class="column-title">
+          <span class="urgences-icon">⏱</span>
+          Urgences SLA par tâche
+        </h2>
+        <div class="ops-urgences-meta">
+          <span v-if="loadingUrgences" class="urgences-loading">Chargement…</span>
+          <span v-else class="urgences-count">{{ urgencesTaches.length }} tâche(s) en alerte</span>
+          <button
+            class="btn-refresh-urgences"
+            @click="refreshUrgences"
+            :disabled="loadingUrgences"
+            title="Rafraîchir les urgences"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
+      <div v-if="!loadingUrgences && urgencesTaches.length === 0" class="urgences-empty">
+        <span>Toutes les tâches sont dans les délais SLA.</span>
+      </div>
+      <div v-else class="urgences-list">
+        <div
+          v-for="(urg, idx) in urgencesTaches"
+          :key="urg.crvId + '_' + urg.phaseId"
+          class="urgence-item sla-fade-in"
+          :class="['niveau-' + urg.niveau, urg.niveau === 'exceeded' ? 'urgence-exceeded-pulse' : '']"
+          :style="{ animationDelay: (idx * 50) + 'ms' }"
+          :title="urg.tooltip"
+        >
+          <div class="urg-left">
+            <div class="urg-crv">{{ urg.numeroCRV }}</div>
+            <div class="urg-task">
+              <span class="urg-icon" aria-hidden="true">{{ urg.icon }}</span>
+              <span class="urg-label">{{ urg.libelle }}</span>
+            </div>
+          </div>
+          <div class="urg-middle">
+            <SLABadge
+              :niveau="urg.niveau.toUpperCase()"
+              :show-label="true"
+              :custom-label="urg.info"
+              size="sm"
+            />
+          </div>
+          <div class="urg-actions">
+            <button class="btn-open-crv" @click="openCrv(urg)">Ouvrir CRV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
          ZONE PRINCIPALE — 2 colonnes
          ═══════════════════════════════════════════════════════════ -->
     <div class="ops-main">
@@ -173,13 +229,102 @@
  * - onUnmounted → disconnectSSE
  */
 import { useOpsStore } from '@/stores/opsStore'
+import { crvAPI } from '@/services/api'
+import { useSLA } from '@/composables/useSLA'
+import SLABadge from '@/components/Common/SLABadge.vue'
+import { tooltipText as slaTooltipText } from '@/constants/slaSemantique'
+
+// Mapping niveau minuscule → canonique (pour tooltips)
+const NIVEAU_TO_CANON = { ok: 'OK', warning: 'WARNING', critical: 'CRITICAL', exceeded: 'EXCEEDED' }
+
+const SLA_CODE_PREFIXES = ['CHECKIN_', 'BRIEFING_', 'BOARDING_', 'BAGAGES_', 'RAMP_', 'MSG_']
+const DOMAIN_ICONS = {
+  CHECKIN_: '🛃',
+  BRIEFING_: '📝',
+  BOARDING_: '🛫',
+  BAGAGES_: '🧳',
+  RAMP_: '🛬',
+  MSG_: '📡'
+}
+
+function isPhaseSLA(phase) {
+  const code = phase?.phase?.code || phase?.code || ''
+  return code && SLA_CODE_PREFIXES.some(p => code.startsWith(p))
+}
+
+function phaseIcon(phase) {
+  const code = phase?.phase?.code || phase?.code || ''
+  const prefix = SLA_CODE_PREFIXES.find(p => code.startsWith(p))
+  return DOMAIN_ICONS[prefix] || '⏱'
+}
+
+function qualifyPhaseNiveau(phase) {
+  const statut = phase.statut
+  if (statut === 'TERMINE' || statut === 'NON_REALISE') return 'ok'
+  const slaMode = phase?.phase?.slaMode || 'DUREE'
+  const now = new Date()
+  if (slaMode === 'DEADLINE') {
+    if (statut === 'NON_COMMENCE' && phase.heureDebutPrevue) {
+      const diffMin = (new Date(phase.heureDebutPrevue) - now) / 60000
+      if (diffMin > 15) return 'ok'
+      if (diffMin > 5) return 'warning'
+      if (diffMin > 0) return 'critical'
+      return 'exceeded'
+    }
+    if (statut === 'EN_COURS' && phase.heureFinPrevue) {
+      const diffMin = (new Date(phase.heureFinPrevue) - now) / 60000
+      if (diffMin > 10) return 'ok'
+      if (diffMin > 3) return 'warning'
+      if (diffMin > 0) return 'critical'
+      return 'exceeded'
+    }
+  }
+  if (statut === 'EN_COURS' && phase.heureDebutReelle && phase?.phase?.dureeStandardMinutes) {
+    const elapsed = (now - new Date(phase.heureDebutReelle)) / 60000
+    const ratio = elapsed / phase.phase.dureeStandardMinutes
+    if (ratio >= 1) return 'exceeded'
+    if (ratio >= 0.9) return 'critical'
+    if (ratio >= 0.75) return 'warning'
+  }
+  return 'ok'
+}
+
+function phaseInfo(phase) {
+  const now = new Date()
+  if (phase.statut === 'NON_COMMENCE' && phase.heureDebutPrevue) {
+    const diffMin = Math.round((new Date(phase.heureDebutPrevue) - now) / 60000)
+    return diffMin >= 0 ? `dans ${diffMin}min` : `+${Math.abs(diffMin)}min retard`
+  }
+  if (phase.statut === 'EN_COURS') {
+    if (phase.heureFinPrevue) {
+      const diffMin = Math.round((new Date(phase.heureFinPrevue) - now) / 60000)
+      return diffMin >= 0 ? `fin dans ${diffMin}min` : `+${Math.abs(diffMin)}min retard`
+    }
+    if (phase.heureDebutReelle) {
+      const elapsed = Math.round((now - new Date(phase.heureDebutReelle)) / 60000)
+      return `${elapsed}min en cours`
+    }
+  }
+  return ''
+}
 
 export default {
   name: 'OpsDashboard',
 
+  components: { SLABadge },
+
   setup() {
     const opsStore = useOpsStore()
-    return { opsStore }
+    const { init: initSLA } = useSLA()
+    return { opsStore, initSLA }
+  },
+
+  data() {
+    return {
+      urgencesTaches: [],
+      loadingUrgences: false,
+      urgencesInterval: null
+    }
   },
 
   computed: {
@@ -236,17 +381,113 @@ export default {
      */
     refreshDashboard() {
       this.opsStore.fetchDashboard()
+      this.refreshUrgences()
+    },
+
+    /**
+     * Ouvre un CRV dans sa vue wizard selon son type d'opération
+     */
+    openCrv(urg) {
+      let route = '/crv/arrivee'
+      if (urg.typeOperation === 'DEPART') route = '/crv/depart'
+      else if (urg.typeOperation === 'TURN_AROUND' || urg.typeOperation === 'TURNAROUND') route = '/crv/turnaround'
+      this.$router.push({ path: route, query: { id: urg.crvId } })
+    },
+
+    /**
+     * Récupère et agrège les urgences SLA sur tous les CRV actifs.
+     * Utilise GET /api/crv?statut=EN_COURS puis GET /api/crv/:id pour chacun.
+     * Limité aux 20 premiers CRV actifs pour rester performant.
+     */
+    async refreshUrgences() {
+      this.loadingUrgences = true
+      try {
+        // Charger les CRV actifs (EN_COURS + BROUILLON)
+        const statutsActifs = ['EN_COURS', 'BROUILLON']
+        const aggregated = []
+        for (const statut of statutsActifs) {
+          try {
+            const response = await crvAPI.getAll({ statut, page: 1, limit: 20 })
+            const data = response?.data?.data || response?.data || []
+            const list = Array.isArray(data) ? data : (data.data || [])
+            aggregated.push(...list)
+          } catch {
+            /* ignore */
+          }
+        }
+
+        // Pour chaque CRV, récupérer ses phases
+        const urgs = []
+        const seen = new Set()
+        for (const crv of aggregated) {
+          const id = crv._id || crv.id
+          if (seen.has(id)) continue
+          seen.add(id)
+          try {
+            const r = await crvAPI.getById(id)
+            const payload = r?.data?.data || r?.data || {}
+            const phases = payload.phases || []
+            const fullCrv = payload.crv || crv
+            for (const phase of phases) {
+              if (!isPhaseSLA(phase)) continue
+              const niveau = qualifyPhaseNiveau(phase)
+              if (niveau === 'critical' || niveau === 'exceeded') {
+                const codeIATA = fullCrv.vol?.codeIATA || crv.vol?.codeIATA
+                const nomCompagnie = fullCrv.vol?.compagnie || fullCrv.vol?.nomCompagnie || crv.vol?.compagnie
+                const sem = NIVEAU_TO_CANON[niveau] || null
+                const tooltipParts = []
+                if (sem) tooltipParts.push(slaTooltipText(sem))
+                if (codeIATA) {
+                  tooltipParts.push(`Contrat : ${nomCompagnie || codeIATA}${codeIATA ? ' (' + codeIATA + ')' : ''}`)
+                } else {
+                  tooltipParts.push('Contrat : Standard (fallback)')
+                }
+                urgs.push({
+                  crvId: id,
+                  phaseId: phase.id || phase._id,
+                  numeroCRV: fullCrv.numeroCRV || crv.numeroCRV || '—',
+                  typeOperation: fullCrv.vol?.typeOperation || crv.vol?.typeOperation,
+                  libelle: phase?.phase?.libelle || phase?.phase?.code || 'Tâche',
+                  icon: phaseIcon(phase),
+                  niveau,
+                  info: phaseInfo(phase),
+                  tooltip: tooltipParts.join('\n')
+                })
+              }
+            }
+          } catch {
+            /* skip this CRV */
+          }
+        }
+
+        // Tri : exceeded d'abord, puis critical, puis par libellé
+        urgs.sort((a, b) => {
+          const order = { exceeded: 0, critical: 1, warning: 2, ok: 3 }
+          return (order[a.niveau] || 4) - (order[b.niveau] || 4)
+        })
+        this.urgencesTaches = urgs
+      } catch (err) {
+        console.warn('[OpsDashboard] Erreur refreshUrgences:', err.message)
+      } finally {
+        this.loadingUrgences = false
+      }
     }
   },
 
   mounted() {
     // Initialiser SSE + auto-refresh dashboard
     this.opsStore.initialize()
+    // Initialiser SLA (charge configs + compagnies) + charger urgences
+    this.initSLA()
+    this.refreshUrgences()
+    // Rafraîchir en même temps que le dashboard (60s)
+    this.urgencesInterval = setInterval(() => this.refreshUrgences(), 60000)
   },
 
   unmounted() {
     // Nettoyer SSE + intervals
     this.opsStore.cleanup()
+    if (this.urgencesInterval) clearInterval(this.urgencesInterval)
   }
 }
 </script>
@@ -374,20 +615,22 @@ export default {
 }
 
 /* ─── STATS GRID ─────────────────────────────────────────────── */
+/* mobile = 2 cols, tablette md = 4 cols, lg = 7 cols */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 @media (min-width: 768px) {
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .stats-grid {
     grid-template-columns: repeat(7, 1fr);
   }
@@ -691,27 +934,261 @@ export default {
   to { transform: rotate(360deg); }
 }
 
+/* ─── URGENCES SLA PAR TÂCHE ────────────────────────────────── */
+.ops-urgences-section {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid #f97316;
+}
+
+.ops-urgences-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ops-urgences-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.urgences-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ea580c;
+  padding: 4px 10px;
+  background: rgba(249, 115, 22, 0.1);
+  border-radius: 10px;
+}
+
+.urgences-loading {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.urgences-icon {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.btn-refresh-urgences {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-refresh-urgences:hover:not(:disabled) {
+  background: var(--bg-card-hover, #f3f4f6);
+  color: var(--color-primary, #2563eb);
+  transform: rotate(90deg);
+}
+
+.btn-refresh-urgences:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.urgences-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px dashed rgba(34, 197, 94, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.urgences-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.urgence-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--bg-body, #f9fafb);
+  transition: background 0.15s;
+}
+
+.urgence-item:hover {
+  background: var(--bg-card-hover, #f3f4f6);
+}
+
+.urgence-item.niveau-critical {
+  border-left: 4px solid #f97316;
+}
+
+.urgence-item.niveau-exceeded {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.urgence-item.sla-fade-in {
+  animation: urg-fade-in 320ms ease-out both;
+}
+@keyframes urg-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.urgence-item.urgence-exceeded-pulse {
+  animation: urg-fade-in 320ms ease-out both, urg-pulse 1.8s ease-in-out 320ms infinite;
+}
+@keyframes urg-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%      { box-shadow: 0 0 0 2px rgba(239,68,68,0.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .urgence-item.sla-fade-in,
+  .urgence-item.urgence-exceeded-pulse {
+    animation: none !important;
+  }
+}
+
+.urg-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.urg-crv {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-primary, #2563eb);
+}
+
+.urg-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.urg-icon { font-size: 15px; }
+
+.urg-label {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.urg-middle {
+  display: flex;
+  align-items: center;
+}
+
+.urg-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.urg-timer.timer-critical { background: rgba(249, 115, 22, 0.18); color: #ea580c; }
+.urg-timer.timer-exceeded { background: rgba(239, 68, 68, 0.18); color: #dc2626; }
+
+.urg-actions {}
+
+.btn-open-crv {
+  background: var(--color-primary, #2563eb);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-open-crv:hover { background: #1d4ed8; }
+
 /* ─── RESPONSIVE ─────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .ops-dashboard {
-    padding: 16px 8px;
+    padding: 14px 10px;
   }
 
   .ops-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 
   .ops-title {
     font-size: 20px;
   }
 
+  .stat-card {
+    padding: 12px;
+  }
+
   .stat-value {
     font-size: 22px;
   }
 
+  .stat-label {
+    font-size: 10px;
+  }
+
   .events-feed {
     max-height: 400px;
+  }
+
+  .urgence-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .urg-actions {
+    width: 100%;
+  }
+
+  .btn-open-crv {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .btn-refresh {
+    min-height: 44px;
+  }
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ops-dashboard {
+    padding: 20px 16px;
+  }
+
+  .stat-value {
+    font-size: 24px;
   }
 }
 </style>

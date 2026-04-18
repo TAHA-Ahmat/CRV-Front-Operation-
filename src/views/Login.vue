@@ -134,8 +134,8 @@ onMounted(() => {
 /* RESPONSIVE DESIGN                            */
 /* ============================================ */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .login {
     padding: 16px !important;
   }
@@ -174,10 +174,14 @@ onMounted(() => {
   }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablette (768px - 1023px = md:) */
+@media (min-width: 768px) and (max-width: 1023px) {
   .login > div {
-    max-width: 420px;
+    max-width: 440px;
+  }
+
+  .bg-crv-dark .text-6xl {
+    font-size: 56px !important;
   }
 }
 </style>

@@ -1639,10 +1639,10 @@ const showToast = (message, type = 'success') => {
 /* RESPONSIVE DESIGN                            */
 /* ============================================ */
 
-/* Mobile (jusqu'à 640px) */
-@media (max-width: 640px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
   .page-header {
-    padding: 16px;
+    padding: 14px;
   }
 
   .header-content {
@@ -1837,8 +1837,8 @@ const showToast = (message, type = 'success') => {
   }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Tablette (768px - 1023px = md:) */
+@media (min-width: 768px) and (max-width: 1023px) {
   .header-content {
     flex-wrap: wrap;
   }
@@ -1854,10 +1854,20 @@ const showToast = (message, type = 'success') => {
   .modal-content.modal-large {
     max-width: 90%;
   }
+
+  /* Table : overflow horizontal sur tablette */
+  .avions-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 760px;
+  }
 }
 
-/* Desktop (1025px+) */
-@media (min-width: 1025px) {
+/* Desktop (≥ 1024px = lg:) */
+@media (min-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
   }
