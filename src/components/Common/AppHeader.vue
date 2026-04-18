@@ -40,7 +40,11 @@
           <router-link to="/crv/nouveau" class="nav-link">Nouveau CRV</router-link>
           <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes</router-link>
-          <router-link to="/archives" class="nav-link">Archives</router-link>
+        </template>
+
+        <!-- Lien Avions : SUPERVISEUR + MANAGER + QUALITE (référentiel/config) -->
+        <template v-if="canAccessAvions">
+          <router-link to="/avions" class="nav-link">Avions</router-link>
         </template>
 
         <!-- SUPERVISEUR & MANAGER : Menu supplémentaire validation -->
@@ -65,7 +69,6 @@
           <router-link to="/crv/liste" class="nav-link">Consulter CRV</router-link>
           <router-link to="/bulletins" class="nav-link">Bulletins</router-link>
           <router-link to="/programmes-vol" class="nav-link">Programmes</router-link>
-          <router-link to="/archives" class="nav-link">Archives</router-link>
           <router-link to="/statistiques" class="nav-link">Stats</router-link>
         </template>
 
@@ -79,11 +82,10 @@
           </router-link>
         </template>
 
-        <!-- ADMIN : Gestion système uniquement (pas de CRV) -->
+        <!-- ADMIN : Gestion système uniquement (pas de CRV, pas d'OPS) -->
         <template v-if="isAdmin">
           <router-link to="/dashboard-admin" class="nav-link">Admin</router-link>
           <router-link to="/users" class="nav-link">Utilisateurs</router-link>
-          <router-link to="/logs" class="nav-link">Logs</router-link>
           <router-link to="/settings" class="nav-link">Paramètres</router-link>
         </template>
 
@@ -134,7 +136,10 @@
         <router-link to="/crv/nouveau" class="mobile-nav-link" @click="closeMobileMenu">Nouveau CRV</router-link>
         <router-link to="/bulletins" class="mobile-nav-link" @click="closeMobileMenu">Bulletins</router-link>
         <router-link to="/programmes-vol" class="mobile-nav-link" @click="closeMobileMenu">Programmes Vol</router-link>
-        <router-link to="/archives" class="mobile-nav-link" @click="closeMobileMenu">Archives</router-link>
+      </template>
+      <!-- Lien Avions : SUPERVISEUR + MANAGER + QUALITE -->
+      <template v-if="canAccessAvions">
+        <router-link to="/avions" class="mobile-nav-link" @click="closeMobileMenu">Avions</router-link>
       </template>
       <template v-if="canValidate">
         <router-link to="/validation" class="mobile-nav-link" @click="closeMobileMenu">À valider</router-link>
@@ -153,7 +158,6 @@
         <router-link to="/crv/liste" class="mobile-nav-link" @click="closeMobileMenu">Consulter CRV</router-link>
         <router-link to="/bulletins" class="mobile-nav-link" @click="closeMobileMenu">Bulletins</router-link>
         <router-link to="/programmes-vol" class="mobile-nav-link" @click="closeMobileMenu">Programmes Vol</router-link>
-        <router-link to="/archives" class="mobile-nav-link" @click="closeMobileMenu">Archives</router-link>
         <router-link to="/statistiques" class="mobile-nav-link" @click="closeMobileMenu">Statistiques</router-link>
       </template>
       <!-- OPS CONTROL CENTER Mobile -->
@@ -164,7 +168,6 @@
       <template v-if="isAdmin">
         <router-link to="/dashboard-admin" class="mobile-nav-link" @click="closeMobileMenu">Administration</router-link>
         <router-link to="/users" class="mobile-nav-link" @click="closeMobileMenu">Utilisateurs</router-link>
-        <router-link to="/logs" class="mobile-nav-link" @click="closeMobileMenu">Logs</router-link>
         <router-link to="/settings" class="mobile-nav-link" @click="closeMobileMenu">Paramètres</router-link>
       </template>
       <!-- Profil mobile -->
@@ -245,7 +248,12 @@ export default {
       return [ROLES.SUPERVISEUR, ROLES.MANAGER].includes(this.userRole);
     },
     canAccessOps() {
-      return [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISEUR].includes(this.userRole);
+      // Doctrine MADMIT : ADMIN n'a aucun accès opérationnel
+      return [ROLES.MANAGER, ROLES.SUPERVISEUR].includes(this.userRole);
+    },
+    // Lien Avions visible pour SUP + MGR + QUAL (référentiel, lecture/config)
+    canAccessAvions() {
+      return [ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE].includes(this.userRole);
     },
 
     // Label du rôle pour affichage
