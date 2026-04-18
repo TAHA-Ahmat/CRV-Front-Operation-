@@ -4,11 +4,11 @@
  * MODULE OPS CONTROL CENTER v1.0.0
  *
  * Rôles autorisés :
- * - ADMIN → Accès complet
  * - MANAGER → Accès complet
  * - SUPERVISEUR → Accès complet
  *
  * Rôles exclus :
+ * - ADMIN → Doctrine MADMIT : aucun accès opérationnel
  * - AGENT_ESCALE, CHEF_EQUIPE, QUALITE → Pas d'accès
  */
 
@@ -21,7 +21,7 @@ const opsRoutes = [
     component: () => import('@/views/Ops/OpsDashboard.vue'),
     meta: {
       requiresAuth: true,
-      allowedRoles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.SUPERVISEUR]
+      allowedRoles: [ROLES.MANAGER, ROLES.SUPERVISEUR]
     }
   }
 ]
