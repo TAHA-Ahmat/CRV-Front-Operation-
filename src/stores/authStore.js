@@ -55,6 +55,20 @@ export const useAuthStore = defineStore('auth', {
     isAgentEscale: (state) => state.user?.fonction === ROLES.AGENT_ESCALE,
     isQualite: (state) => state.user?.fonction === ROLES.QUALITE,
 
+    // Permissions élevées
+    canManage: (state) => {
+      const role = state.user?.fonction
+      return role === ROLES.ADMIN || role === ROLES.MANAGER
+    },
+    canSupervise: (state) => {
+      const role = state.user?.fonction
+      return role === ROLES.ADMIN || role === ROLES.MANAGER || role === ROLES.SUPERVISEUR
+    },
+    canEdit: (state) => {
+      const role = state.user?.fonction
+      return role !== ROLES.QUALITE
+    },
+
     // Doit changer mot de passe
     mustChangePassword: (state) => state.doitChangerMotDePasse
   },
