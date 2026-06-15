@@ -84,7 +84,13 @@ vi.mock('@/utils/permissions', () => ({
   canValidateCRV: vi.fn(() => true),
   canRejectCRV: vi.fn(() => true),
   canLockCRV: vi.fn(() => true),
-  canUnlockCRV: vi.fn(() => true)
+  canUnlockCRV: vi.fn(() => true),
+  canEdit: vi.fn(() => true),
+  canDelete: vi.fn(() => true),
+  canView: vi.fn(() => true),
+  canCancelCRV: vi.fn(() => true),
+  canCreateCRV: vi.fn(() => true),
+  canArchiveCRV: vi.fn(() => true)
 }))
 
 vi.mock('@/config/crvEnums', () => ({
@@ -1558,12 +1564,14 @@ describe('ValidationCRV - Page de supervision', () => {
       })
 
       await flushPromises()
-      wrapper.vm.selectedCRV = mockCRVs[1]
+      // Set the CRV to be validated via crvToAction (not selectedCRV)
+      wrapper.vm.crvToAction = mockCRVs[1]
+      wrapper.vm.actionComment = 'Test validation'
       await wrapper.vm.$nextTick()
 
       await wrapper.vm.handleValidate()
 
-      expect(validationAPI.valider).toHaveBeenCalledWith('crv2', expect.any(Object))
+      expect(validationAPI.valider).toHaveBeenCalledWith('crv2', 'Test validation')
     })
 
     it('devrait verrouiller un CRV', async () => {
@@ -1644,8 +1652,9 @@ describe('ValidationCRV - Page de supervision', () => {
       })
 
       await flushPromises()
-      wrapper.vm.selectedCRV = mockCRVs[3]
-      wrapper.vm.unlockReason = 'Correction nécessaire'
+      // Set the CRV to be unlocked via crvToAction (not selectedCRV)
+      wrapper.vm.crvToAction = mockCRVs[3]
+      wrapper.vm.actionComment = 'Correction nécessaire'
       await wrapper.vm.$nextTick()
 
       await wrapper.vm.handleUnlock()
@@ -1937,7 +1946,9 @@ describe('CRV Workflow - Scénario E2E', () => {
       data: { crv: { ...verrouilledCRV, statut: 'EN_COURS' } }
     })
 
+    wrapper.vm.crvToAction = verrouilledCRV
     wrapper.vm.actionComment = 'Correction nécessaire'
+    await wrapper.vm.$nextTick()
     await wrapper.vm.handleUnlock()
 
     expect(validationAPI.deverrouiller).toHaveBeenCalledWith('crv4', 'Correction nécessaire')
