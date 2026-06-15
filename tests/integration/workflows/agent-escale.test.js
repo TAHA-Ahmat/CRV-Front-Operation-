@@ -663,6 +663,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           data: { charge: { id: 'c1', ...chargeData } }
         })
 
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 20 },
+            phases: crvStore.phases,
+            charges: [{ id: 'c1', ...chargeData }],
+            evenements: [],
+            observations: []
+          }
+        })
+
         await crvStore.addCharge(chargeData)
 
         expect(crvAPI.addCharge).toHaveBeenCalledWith('crv-001', chargeData)
@@ -681,6 +691,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
 
         crvAPI.addCharge.mockResolvedValue({
           data: { charge: { id: 'c2', ...chargeData } }
+        })
+
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 20 },
+            phases: crvStore.phases,
+            charges: [{ id: 'c2', ...chargeData }],
+            evenements: [],
+            observations: []
+          }
         })
 
         await crvStore.addCharge(chargeData)
@@ -726,6 +746,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           data: { charge: { id: 'c3', ...chargeData } }
         })
 
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 30 },
+            phases: crvStore.phases,
+            charges: [{ id: 'c3', ...chargeData }],
+            evenements: [],
+            observations: []
+          }
+        })
+
         await crvStore.addCharge(chargeData)
 
         expect(crvStore.getChargesBagages).toHaveLength(1)
@@ -743,6 +773,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
 
         crvAPI.addCharge.mockResolvedValue({
           data: { charge: { id: 'c4', ...chargeData } }
+        })
+
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 35 },
+            phases: crvStore.phases,
+            charges: [{ id: 'c4', ...chargeData }],
+            evenements: [],
+            observations: []
+          }
         })
 
         await crvStore.addCharge(chargeData)
@@ -803,6 +843,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           data: { evenement: { id: 'e1', ...eventData, horodatage: '2024-01-15T10:30:00Z' } }
         })
 
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 40 },
+            phases: crvStore.phases,
+            charges: crvStore.charges,
+            evenements: [{ id: 'e1', ...eventData }],
+            observations: []
+          }
+        })
+
         await crvStore.addEvenement(eventData)
 
         expect(crvAPI.addEvenement).toHaveBeenCalledWith('crv-001', eventData)
@@ -811,13 +861,23 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
 
       it('devrait ajouter un événement INCIDENT avec gravité MAJEURE', async () => {
         const eventData = {
-          typeEvenement: 'INCIDENT',
+          typeEvenement: 'INCIDENT_TECHNIQUE',
           gravite: 'MAJEURE',
           description: 'Collision mineure avec véhicule de piste'
         }
 
         crvAPI.addEvenement.mockResolvedValue({
           data: { evenement: { id: 'e2', ...eventData } }
+        })
+
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 45 },
+            phases: crvStore.phases,
+            charges: crvStore.charges,
+            evenements: [{ id: 'e2', ...eventData }],
+            observations: []
+          }
         })
 
         await crvStore.addEvenement(eventData)
@@ -828,12 +888,25 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
       it('devrait pouvoir ajouter plusieurs événements', async () => {
         const events = [
           { typeEvenement: 'RETARD', gravite: 'MINEURE', description: 'Retard' },
-          { typeEvenement: 'TECHNIQUE', gravite: 'MODEREE', description: 'Problème technique' }
+          { typeEvenement: 'PROBLEME_TECHNIQUE', gravite: 'MODEREE', description: 'Problème technique' }
         ]
 
+        const addedEvents = []
         for (let i = 0; i < events.length; i++) {
+          const newEvent = { id: `e${i}`, ...events[i] }
+          addedEvents.push(newEvent)
+
           crvAPI.addEvenement.mockResolvedValueOnce({
-            data: { evenement: { id: `e${i}`, ...events[i] } }
+            data: { evenement: newEvent }
+          })
+          crvAPI.getById.mockResolvedValueOnce({
+            data: {
+              crv: { ...crvStore.currentCRV, completude: 50 + i * 5 },
+              phases: crvStore.phases,
+              charges: crvStore.charges,
+              evenements: [...addedEvents],
+              observations: []
+            }
           })
           await crvStore.addEvenement(events[i])
         }
@@ -853,6 +926,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           data: { observation: { id: 'o1', ...obsData, auteur: agentUser } }
         })
 
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 60 },
+            phases: crvStore.phases,
+            charges: crvStore.charges,
+            evenements: crvStore.evenements,
+            observations: [{ id: 'o1', ...obsData }]
+          }
+        })
+
         await crvStore.addObservation(obsData)
 
         expect(crvAPI.addObservation).toHaveBeenCalledWith('crv-001', obsData)
@@ -869,6 +952,16 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
           data: { observation: { id: 'o2', ...obsData } }
         })
 
+        crvAPI.getById.mockResolvedValue({
+          data: {
+            crv: { ...crvStore.currentCRV, completude: 65 },
+            phases: crvStore.phases,
+            charges: crvStore.charges,
+            evenements: crvStore.evenements,
+            observations: [{ id: 'o2', ...obsData }]
+          }
+        })
+
         await crvStore.addObservation(obsData)
 
         expect(crvStore.observations[0].categorie).toBe('SECURITE')
@@ -877,9 +970,23 @@ describe('PROCESSUS AGENT D\'ESCALE', () => {
       it('devrait supporter toutes les catégories d\'observation', async () => {
         const categories = ['GENERALE', 'TECHNIQUE', 'OPERATIONNELLE', 'SECURITE', 'QUALITE', 'SLA']
 
-        for (const categorie of categories) {
+        const addedObservations = []
+        for (let idx = 0; idx < categories.length; idx++) {
+          const categorie = categories[idx]
+          const newObs = { id: `o-${categorie}`, categorie, contenu: `Test ${categorie}` }
+          addedObservations.push(newObs)
+
           crvAPI.addObservation.mockResolvedValueOnce({
-            data: { observation: { id: `o-${categorie}`, categorie, contenu: `Test ${categorie}` } }
+            data: { observation: newObs }
+          })
+          crvAPI.getById.mockResolvedValueOnce({
+            data: {
+              crv: { ...crvStore.currentCRV, completude: 70 + idx * 2 },
+              phases: crvStore.phases,
+              charges: crvStore.charges,
+              evenements: crvStore.evenements,
+              observations: [...addedObservations]
+            }
           })
           await crvStore.addObservation({ categorie, contenu: `Test ${categorie}` })
         }

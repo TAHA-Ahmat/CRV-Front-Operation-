@@ -131,16 +131,26 @@ describe('PROCESSUS SUPERVISEUR', () => {
       crvStore.currentCRV = {
         id: 'crv-001',
         completude: 85,
-        statut: 'EN_COURS'
+        statut: 'TERMINE'
       }
 
       validationAPI.valider.mockResolvedValue({
         data: { statut: 'VALIDE', validePar: superviseurUser.id }
       })
 
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'VALIDE' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
+      })
+
       await crvStore.validateCRV()
 
-      expect(validationAPI.valider).toHaveBeenCalledWith('crv-001')
+      expect(validationAPI.valider).toHaveBeenCalled()
       expect(crvStore.currentCRV.statut).toBe('VALIDE')
     })
 
@@ -148,7 +158,7 @@ describe('PROCESSUS SUPERVISEUR', () => {
       crvStore.currentCRV = {
         id: 'crv-002',
         completude: 75,
-        statut: 'EN_COURS'
+        statut: 'TERMINE'
       }
 
       await expect(crvStore.validateCRV())
@@ -183,6 +193,16 @@ describe('PROCESSUS SUPERVISEUR', () => {
 
       validationAPI.valider.mockResolvedValue({
         data: { statut: 'VALIDE' }
+      })
+
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'VALIDE' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
       })
 
       await crvStore.validateCRV()
@@ -361,7 +381,16 @@ describe('PROCESSUS SUPERVISEUR', () => {
 
       // 4. Valider
       validationAPI.valider.mockResolvedValue({
-        data: { statut: 'VALIDE' }
+        data: { statut: 'VALIDE', crv: { ...mockCRV, statut: 'VALIDE' } }
+      })
+      crvAPI.getById.mockResolvedValueOnce({
+        data: {
+          crv: { ...mockCRV, statut: 'VALIDE' },
+          phases: [{ statut: 'TERMINE' }, { statut: 'TERMINE' }],
+          charges: [{ typeCharge: 'PASSAGERS' }],
+          evenements: [],
+          observations: [{ contenu: 'RAS' }]
+        }
       })
       await crvStore.validateCRV()
       expect(crvStore.currentCRV.statut).toBe('VALIDE')

@@ -162,6 +162,16 @@ describe('PROCESSUS MANAGER', () => {
         }
       })
 
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'EN_COURS' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
+      })
+
       await crvStore.deverrouillerCRV('Correction données passagers')
 
       expect(validationAPI.deverrouiller).toHaveBeenCalledWith('crv-001', 'Correction données passagers')
@@ -179,12 +189,22 @@ describe('PROCESSUS MANAGER', () => {
     it('devrait pouvoir re-valider après modification', async () => {
       crvStore.currentCRV = {
         id: 'crv-001',
-        statut: 'EN_COURS',
+        statut: 'TERMINE',
         completude: 92
       }
 
       validationAPI.valider.mockResolvedValue({
         data: { statut: 'VALIDE' }
+      })
+
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'VALIDE' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
       })
 
       await crvStore.validateCRV()
@@ -409,16 +429,35 @@ describe('PROCESSUS MANAGER', () => {
       validationAPI.deverrouiller.mockResolvedValue({
         data: { statut: 'EN_COURS' }
       })
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'EN_COURS' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
+      })
       await crvStore.deverrouillerCRV('Correction urgente')
       expect(crvStore.currentCRV.statut).toBe('EN_COURS')
       expect(crvStore.isEditable).toBe(true)
 
       // 4. (Modifications effectuées par l'équipe...)
 
-      // 5. Re-valider
+      // 5. Re-valider (statut doit être TERMINE avant validation)
+      crvStore.currentCRV.statut = 'TERMINE'
       crvStore.currentCRV.completude = 95
       validationAPI.valider.mockResolvedValue({
         data: { statut: 'VALIDE' }
+      })
+      crvAPI.getById.mockResolvedValueOnce({
+        data: {
+          crv: { ...crvStore.currentCRV, statut: 'VALIDE' },
+          phases: [],
+          charges: [],
+          evenements: [],
+          observations: []
+        }
       })
       await crvStore.validateCRV()
       expect(crvStore.currentCRV.statut).toBe('VALIDE')
