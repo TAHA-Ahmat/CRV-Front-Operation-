@@ -85,6 +85,7 @@ vi.mock('@/utils/permissions', () => ({
   canRejectCRV: vi.fn(() => true),
   canLockCRV: vi.fn(() => true),
   canUnlockCRV: vi.fn(() => true),
+  canDeleteCRV: vi.fn(() => true),
   canEdit: vi.fn(() => true),
   canDelete: vi.fn(() => true),
   canView: vi.fn(() => true),
@@ -106,6 +107,12 @@ vi.mock('@/config/crvEnums', () => ({
     'TURNAROUND': 'Turnaround'
   }
 }))
+
+// ============================================================================
+// GLOBAL MOCKS
+// ============================================================================
+
+global.confirm = vi.fn(() => true)
 
 // ============================================================================
 // DONNÉES DE TEST
