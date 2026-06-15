@@ -95,17 +95,374 @@ vi.mock('@/utils/permissions', () => ({
 }))
 
 vi.mock('@/config/crvEnums', () => ({
+  // Statuts CRV
+  STATUT_CRV: {
+    'BROUILLON': 'BROUILLON',
+    'EN_COURS': 'EN_COURS',
+    'TERMINE': 'TERMINE',
+    'VALIDE': 'VALIDE',
+    'VERROUILLE': 'VERROUILLE',
+    'ANNULE': 'ANNULE'
+  },
   STATUT_CRV_LABELS: {
-    'TERMINE': 'Soumis (en attente de validation)',
-    'VALIDE': 'Validé (en attente verrouillage)',
+    'BROUILLON': 'Brouillon',
+    'EN_COURS': 'En cours',
+    'TERMINE': 'Soumis',
+    'VALIDE': 'Validé',
     'VERROUILLE': 'Verrouillé',
-    'EN_COURS': 'En cours'
+    'ANNULE': 'Annulé'
+  },
+
+  // Statuts Phase
+  STATUT_PHASE: {
+    'NON_COMMENCE': 'NON_COMMENCE',
+    'EN_COURS': 'EN_COURS',
+    'TERMINE': 'TERMINE',
+    'NON_REALISE': 'NON_REALISE',
+    'ANNULE': 'ANNULE'
+  },
+  STATUT_PHASE_LABELS: {
+    'NON_COMMENCE': 'Non démarrée',
+    'EN_COURS': 'En cours',
+    'TERMINE': 'Terminée',
+    'NON_REALISE': 'Non réalisée',
+    'ANNULE': 'Annulée'
+  },
+
+  // Types Opération
+  TYPE_OPERATION: {
+    'ARRIVEE': 'ARRIVEE',
+    'DEPART': 'DEPART',
+    'TURN_AROUND': 'TURN_AROUND'
   },
   TYPE_OPERATION_LABELS: {
-    'DEPART': 'Départ',
     'ARRIVEE': 'Arrivée',
-    'TURNAROUND': 'Turnaround'
-  }
+    'DEPART': 'Départ',
+    'TURN_AROUND': 'Turn Around'
+  },
+
+  // Rôles Personnel (MVS-9) - CRITICAL for CRVValidation.vue
+  ROLE_PERSONNEL: {
+    'CHEF_ESCALE': 'CHEF_ESCALE',
+    'AGENT_TRAFIC': 'AGENT_TRAFIC',
+    'AGENT_PISTE': 'AGENT_PISTE',
+    'AGENT_PASSAGE': 'AGENT_PASSAGE',
+    'MANUTENTIONNAIRE': 'MANUTENTIONNAIRE',
+    'CHAUFFEUR': 'CHAUFFEUR',
+    'AGENT_SECURITE': 'AGENT_SECURITE',
+    'TECHNICIEN': 'TECHNICIEN',
+    'SUPERVISEUR': 'SUPERVISEUR',
+    'COORDINATEUR': 'COORDINATEUR',
+    'AUTRE': 'AUTRE'
+  },
+  ROLE_PERSONNEL_LABELS: {
+    'CHEF_ESCALE': 'Chef d\'escale',
+    'AGENT_TRAFIC': 'Agent de trafic',
+    'AGENT_PISTE': 'Agent de piste',
+    'AGENT_PASSAGE': 'Agent de passage',
+    'MANUTENTIONNAIRE': 'Manutentionnaire',
+    'CHAUFFEUR': 'Chauffeur',
+    'AGENT_SECURITE': 'Agent de sécurité',
+    'TECHNICIEN': 'Technicien',
+    'SUPERVISEUR': 'Superviseur',
+    'COORDINATEUR': 'Coordinateur',
+    'AUTRE': 'Autre'
+  },
+  ROLE_PERSONNEL_DESCRIPTIONS: {
+    'CHEF_ESCALE': 'Responsable de la coordination des opérations d\'escale',
+    'AGENT_TRAFIC': 'Gère le trafic passagers et les formalités',
+    'AGENT_PISTE': 'Intervient sur les opérations piste',
+    'AGENT_PASSAGE': 'Gère l\'embarquement et le débarquement passagers',
+    'MANUTENTIONNAIRE': 'Chargement et déchargement bagages et fret',
+    'CHAUFFEUR': 'Conduite des engins de piste',
+    'AGENT_SECURITE': 'Assure la sécurité sur le périmètre avion',
+    'TECHNICIEN': 'Maintenance et interventions techniques',
+    'SUPERVISEUR': 'Supervise les équipes au sol',
+    'COORDINATEUR': 'Coordonne entre différents services',
+    'AUTRE': 'Autre rôle (précisez)'
+  },
+
+  // Types Événement
+  TYPE_EVENEMENT: {
+    'PANNE_EQUIPEMENT': 'PANNE_EQUIPEMENT',
+    'ABSENCE_PERSONNEL': 'ABSENCE_PERSONNEL',
+    'RETARD': 'RETARD',
+    'INCIDENT_SECURITE': 'INCIDENT_SECURITE',
+    'INCIDENT_TECHNIQUE': 'INCIDENT_TECHNIQUE',
+    'PROBLEME_TECHNIQUE': 'PROBLEME_TECHNIQUE',
+    'METEO': 'METEO',
+    'AUTRE': 'AUTRE'
+  },
+  TYPE_EVENEMENT_LABELS: {
+    'PANNE_EQUIPEMENT': 'Panne équipement',
+    'ABSENCE_PERSONNEL': 'Absence personnel',
+    'RETARD': 'Retard',
+    'INCIDENT_SECURITE': 'Incident sécurité',
+    'INCIDENT_TECHNIQUE': 'Incident technique',
+    'PROBLEME_TECHNIQUE': 'Problème technique',
+    'METEO': 'Météo',
+    'AUTRE': 'Autre'
+  },
+  TYPE_EVENEMENT_GROUPES: {
+    'PANNES_ABSENCES': {
+      'label': 'Pannes & Absences',
+      'types': ['PANNE_EQUIPEMENT', 'ABSENCE_PERSONNEL']
+    },
+    'RETARDS': {
+      'label': 'Retards',
+      'types': ['RETARD']
+    },
+    'INCIDENTS': {
+      'label': 'Incidents & Problèmes',
+      'types': ['INCIDENT_SECURITE', 'INCIDENT_TECHNIQUE', 'PROBLEME_TECHNIQUE']
+    },
+    'ENVIRONNEMENT': {
+      'label': 'Environnement',
+      'types': ['METEO']
+    },
+    'AUTRES': {
+      'label': 'Autres',
+      'types': ['AUTRE']
+    }
+  },
+
+  // Gravités Événement
+  GRAVITE_EVENEMENT: {
+    'MINEURE': 'MINEURE',
+    'MODEREE': 'MODEREE',
+    'MAJEURE': 'MAJEURE',
+    'CRITIQUE': 'CRITIQUE'
+  },
+  GRAVITE_EVENEMENT_LABELS: {
+    'MINEURE': 'Mineure',
+    'MODEREE': 'Modérée',
+    'MAJEURE': 'Majeure',
+    'CRITIQUE': 'Critique'
+  },
+
+  // Statuts Événement
+  STATUT_EVENEMENT: {
+    'OUVERT': 'OUVERT',
+    'EN_COURS': 'EN_COURS',
+    'RESOLU': 'RESOLU',
+    'CLOTURE': 'CLOTURE'
+  },
+  STATUT_EVENEMENT_LABELS: {
+    'OUVERT': 'Ouvert',
+    'EN_COURS': 'En cours',
+    'RESOLU': 'Résolu',
+    'CLOTURE': 'Clôturé'
+  },
+
+  // Types Charge
+  TYPE_CHARGE: {
+    'PASSAGERS': 'PASSAGERS',
+    'BAGAGES': 'BAGAGES',
+    'FRET': 'FRET'
+  },
+  TYPE_CHARGE_LABELS: {
+    'PASSAGERS': 'Passagers',
+    'BAGAGES': 'Bagages',
+    'FRET': 'Fret'
+  },
+
+  // Sens Opération
+  SENS_OPERATION: {
+    'EMBARQUEMENT': 'EMBARQUEMENT',
+    'DEBARQUEMENT': 'DEBARQUEMENT'
+  },
+  SENS_OPERATION_LABELS: {
+    'EMBARQUEMENT': 'Embarquement',
+    'DEBARQUEMENT': 'Débarquement'
+  },
+
+  // Types Fret
+  TYPE_FRET: {
+    'GENERAL': 'GENERAL',
+    'STANDARD': 'STANDARD',
+    'PERISSABLE': 'PERISSABLE',
+    'DANGEREUX': 'DANGEREUX',
+    'ANIMAUX': 'ANIMAUX',
+    'AUTRE': 'AUTRE'
+  },
+  TYPE_FRET_LABELS: {
+    'GENERAL': 'Général',
+    'STANDARD': 'Standard',
+    'PERISSABLE': 'Périssable',
+    'DANGEREUX': 'Dangereux (DGR)',
+    'ANIMAUX': 'Animaux vivants',
+    'AUTRE': 'Autre'
+  },
+
+  // Catégories Observation
+  CATEGORIE_OBSERVATION: {
+    'GENERALE': 'GENERALE',
+    'TECHNIQUE': 'TECHNIQUE',
+    'OPERATIONNELLE': 'OPERATIONNELLE',
+    'SECURITE': 'SECURITE',
+    'QUALITE': 'QUALITE',
+    'SLA': 'SLA'
+  },
+  CATEGORIE_OBSERVATION_LABELS: {
+    'GENERALE': 'Générale',
+    'TECHNIQUE': 'Technique',
+    'OPERATIONNELLE': 'Opérationnelle',
+    'SECURITE': 'Sécurité',
+    'QUALITE': 'Qualité',
+    'SLA': 'SLA'
+  },
+
+  // Visibilité Observation
+  VISIBILITE_OBSERVATION: {
+    'INTERNE': 'INTERNE',
+    'COMPAGNIE': 'COMPAGNIE',
+    'PUBLIQUE': 'PUBLIQUE'
+  },
+  VISIBILITE_OBSERVATION_LABELS: {
+    'INTERNE': 'Interne',
+    'COMPAGNIE': 'Compagnie',
+    'PUBLIQUE': 'Publique'
+  },
+
+  // Catégories Phase
+  CATEGORIE_PHASE: {
+    'PISTE': 'PISTE',
+    'PASSAGERS': 'PASSAGERS',
+    'FRET': 'FRET',
+    'BAGAGE': 'BAGAGE',
+    'TECHNIQUE': 'TECHNIQUE',
+    'AVITAILLEMENT': 'AVITAILLEMENT',
+    'NETTOYAGE': 'NETTOYAGE',
+    'SECURITE': 'SECURITE',
+    'BRIEFING': 'BRIEFING'
+  },
+
+  // Motifs Non-Réalisation
+  MOTIF_NON_REALISATION: {
+    'NON_NECESSAIRE': 'NON_NECESSAIRE',
+    'EQUIPEMENT_INDISPONIBLE': 'EQUIPEMENT_INDISPONIBLE',
+    'PERSONNEL_ABSENT': 'PERSONNEL_ABSENT',
+    'CONDITIONS_METEO': 'CONDITIONS_METEO',
+    'AUTRE': 'AUTRE'
+  },
+  MOTIF_NON_REALISATION_LABELS: {
+    'NON_NECESSAIRE': 'Non nécessaire',
+    'EQUIPEMENT_INDISPONIBLE': 'Équipement indisponible',
+    'PERSONNEL_ABSENT': 'Personnel absent',
+    'CONDITIONS_METEO': 'Conditions météo',
+    'AUTRE': 'Autre'
+  },
+
+  // Types Engin
+  TYPE_ENGIN: {
+    'tracteur': 'tracteur',
+    'chariot_bagages': 'chariot_bagages',
+    'chariot_fret': 'chariot_fret',
+    'camion_fret': 'camion_fret',
+    'passerelle': 'passerelle',
+    'gpu': 'gpu',
+    'asu': 'asu',
+    'camion_avitaillement': 'camion_avitaillement',
+    'convoyeur': 'convoyeur',
+    'autre': 'autre'
+  },
+  TYPE_ENGIN_LABELS: {
+    'tracteur': 'Tracteur pushback',
+    'chariot_bagages': 'Chariot bagages',
+    'chariot_fret': 'Chariot fret',
+    'camion_fret': 'Camion fret',
+    'passerelle': 'Passerelle / Escalier',
+    'gpu': 'GPU (Groupe de parc)',
+    'asu': 'ASU (Air Start Unit)',
+    'camion_avitaillement': 'Camion avitaillement',
+    'convoyeur': 'Convoyeur',
+    'autre': 'Autre'
+  },
+
+  // Usages Engin
+  USAGE_ENGIN: {
+    'TRACTAGE': 'TRACTAGE',
+    'BAGAGES': 'BAGAGES',
+    'FRET': 'FRET',
+    'ALIMENTATION_ELECTRIQUE': 'ALIMENTATION_ELECTRIQUE',
+    'CLIMATISATION': 'CLIMATISATION',
+    'PASSERELLE': 'PASSERELLE',
+    'CHARGEMENT': 'CHARGEMENT'
+  },
+  USAGE_ENGIN_LABELS: {
+    'TRACTAGE': 'Tractage',
+    'BAGAGES': 'Bagages',
+    'FRET': 'Fret',
+    'ALIMENTATION_ELECTRIQUE': 'Alimentation électrique',
+    'CLIMATISATION': 'Climatisation',
+    'PASSERELLE': 'Passerelle',
+    'CHARGEMENT': 'Chargement'
+  },
+
+  // Statuts Vol
+  STATUT_VOL: {
+    'PROGRAMME': 'PROGRAMME',
+    'EN_COURS': 'EN_COURS',
+    'TERMINE': 'TERMINE',
+    'ANNULE': 'ANNULE',
+    'RETARDE': 'RETARDE'
+  },
+  STATUT_VOL_LABELS: {
+    'PROGRAMME': 'Programmé',
+    'EN_COURS': 'En cours',
+    'TERMINE': 'Terminé',
+    'ANNULE': 'Annulé',
+    'RETARDE': 'Retardé'
+  },
+
+  // Types Vol Hors Programme
+  TYPE_VOL_HORS_PROGRAMME: {
+    'CHARTER': 'CHARTER',
+    'MEDICAL': 'MEDICAL',
+    'TECHNIQUE': 'TECHNIQUE',
+    'COMMERCIAL': 'COMMERCIAL',
+    'CARGO': 'CARGO',
+    'AUTRE': 'AUTRE'
+  },
+  TYPE_VOL_HORS_PROGRAMME_LABELS: {
+    'CHARTER': 'Charter',
+    'MEDICAL': 'Médical',
+    'TECHNIQUE': 'Technique',
+    'COMMERCIAL': 'Commercial',
+    'CARGO': 'Cargo',
+    'AUTRE': 'Autre'
+  },
+
+  // Constants
+  SEUILS_COMPLETUDE: {
+    'TERMINER': 50,
+    'VALIDER': 80
+  },
+  ERROR_CODES: {
+    'CRV_DOUBLON': 'CRV_DOUBLON',
+    'CRV_VERROUILLE': 'CRV_VERROUILLE',
+    'COMPLETUDE_INSUFFISANTE': 'COMPLETUDE_INSUFFISANTE',
+    'CONDITIONS_TERMINAISON_NON_SATISFAITES': 'CONDITIONS_TERMINAISON_NON_SATISFAITES',
+    'MOTIF_NON_REALISATION_REQUIS': 'MOTIF_NON_REALISATION_REQUIS',
+    'DETAIL_MOTIF_REQUIS': 'DETAIL_MOTIF_REQUIS',
+    'INCOHERENCE_TYPE_OPERATION': 'INCOHERENCE_TYPE_OPERATION',
+    'VALEURS_EXPLICITES_REQUISES': 'VALEURS_EXPLICITES_REQUISES',
+    'TRANSITION_STATUT_INVALIDE': 'TRANSITION_STATUT_INVALIDE',
+    'POIDS_REQUIS_AVEC_BAGAGES': 'POIDS_REQUIS_AVEC_BAGAGES',
+    'POIDS_FRET_REQUIS': 'POIDS_FRET_REQUIS',
+    'TYPE_FRET_REQUIS': 'TYPE_FRET_REQUIS',
+    'QUALITE_READ_ONLY': 'QUALITE_READ_ONLY',
+    'TOKEN_EXPIRED': 'TOKEN_EXPIRED',
+    'TOKEN_INVALID': 'TOKEN_INVALID'
+  },
+
+  // Utility Functions
+  validateEnumValue: vi.fn((value, enumObj) => Object.values(enumObj).includes(value)),
+  enumToOptions: vi.fn((enumObj, labelsObj) => Object.values(enumObj).map(value => ({
+    value,
+    label: labelsObj[value] || value
+  }))),
+  getEnumOptions: vi.fn((enumObj) => Object.values(enumObj).map(value => ({ value, label: value })))
 }))
 
 // ============================================================================
