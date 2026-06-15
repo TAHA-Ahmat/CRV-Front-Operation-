@@ -55,9 +55,18 @@ vi.mock('@/services/api', () => ({
 
 vi.mock('@/composables/useSLA', () => ({
   useSLA: vi.fn(() => ({
-    slaNiveauFinal: 'OK',
-    slaCauseRetard: null,
-    updateSlaInfo: vi.fn()
+    init: vi.fn().mockResolvedValue(undefined),
+    loaded: { value: true },
+    calculerSLACRV: vi.fn((crv) => ({
+      niveau: 'OK',
+      label: 'OK',
+      cssClass: 'sla-ok'
+    })),
+    calculerSLABagages: vi.fn(),
+    calculerSLABoarding: vi.fn(),
+    calculerSLACheckin: vi.fn(),
+    resolveAircraftCategory: vi.fn(),
+    resoudreDureePhase: vi.fn()
   }))
 }))
 
