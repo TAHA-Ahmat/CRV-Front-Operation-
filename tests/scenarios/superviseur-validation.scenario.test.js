@@ -242,11 +242,29 @@ describe('SCÉNARIO COMPLET: VALIDATION CRV - Superviseur', () => {
     })
 
     it('Superviseur valide le CRV → Statut VALIDE', async () => {
+      const phases = [
+        { id: 'p1', nom: 'Phase 1', statut: 'TERMINE', ordre: 1 },
+        { id: 'p2', nom: 'Phase 2', statut: 'TERMINE', ordre: 2 },
+        { id: 'p3', nom: 'Phase 3', statut: 'TERMINE', ordre: 3 }
+      ]
+
       validationAPI.valider.mockResolvedValue({
         data: {
+          crv: { ...crvAValider, statut: 'VALIDE' },
           statut: 'VALIDE',
           validePar: superviseur.id,
           dateValidation: '2024-01-15T16:00:00Z'
+        }
+      })
+
+      // Mock loadCRV to return the VALIDE status
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvAValider, statut: 'VALIDE' },
+          phases,
+          charges: [],
+          evenements: [],
+          observations: []
         }
       })
 
@@ -257,7 +275,7 @@ describe('SCÉNARIO COMPLET: VALIDATION CRV - Superviseur', () => {
       console.log(`   → Date: 15/01/2024 16:00`)
       console.log(`   → Nouveau statut: ${crvStore.currentCRV.statut}`)
 
-      expect(validationAPI.valider).toHaveBeenCalledWith('crv-001')
+      expect(validationAPI.valider).toHaveBeenCalledWith('crv-001', null)
       expect(crvStore.currentCRV.statut).toBe('VALIDE')
       expect(crvStore.isValidated).toBe(true)
     })
@@ -467,7 +485,19 @@ describe('SCÉNARIO COMPLET: VALIDATION CRV - Superviseur', () => {
 
       // 5. VALIDER
       validationAPI.valider.mockResolvedValue({
-        data: { statut: 'VALIDE' }
+        data: {
+          crv: { ...crvAValider, completude: 88, statut: 'VALIDE' },
+          statut: 'VALIDE'
+        }
+      })
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvAValider, completude: 88, statut: 'VALIDE' },
+          phases: [{ statut: 'TERMINE' }],
+          charges: [{ typeCharge: 'PASSAGERS' }],
+          evenements: [],
+          observations: [{ contenu: 'RAS' }]
+        }
       })
       await crvStore.validateCRV()
       console.log('✅ 5. CRV VALIDÉ')

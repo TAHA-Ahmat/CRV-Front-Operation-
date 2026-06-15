@@ -176,7 +176,8 @@ describe('SCÉNARIO COMPLET: CRV ARRIVÉE - Agent d\'Escale', () => {
           numeroCRV: 'CRV-2024-0001',
           statut: 'BROUILLON',
           completude: 0,
-          vol: volArrivee
+          vol: volArrivee,
+          phases
         }
       })
 

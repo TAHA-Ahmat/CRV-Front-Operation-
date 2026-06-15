@@ -211,6 +211,33 @@ export function isAdmin(role) {
 }
 
 /**
+ * Vérifie si un rôle peut valider un programme vol
+ * @param {string} role - Rôle normalisé
+ * @returns {boolean}
+ */
+export function canValidateProgramme(role) {
+  return ROLES_VALIDATION_PROGRAMME.includes(role)
+}
+
+/**
+ * Vérifie si un rôle peut supprimer un CRV
+ * @param {string} role - Rôle normalisé
+ * @returns {boolean}
+ */
+export function canDeleteCRV(role) {
+  return ROLES_SUPPRESSION_CRV.includes(role)
+}
+
+/**
+ * Vérifie si un rôle peut supprimer un programme vol
+ * @param {string} role - Rôle normalisé
+ * @returns {boolean}
+ */
+export function canDeleteProgramme(role) {
+  return ROLES_SUPPRESSION_PROGRAMME.includes(role)
+}
+
+/**
  * Retourne le label d'affichage d'un rôle
  * @param {string} role - Rôle normalisé
  * @returns {string}
@@ -244,6 +271,9 @@ export default {
   hasAccessCRV,
   isReadOnly,
   isAdmin,
+  canValidateProgramme,
+  canDeleteCRV,
+  canDeleteProgramme,
   getRoleLabel,
   getRolesForSelect
 }

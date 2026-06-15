@@ -91,7 +91,7 @@ describe('DEMO: Agent crée CRV Arrivée', () => {
     console.log('📝 ÉTAPE 5: Phases du CRV Arrivée')
     console.log('-'.repeat(40))
 
-    expect(crv.phases.length).toBe(5)
+    expect(crv.phases.length).toBe(8)
 
     console.log(`   ${crv.phases.length} phases pour un vol ARRIVÉE:\n`)
     crv.phases.forEach((phase, i) => {

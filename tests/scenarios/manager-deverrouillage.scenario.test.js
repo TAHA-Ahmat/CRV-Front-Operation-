@@ -241,12 +241,37 @@ describe('SCÉNARIO COMPLET: DÉVERROUILLAGE CRV - Manager', () => {
     it('Manager déverrouille avec raison obligatoire', async () => {
       const raison = 'Correction nombre passagers: 150 → 168 (erreur de saisie agent)'
 
+      // Mock deverrouiller API response
       validationAPI.deverrouiller.mockResolvedValue({
         data: {
           statut: 'EN_COURS',
           deverrouillePar: manager.id,
           dateDeverrouillage: '2024-01-15T17:30:00Z',
           raisonDeverrouillage: raison
+        }
+      })
+
+      // Mock loadCRV to return updated status and proper phases
+      const phases = [
+        { id: 'p1', nom: 'Phase 1', statut: 'TERMINE', ordre: 1 },
+        { id: 'p2', nom: 'Phase 2', statut: 'TERMINE', ordre: 2 },
+        { id: 'p3', nom: 'Phase 3', statut: 'TERMINE', ordre: 3 }
+      ]
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvVerrouille, statut: 'EN_COURS' },
+          phases,
+          charges: [
+            {
+              id: 'c1',
+              typeCharge: 'PASSAGERS',
+              passagersAdultes: 150,
+              passagersEnfants: 15,
+              passagersBebes: 3
+            }
+          ],
+          evenements: [],
+          observations: []
         }
       })
 
@@ -338,17 +363,43 @@ describe('SCÉNARIO COMPLET: DÉVERROUILLAGE CRV - Manager', () => {
       authStore.token = 'jwt-token'
       crvStore.currentCRV = {
         ...crvVerrouille,
-        statut: 'EN_COURS',
+        statut: 'TERMINE',
         completude: 92
       }
     })
 
     it('Manager re-valide le CRV corrigé', async () => {
+      const phases = [
+        { id: 'p1', nom: 'Phase 1', statut: 'TERMINE', ordre: 1 },
+        { id: 'p2', nom: 'Phase 2', statut: 'TERMINE', ordre: 2 },
+        { id: 'p3', nom: 'Phase 3', statut: 'TERMINE', ordre: 3 }
+      ]
+
       validationAPI.valider.mockResolvedValue({
         data: {
+          crv: { ...crvVerrouille, statut: 'VALIDE', completude: 92 },
           statut: 'VALIDE',
           validePar: manager.id,
           dateValidation: '2024-01-15T17:45:00Z'
+        }
+      })
+
+      // Mock loadCRV to return the VALIDE status
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvVerrouille, statut: 'VALIDE', completude: 92 },
+          phases,
+          charges: [
+            {
+              id: 'c1',
+              typeCharge: 'PASSAGERS',
+              passagersAdultes: 168,
+              passagersEnfants: 15,
+              passagersBebes: 3
+            }
+          ],
+          evenements: [],
+          observations: []
         }
       })
 
@@ -565,10 +616,15 @@ describe('SCÉNARIO COMPLET: DÉVERROUILLAGE CRV - Manager', () => {
       console.log('✅ 1. Connexion Manager')
 
       // 2. CHARGER CRV VERROUILLÉ
+      const phases = [
+        { id: 'p1', nom: 'Phase 1', statut: 'TERMINE', ordre: 1 },
+        { id: 'p2', nom: 'Phase 2', statut: 'TERMINE', ordre: 2 },
+        { id: 'p3', nom: 'Phase 3', statut: 'TERMINE', ordre: 3 }
+      ]
       crvAPI.getById.mockResolvedValue({
         data: {
           crv: crvVerrouille,
-          phases: [],
+          phases,
           charges: [{ id: 'c1', passagersAdultes: 150 }],
           evenements: [],
           observations: []
@@ -582,18 +638,27 @@ describe('SCÉNARIO COMPLET: DÉVERROUILLAGE CRV - Manager', () => {
       validationAPI.deverrouiller.mockResolvedValue({
         data: { statut: 'EN_COURS' }
       })
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvVerrouille, statut: 'EN_COURS' },
+          phases,
+          charges: [{ id: 'c1', passagersAdultes: 150 }],
+          evenements: [],
+          observations: []
+        }
+      })
       await crvStore.deverrouillerCRV('Correction passagers')
       expect(crvStore.isEditable).toBe(true)
       console.log('✅ 3. CRV déverrouillé')
 
-      // 4. CORRIGER
+      // 4. CORRIGER (transition to TERMINE for validation)
       chargesAPI.update.mockResolvedValue({
         data: { charge: { passagersAdultes: 168 } }
       })
       crvAPI.getById.mockResolvedValue({
         data: {
-          crv: { ...crvStore.currentCRV, completude: 92 },
-          phases: [],
+          crv: { ...crvVerrouille, statut: 'TERMINE', completude: 92 },
+          phases,
           charges: [{ id: 'c1', passagersAdultes: 168 }],
           evenements: [],
           observations: []
@@ -606,6 +671,15 @@ describe('SCÉNARIO COMPLET: DÉVERROUILLAGE CRV - Manager', () => {
       // 5. RE-VALIDER
       validationAPI.valider.mockResolvedValue({
         data: { statut: 'VALIDE' }
+      })
+      crvAPI.getById.mockResolvedValue({
+        data: {
+          crv: { ...crvVerrouille, statut: 'VALIDE', completude: 92 },
+          phases,
+          charges: [{ id: 'c1', passagersAdultes: 168 }],
+          evenements: [],
+          observations: []
+        }
       })
       await crvStore.validateCRV()
       expect(crvStore.isValidated).toBe(true)

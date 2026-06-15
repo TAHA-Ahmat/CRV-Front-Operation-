@@ -296,11 +296,11 @@ export const useCRVStore = defineStore('crv', {
         const result = this._extractData(response)
         console.log('[CRV][LOAD]', { action: 'createCRV', result: 'success', crv: result })
 
-        this.currentCRV = result
-        this.phases = []
-        this.charges = []
-        this.evenements = []
-        this.observations = []
+        this.currentCRV = result.crv || result
+        this.phases = result.phases || []
+        this.charges = result.charges || []
+        this.evenements = result.evenements || []
+        this.observations = result.observations || []
         this.transitionsPossibles = []
 
         // Pas de loadCRV ici — la réponse du POST contient déjà les données complètes.
