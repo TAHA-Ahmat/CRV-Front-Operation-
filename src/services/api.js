@@ -592,7 +592,28 @@ export const volsAPI = {
    * Modifier un vol
    * PATCH /api/vols/:id
    */
-  update: (id, data) => api.patch(`/vols/${id}`, data)
+  update: (id, data) => api.patch(`/vols/${id}`, data),
+
+  /**
+   * Lier un vol à un programme
+   * POST /api/vols/:id/lier-programme
+   * Body: { programmeId }
+   */
+  lierProgramme: (id, programmeId) => api.post(`/vols/${id}/lier-programme`, { programmeId }),
+
+  /**
+   * Marquer un vol comme hors programme
+   * POST /api/vols/:id/marquer-hors-programme
+   * Body: { typeVolHorsProgramme }
+   */
+  marquerHorsProgramme: (id, data) => api.post(`/vols/${id}/marquer-hors-programme`, data),
+
+  /**
+   * Obtenir les vols hors programme
+   * GET /api/vols/hors-programme
+   * Query: { page? }
+   */
+  getHorsProgramme: (params) => api.get('/vols/hors-programme', { params })
 }
 
 // ============================================
@@ -653,6 +674,13 @@ export const programmesVolAPI = {
    * Body: { raison? }
    */
   suspendre: (id, raison = '') => api.post(`/programmes-vol/${id}/suspendre`, { raison }),
+
+  /**
+   * Obtenir les programmes applicables pour une date
+   * GET /api/programmes-vol/applicables/:date
+   * @param date - format YYYY-MM-DD
+   */
+  getApplicables: (date) => api.get(`/programmes-vol/applicables/${date}`),
 
   /**
    * Obtenir le programme actif
@@ -1148,10 +1176,9 @@ export const validationAPI = {
    * Prérequis: statut=TERMINE, completude >= 80%
    * Résultat: statut passe à VALIDE
    */
-  valider: (id, commentaires = null) => {
-    console.log('[VALIDATION API] valider() - CRV ID:', id, '- Commentaires:', commentaires)
-    const body = commentaires ? { commentaires } : {}
-    return api.post(`/validation/${id}/valider`, body)
+  valider: (id) => {
+    console.log('[VALIDATION API] valider() - CRV ID:', id)
+    return api.post(`/validation/${id}/valider`)
   },
 
   /**
