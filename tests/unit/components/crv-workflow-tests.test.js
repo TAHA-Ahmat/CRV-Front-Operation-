@@ -37,13 +37,15 @@ vi.mock('@/services/api', () => ({
     addObservation: vi.fn(),
     peutAnnuler: vi.fn(),
     annuler: vi.fn(),
-    reactiver: vi.fn()
+    reactiver: vi.fn(),
+    getPDFBase64: vi.fn()
   },
   validationAPI: {
     valider: vi.fn(),
     deverrouiller: vi.fn(),
     getStatus: vi.fn(),
-    rejeter: vi.fn()
+    rejeter: vi.fn(),
+    verrouiller: vi.fn()
   },
   phasesAPI: {
     demarrer: vi.fn(),
@@ -76,6 +78,27 @@ vi.mock('@/composables/usePermissions', () => ({
     isQualite: false,
     isManager: true
   }))
+}))
+
+vi.mock('@/utils/permissions', () => ({
+  canValidateCRV: vi.fn(() => true),
+  canRejectCRV: vi.fn(() => true),
+  canLockCRV: vi.fn(() => true),
+  canUnlockCRV: vi.fn(() => true)
+}))
+
+vi.mock('@/config/crvEnums', () => ({
+  STATUT_CRV_LABELS: {
+    'TERMINE': 'Soumis (en attente de validation)',
+    'VALIDE': 'Validé (en attente verrouillage)',
+    'VERROUILLE': 'Verrouillé',
+    'EN_COURS': 'En cours'
+  },
+  TYPE_OPERATION_LABELS: {
+    'DEPART': 'Départ',
+    'ARRIVEE': 'Arrivée',
+    'TURNAROUND': 'Turnaround'
+  }
 }))
 
 // ============================================================================
@@ -1088,17 +1111,47 @@ describe('CRVValidation - Formulaire de validation', () => {
 
 describe('ValidationCRV - Page de supervision', () => {
   let store
+  let authStore
   let router
 
   beforeEach(() => {
     setActivePinia(createPinia())
     store = useCRVStore()
+    authStore = useAuthStore()
+    authStore.user = { fonction: 'QUALITE', role: 'admin' }
     router = {
       push: vi.fn(),
       currentRoute: { value: { params: {} } }
     }
     vi.mocked(useRouter).mockReturnValue(router)
     vi.clearAllMocks()
+    // Setup default mock returns
+    crvAPI.getAll.mockResolvedValue({
+      data: {
+        data: [],
+        total: 0,
+        page: 1,
+        pages: 1
+      }
+    })
+    crvAPI.getById.mockResolvedValue({
+      data: {
+        data: mockCRVs[0],
+        crv: mockCRVs[0],
+        phases: [],
+        charges: [],
+        engins: [],
+        evenements: [],
+        observations: []
+      }
+    })
+    validationAPI.getStatus.mockResolvedValue({
+      data: {
+        data: {
+          historique: []
+        }
+      }
+    })
   })
 
   describe('Initialisation et rendu', () => {
@@ -1374,9 +1427,10 @@ describe('ValidationCRV - Page de supervision', () => {
 
   describe('Workflows de validation', () => {
     it('devrait afficher le bouton de validation pour TERMINE', async () => {
+      const termineCRV = { ...mockCRVs[1], statut: 'TERMINE', completude: 85 }
       crvAPI.getAll.mockResolvedValue({
         data: {
-          data: [mockCRVs[1]], // TERMINE
+          data: [termineCRV],
           total: 1,
           page: 1,
           pages: 1
@@ -1394,6 +1448,7 @@ describe('ValidationCRV - Page de supervision', () => {
       })
 
       await flushPromises()
+      await wrapper.vm.$nextTick()
       const validateBtn = wrapper.find('.sv-action--validate')
       expect(validateBtn.exists()).toBe(true)
     })
@@ -1424,9 +1479,10 @@ describe('ValidationCRV - Page de supervision', () => {
     })
 
     it('devrait afficher le bouton de déverrouillage pour VERROUILLE', async () => {
+      const verrouilledCRV = { ...mockCRVs[3], statut: 'VERROUILLE', completude: 95 }
       crvAPI.getAll.mockResolvedValue({
         data: {
-          data: [mockCRVs[3]], // VERROUILLE
+          data: [verrouilledCRV],
           total: 1,
           page: 1,
           pages: 1
@@ -1444,14 +1500,16 @@ describe('ValidationCRV - Page de supervision', () => {
       })
 
       await flushPromises()
+      await wrapper.vm.$nextTick()
       const unlockBtn = wrapper.find('.sv-action--unlock')
       expect(unlockBtn.exists()).toBe(true)
     })
 
     it('devrait ouvrir le modal de validation au clic', async () => {
+      const termineCRV = { ...mockCRVs[1], statut: 'TERMINE', completude: 85 }
       crvAPI.getAll.mockResolvedValue({
         data: {
-          data: [mockCRVs[1]], // TERMINE
+          data: [termineCRV],
           total: 1,
           page: 1,
           pages: 1
@@ -1469,6 +1527,7 @@ describe('ValidationCRV - Page de supervision', () => {
       })
 
       await flushPromises()
+      await wrapper.vm.$nextTick()
       const validateBtn = wrapper.find('.sv-action--validate')
       await validateBtn.trigger('click')
 
@@ -1770,24 +1829,40 @@ describe('CRV Workflow - Scénario E2E', () => {
 
   it('devrait compléter le workflow de validation complet', async () => {
     // 1. Charger la liste des CRV
+    const termineCRV = { ...mockCRVs[1], statut: 'TERMINE', completude: 85 }
     crvAPI.getAll.mockResolvedValue({
       data: {
-        data: [mockCRVs[1]], // TERMINE
+        data: [termineCRV],
         total: 1,
         page: 1,
         pages: 1
       }
     })
+    crvAPI.getById.mockResolvedValue({
+      data: {
+        data: termineCRV,
+        crv: termineCRV,
+        phases: [],
+        charges: [],
+        engins: [],
+        evenements: [],
+        observations: []
+      }
+    })
 
+    const pinia = createPinia()
     const wrapper = mount(ValidationCRV, {
       global: {
-        plugins: [createPinia()],
+        plugins: [pinia],
         stubs: {
           ArchiveButton: true,
           ToastNotification: true
         }
       }
     })
+
+    const authStore = useAuthStore()
+    authStore.user = { fonction: 'QUALITE', role: 'admin' }
 
     await flushPromises()
 
@@ -1797,11 +1872,12 @@ describe('CRV Workflow - Scénario E2E', () => {
     // 3. Sélectionner un CRV
     const card = wrapper.find('.sv-card')
     await card.trigger('click')
+    await flushPromises()
     expect(wrapper.vm.selectedCRV).toBeTruthy()
 
     // 4. Valider le CRV
     validationAPI.valider.mockResolvedValue({
-      data: { crv: { ...mockCRVs[1], statut: 'VALIDE' } }
+      data: { crv: { ...termineCRV, statut: 'VALIDE' } }
     })
 
     const validateBtn = wrapper.find('.sv-action--validate')
@@ -1811,24 +1887,40 @@ describe('CRV Workflow - Scénario E2E', () => {
 
   it('devrait compléter le workflow de déverrouillage', async () => {
     // 1. Charger la liste des CRV verrouillés
+    const verrouilledCRV = { ...mockCRVs[3], statut: 'VERROUILLE', completude: 95 }
     crvAPI.getAll.mockResolvedValue({
       data: {
-        data: [mockCRVs[3]], // VERROUILLE
+        data: [verrouilledCRV],
         total: 1,
         page: 1,
         pages: 1
       }
     })
+    crvAPI.getById.mockResolvedValue({
+      data: {
+        data: verrouilledCRV,
+        crv: verrouilledCRV,
+        phases: [],
+        charges: [],
+        engins: [],
+        evenements: [],
+        observations: []
+      }
+    })
 
+    const pinia = createPinia()
     const wrapper = mount(ValidationCRV, {
       global: {
-        plugins: [createPinia()],
+        plugins: [pinia],
         stubs: {
           ArchiveButton: true,
           ToastNotification: true
         }
       }
     })
+
+    const authStore = useAuthStore()
+    authStore.user = { fonction: 'QUALITE', role: 'admin' }
 
     await flushPromises()
 
@@ -1842,10 +1934,10 @@ describe('CRV Workflow - Scénario E2E', () => {
 
     // 4. Déverrouiller avec raison
     validationAPI.deverrouiller.mockResolvedValue({
-      data: { crv: { ...mockCRVs[3], statut: 'EN_COURS' } }
+      data: { crv: { ...verrouilledCRV, statut: 'EN_COURS' } }
     })
 
-    wrapper.vm.unlockReason = 'Correction nécessaire'
+    wrapper.vm.actionComment = 'Correction nécessaire'
     await wrapper.vm.handleUnlock()
 
     expect(validationAPI.deverrouiller).toHaveBeenCalledWith('crv4', 'Correction nécessaire')
