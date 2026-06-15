@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRV - Offline Mode</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 16px;
+            font-size: 28px;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .status {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 12px 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 49%, 100% { opacity: 1; }
+            50%, 99% { opacity: 0.3; }
+        }
+        .help {
+            margin-top: 24px;
+            font-size: 13px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📡</div>
+        <h1>You are Offline</h1>
+        <p>The application is running in offline mode.</p>
+        
+        <div class="status">
+            <span class="status-dot"></span>
+            <strong>Offline Mode Active</strong>
+            <p style="margin: 8px 0 0 0;">Your changes are being saved locally and will sync automatically when you reconnect.</p>
+        </div>
+        
+        <p><strong>What you can do:</strong></p>
+        <ul style="text-align: left; margin: 16px 0; font-size: 14px; color: #666;">
+            <li>View cached pages and data</li>
+            <li>Make changes (they'll be saved locally)</li>
+            <li>Browse your offline content</li>
+        </ul>
+        
+        <div class="help">
+            <p>When your internet connection is restored, changes will automatically sync to the server.</p>
+        </div>
+    </div>
+
+    <script>
+        // Monitor connection status
+        window.addEventListener('online', function() {
+            document.body.style.background = 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)';
+            setTimeout(() => window.location.reload(), 1000);
+        });
+
+        // Auto-reload when back online
+        window.addEventListener('online', () => {
+            console.log('Connection restored, reloading application...');
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>

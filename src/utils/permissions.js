@@ -121,7 +121,7 @@ const PERMISSION_MATRIX = {
   [ACTIONS.CRV_CREER]: ROLES_OPERATIONNELS,
   [ACTIONS.CRV_MODIFIER]: ROLES_OPERATIONNELS,
   [ACTIONS.CRV_LIRE]: [...ROLES_OPERATIONNELS, ROLES.QUALITE],
-  [ACTIONS.CRV_SUPPRIMER]: ROLES_OPERATIONNELS,
+  [ACTIONS.CRV_SUPPRIMER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.CRV_ARCHIVER]: ROLES_OPERATIONNELS,
   [ACTIONS.CRV_DEMARRER]: ROLES_OPERATIONNELS,
   [ACTIONS.CRV_TERMINER]: ROLES_OPERATIONNELS,
@@ -161,10 +161,10 @@ const PERMISSION_MATRIX = {
   [ACTIONS.PROGRAMME_CREER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.PROGRAMME_MODIFIER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.PROGRAMME_LIRE]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER, ROLES.QUALITE],
-  [ACTIONS.PROGRAMME_VALIDER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.PROGRAMME_ACTIVER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.PROGRAMME_VALIDER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.PROGRAMME_ACTIVER]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
   [ACTIONS.PROGRAMME_SUSPENDRE]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
-  [ACTIONS.PROGRAMME_SUPPRIMER]: [ROLES.AGENT_ESCALE, ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER],
+  [ACTIONS.PROGRAMME_SUPPRIMER]: [ROLES.MANAGER],
 
   // Avions
   [ACTIONS.AVION_MODIFIER_CONFIG]: [ROLES.SUPERVISEUR, ROLES.MANAGER],
@@ -425,12 +425,14 @@ export function isAdminRole(role) {
 
 export const PERMISSION_MESSAGES = Object.freeze({
   QUALITE_READ_ONLY: 'Votre profil QUALITE est en lecture seule. Seuls les opérationnels peuvent agir sur les CRV.',
+  ADMIN_NO_CRV: 'Le profil ADMIN est réservé à l\'infrastructure. Les opérations métier sont réservées aux rôles opérationnels.',
   INSUFFICIENT_PERMISSIONS: 'Vous n\'avez pas les permissions nécessaires pour cette action.',
   VALIDATION_RESERVED: 'Validation CRV réservée aux SUPERVISEUR et MANAGER.',
   REJET_RESERVED: 'Rejet CRV réservé aux SUPERVISEUR et MANAGER.',
   VERROUILLAGE_RESERVED: 'Verrouillage CRV réservé aux SUPERVISEUR et MANAGER.',
   DEVERROUILLAGE_RESERVED: 'Déverrouillage CRV réservé aux SUPERVISEUR et MANAGER.',
-  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux rôles opérationnels.',
+  SUPPRESSION_CRV_RESERVED: 'Suppression CRV réservée aux SUPERVISEUR et MANAGER.',
+  SUPPRESSION_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
   SUPPRESSION_PROGRAMME_RESERVED: 'Suppression programme réservée au MANAGER uniquement.',
   ADMIN_ONLY: 'Accès refusé. Cette action est réservée aux administrateurs.',
   ADMIN_NO_OPERATIONAL: 'Le profil ADMIN est réservé à l\'infrastructure. Les opérations métier sont réservées aux rôles opérationnels.',
@@ -454,7 +456,7 @@ export function getPermissionDeniedMessage(role, action) {
 
   // ADMIN ne peut pas accéder aux actions opérationnelles
   if (role === ROLES.ADMIN && !action.startsWith('USER_') && !action.startsWith('PROFIL_')) {
-    return PERMISSION_MESSAGES.ADMIN_NO_OPERATIONAL
+    return PERMISSION_MESSAGES.ADMIN_NO_CRV
   }
 
   // Messages spécifiques par action (pour les autres cas rares)
@@ -463,11 +465,11 @@ export function getPermissionDeniedMessage(role, action) {
   }
 
   if (action === ACTIONS.PROGRAMME_VALIDER || action === ACTIONS.PROGRAMME_ACTIVER) {
-    return 'Validation/Activation programme réservée aux SUPERVISEUR et MANAGER.'
+    return PERMISSION_MESSAGES.VALIDATION_RESERVED
   }
 
   if (action === ACTIONS.PROGRAMME_SUPPRIMER) {
-    return PERMISSION_MESSAGES.SUPPRESSION_PROGRAMME_RESERVED
+    return PERMISSION_MESSAGES.SUPPRESSION_RESERVED
   }
 
   if (action.startsWith('USER_')) {

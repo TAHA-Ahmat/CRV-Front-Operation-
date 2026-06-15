@@ -415,14 +415,19 @@ describe('CRV Store', () => {
       describe('addCharge()', () => {
         it('devrait ajouter une charge', async () => {
           const chargeData = { typeCharge: 'PASSAGERS', sensOperation: 'EMBARQUEMENT' }
+          const newCharge = { id: 'c1', ...chargeData }
           crvAPI.addCharge.mockResolvedValue({
-            data: { charge: { id: 'c1', ...chargeData } }
+            data: { charge: newCharge }
+          })
+          crvAPI.getById.mockResolvedValue({
+            data: { crv: { id: 'crv123' }, phases: [], charges: [newCharge], evenements: [], observations: [], engins: [] }
           })
 
           await store.addCharge(chargeData)
 
           expect(crvAPI.addCharge).toHaveBeenCalledWith('crv123', chargeData)
           expect(store.charges).toHaveLength(1)
+          expect(store.charges[0].id).toBe('c1')
         })
       })
     })
@@ -435,46 +440,59 @@ describe('CRV Store', () => {
       describe('addEvenement()', () => {
         it('devrait ajouter un événement', async () => {
           const eventData = { typeEvenement: 'RETARD', gravite: 'MINEURE' }
+          const newEvent = { id: 'e1', ...eventData }
           crvAPI.addEvenement.mockResolvedValue({
-            data: { evenement: { id: 'e1', ...eventData } }
+            data: { evenement: newEvent }
+          })
+          crvAPI.getById.mockResolvedValue({
+            data: { crv: { id: 'crv123' }, phases: [], charges: [], evenements: [newEvent], observations: [], engins: [] }
           })
 
           await store.addEvenement(eventData)
 
           expect(crvAPI.addEvenement).toHaveBeenCalledWith('crv123', eventData)
           expect(store.evenements).toHaveLength(1)
+          expect(store.evenements[0].id).toBe('e1')
         })
       })
 
       describe('addObservation()', () => {
         it('devrait ajouter une observation', async () => {
           const obsData = { categorie: 'GENERALE', contenu: 'Test' }
+          const newObs = { id: 'o1', ...obsData }
           crvAPI.addObservation.mockResolvedValue({
-            data: { observation: { id: 'o1', ...obsData } }
+            data: { observation: newObs }
+          })
+          crvAPI.getById.mockResolvedValue({
+            data: { crv: { id: 'crv123' }, phases: [], charges: [], evenements: [], observations: [newObs], engins: [] }
           })
 
           await store.addObservation(obsData)
 
           expect(crvAPI.addObservation).toHaveBeenCalledWith('crv123', obsData)
           expect(store.observations).toHaveLength(1)
+          expect(store.observations[0].id).toBe('o1')
         })
       })
     })
 
     describe('Validation', () => {
       beforeEach(() => {
-        store.currentCRV = { id: 'crv123', completude: 85, statut: 'EN_COURS' }
+        store.currentCRV = { id: 'crv123', completude: 85, statut: 'TERMINE' }
       })
 
       describe('validateCRV()', () => {
         it('devrait valider si complétude >= 80%', async () => {
           validationAPI.valider.mockResolvedValue({
-            data: { statut: 'VALIDE' }
+            data: { crv: { id: 'crv123', statut: 'VALIDE' } }
+          })
+          crvAPI.getById.mockResolvedValue({
+            data: { crv: { id: 'crv123', completude: 85, statut: 'VALIDE' }, phases: [], charges: [], evenements: [], observations: [] }
           })
 
           await store.validateCRV()
 
-          expect(validationAPI.valider).toHaveBeenCalledWith('crv123')
+          expect(validationAPI.valider).toHaveBeenCalledWith('crv123', null)
           expect(store.currentCRV.statut).toBe('VALIDE')
         })
 
@@ -492,6 +510,9 @@ describe('CRV Store', () => {
         it('devrait déverrouiller avec raison', async () => {
           store.currentCRV.statut = 'VERROUILLE'
           validationAPI.deverrouiller.mockResolvedValue({ data: {} })
+          crvAPI.getById.mockResolvedValue({
+            data: { crv: { id: 'crv123', completude: 85, statut: 'EN_COURS' }, phases: [], charges: [], evenements: [], observations: [], engins: [] }
+          })
 
           await store.deverrouillerCRV('Correction nécessaire')
 
@@ -576,7 +597,8 @@ describe('CRV Store', () => {
     })
 
     describe('_calculateCompletudeDetails', () => {
-      it('devrait calculer la complétude des phases', () => {
+      it('devrait être un no-op (calcul délégué au backend)', () => {
+        // Cette méthode ne fait rien - la complétude détaillée vient du backend
         store.phases = [
           { statut: 'TERMINE' },
           { statut: 'NON_REALISE' },
@@ -586,27 +608,32 @@ describe('CRV Store', () => {
 
         store._calculateCompletudeDetails()
 
-        expect(store.completudeDetails.phases).toBe(50) // 2/4 = 50%
+        // La méthode ne modifie pas completudeDetails (architecture backend)
+        expect(store.completudeDetails).toEqual({
+          phases: 0,
+          charges: 0,
+          evenements: 0,
+          observations: 0
+        })
       })
 
-      it('devrait calculer la complétude des événements', () => {
-        store.evenements = [{ id: 'e1' }]
-        store._calculateCompletudeDetails()
-        expect(store.completudeDetails.evenements).toBe(100)
+      it('devrait utiliser completudeDetails du backend via currentCRV', () => {
+        store.currentCRV = {
+          completudeDetails: {
+            phases: 50,
+            charges: 75,
+            evenements: 100,
+            observations: 0
+          }
+        }
 
-        store.evenements = []
-        store._calculateCompletudeDetails()
-        expect(store.completudeDetails.evenements).toBe(0)
-      })
-
-      it('devrait calculer la complétude des observations', () => {
-        store.observations = [{ id: 'o1' }]
-        store._calculateCompletudeDetails()
-        expect(store.completudeDetails.observations).toBe(100)
-
-        store.observations = []
-        store._calculateCompletudeDetails()
-        expect(store.completudeDetails.observations).toBe(0)
+        // getCompletudeDetails lit depuis currentCRV.completudeDetails
+        expect(store.getCompletudeDetails).toEqual({
+          phases: 50,
+          charges: 75,
+          evenements: 100,
+          observations: 0
+        })
       })
     })
   })

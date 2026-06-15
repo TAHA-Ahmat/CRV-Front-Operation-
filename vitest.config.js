@@ -11,9 +11,15 @@ export default defineConfig({
     include: ['tests/**/*.test.js', 'tests/integration/**/*.test.js', 'tests/scenarios/**/*.test.js'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.js', 'src/**/*.vue'],
-      exclude: ['src/main.js']
+      exclude: ['src/main.js'],
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60
+      }
     }
   },
   resolve: {

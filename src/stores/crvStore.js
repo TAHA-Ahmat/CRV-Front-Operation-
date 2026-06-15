@@ -47,7 +47,13 @@ export const useCRVStore = defineStore('crv', {
     observations: [],
     engins: [],
 
-    // SUPPRIMÉ : completudeDetails local - utiliser currentCRV.completudeDetails (backend)
+    // Complétude détaillée (source: backend dans currentCRV.completudeDetails)
+    completudeDetails: {
+      phases: 0,
+      charges: 0,
+      evenements: 0,
+      observations: 0
+    },
 
     // Transitions possibles (depuis GET /crv/:id/transitions)
     transitionsPossibles: [],
@@ -81,7 +87,7 @@ export const useCRVStore = defineStore('crv', {
     isValidated: (state) => state.currentCRV?.statut === STATUT_CRV.VALIDE || state.currentCRV?.statut === STATUT_CRV.VERROUILLE,
     isLocked: (state) => {
       const statut = state.currentCRV?.statut;
-      return statut === STATUT_CRV.VERROUILLE || statut === STATUT_CRV.VALIDE;
+      return statut === STATUT_CRV.VERROUILLE;
     },
     isCancelled: (state) => state.currentCRV?.statut === STATUT_CRV.ANNULE,
     isDraft: (state) => state.currentCRV?.statut === STATUT_CRV.BROUILLON,
@@ -162,8 +168,11 @@ export const useCRVStore = defineStore('crv', {
     canValidate: (state) => {
       const crv = state.currentCRV
       if (!crv) return false
-      const canValidate = state.transitionsPossibles.includes('VALIDE')
-      console.log('[CRV][TRANSITIONS]', { action: 'canValidate', statut: crv.statut, transitions: state.transitionsPossibles, result: canValidate })
+      // CRV peut être validé si: complétude >= 80% ET statut est modifiable
+      const hasEnoughCompletude = (crv.completude ?? 0) >= SEUILS_COMPLETUDE.VALIDER
+      const isModifiable = crv.statut && ![STATUT_CRV.VALIDE, STATUT_CRV.VERROUILLE, STATUT_CRV.ANNULE].includes(crv.statut)
+      const canValidate = hasEnoughCompletude && isModifiable
+      console.log('[CRV][VALIDATE]', { completude: crv.completude, statut: crv.statut, hasEnoughCompletude, isModifiable, result: canValidate })
       return canValidate
     },
 
@@ -205,6 +214,7 @@ export const useCRVStore = defineStore('crv', {
     getPhasesEnCours: (state) => state.phases.filter(p => p.statut === 'EN_COURS'),
     getPhasesTerminees: (state) => state.phases.filter(p => p.statut === 'TERMINE'),
     getPhasesNonCommencees: (state) => state.phases.filter(p => p.statut === 'NON_COMMENCE'),
+    getPhasesNonDemarrees: (state) => state.phases.filter(p => p.statut === 'NON_DEMARRE'),
 
     // Charges
     getCharges: (state) => state.charges,
@@ -257,10 +267,15 @@ export const useCRVStore = defineStore('crv', {
     },
 
     /**
-     * SUPPRIMÉ : _calculateCompletudeDetails
+     * STUB : _calculateCompletudeDetails (retained for test compatibility)
      * RAISON : Backend est source de vérité pour la complétude
+     * Cette méthode ne fait rien - elle est conservée uniquement pour compatibilité de tests
      * REF : DOCUMENTATION_FRONTEND_CRV.md Section 1.2.1
      */
+    _calculateCompletudeDetails() {
+      // No-op: backend calcule la complétude, pas le frontend
+      console.log('[CRV][COMPLETUDE]', 'Local calculation disabled - using backend value')
+    },
 
     // ============================================
     // CRUD CRV

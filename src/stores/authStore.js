@@ -61,6 +61,33 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     /**
+     * Restaurer la session depuis localStorage
+     * Appelé à l'initialisation de l'app pour persister la connexion
+     */
+    initFromStorage() {
+      try {
+        const token = localStorage.getItem('auth_token')
+        const userDataJson = localStorage.getItem('userData')
+
+        if (token && userDataJson) {
+          try {
+            this.token = token
+            const userData = JSON.parse(userDataJson)
+            this.user = userData
+            this.doitChangerMotDePasse = userData?.doitChangerMotDePasse ?? false
+          } catch (parseError) {
+            // Données corrompues - nettoyer
+            console.error('[AUTH]', 'Données localStorage corrompues:', parseError)
+            this.clearSession()
+            this.logout().catch(() => {})
+          }
+        }
+      } catch (error) {
+        console.error('[AUTH]', 'Erreur lors de la restauration depuis localStorage:', error)
+      }
+    },
+
+    /**
      * Connexion utilisateur
      * @param {Object} credentials - { email, mot_de_passe }
      */

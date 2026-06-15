@@ -36,3 +36,10 @@ app.use(Toast, toastOptions)
 console.log('[CRV] Application démarrée - Contrat backend intégré')
 
 app.mount('#app')
+
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(reg => console.log('✅ Service Worker registered'))
+    .catch(err => console.error('SW registration failed:', err));
+}
