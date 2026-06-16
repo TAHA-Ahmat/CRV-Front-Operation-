@@ -17,6 +17,7 @@
     "axios": "^1.6.0",
     "dexie": "^4.4.3",
     "pinia": "^2.1.0",
+    "uuid": "^9.0.1",
     "vue": "^3.4.0",
     "vue-router": "^4.2.0",
     "vue-toastification": "^2.0.0-rc.5"
