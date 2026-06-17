@@ -4,7 +4,7 @@ services:
     env: static
     region: frankfurt
     plan: free
-    branch: mission/SLA_FULL_COVERAGE_FRONT
+    branch: master
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
