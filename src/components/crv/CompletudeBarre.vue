@@ -37,6 +37,10 @@
 
     <!-- Details par composant -->
     <div class="completude-details" v-if="showDetails">
+      <!-- Alerte phases manquantes -->
+      <div v-if="details.phases === 0 && completude < 80" class="phases-alert">
+        ⚠️ Phases non initialisées — contacter votre responsable ou créer le vol depuis le programme
+      </div>
       <!-- Phases (40%) -->
       <div class="detail-row">
         <div class="detail-label">
@@ -124,7 +128,7 @@ const props = defineProps({
   },
   expanded: {
     type: Boolean,
-    default: false
+    default: true
   }
 })
 
@@ -350,6 +354,16 @@ const scoreClass = computed(() => {
   font-size: 13px;
   font-weight: 600;
   color: #374151;
+}
+
+.phases-alert {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #856404;
+  margin-bottom: 12px;
 }
 
 .toggle-details {
