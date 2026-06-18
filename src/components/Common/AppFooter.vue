@@ -2,7 +2,7 @@
   <footer v-if="isAuthenticated" class="app-footer footer-theme">
     <div class="footer-container">
       <p class="footer-text">
-        © 2025 THS - Module CRV Opérations. Tous droits réservés.
+        © 2026 THS - Module CRV Opérations. Tous droits réservés.
       </p>
     </div>
   </footer>

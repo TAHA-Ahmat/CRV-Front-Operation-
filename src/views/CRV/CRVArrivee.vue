@@ -181,8 +181,8 @@
               >
                 Générer données test
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -202,8 +202,8 @@
               >
                 Générer données test
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -226,8 +226,8 @@
               >
                 Générer données test
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -285,12 +285,11 @@
                 {{ generatingPhases ? 'Génération...' : 'Générer toutes les phases' }}
               </button>
               <button
-                v-if="!crvStore.isLocked"
                 @click="nextStep"
                 class="btn btn-primary"
                 type="button"
               >
-                Continuer
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -315,8 +314,8 @@
               >
                 Générer données test
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -341,8 +340,8 @@
               >
                 Confirmer aucun événement
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>

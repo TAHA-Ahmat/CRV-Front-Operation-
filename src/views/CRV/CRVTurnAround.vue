@@ -201,8 +201,8 @@
             <!-- Boarding + Check-in : déplacés vers Step 4 (phases TA_BOARDING + TA_CHECKIN) -->
 
             <div class="step-actions">
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -212,10 +212,10 @@
             <CRVPersonnes v-model="formData.personnes" :disabled="crvStore.isLocked" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
-                Retour
+                ← Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -225,10 +225,10 @@
             <CRVEngins v-model="formData.engins" :disabled="crvStore.isLocked" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
-                Retour
+                ← Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -271,15 +271,10 @@
 
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
-                Retour
+                ← Retour
               </button>
-              <button
-                v-if="!crvStore.isLocked"
-                @click="nextStep"
-                class="btn btn-primary"
-                type="button"
-              >
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -294,10 +289,10 @@
             />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
-                Retour
+                ← Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>
@@ -312,10 +307,10 @@
             />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
-                Retour
+                ← Retour
               </button>
-              <button v-if="!crvStore.isLocked" @click="nextStep" class="btn btn-primary" type="button">
-                Continuer
+              <button @click="nextStep" class="btn btn-primary" type="button">
+                {{ crvStore.isLocked ? 'Voir la suite →' : 'Continuer' }}
               </button>
             </div>
           </div>

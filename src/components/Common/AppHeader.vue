@@ -174,6 +174,11 @@
       </template>
       <!-- Profil mobile -->
       <router-link to="/profil" class="mobile-nav-link" @click="closeMobileMenu">Mon profil</router-link>
+      <!-- Thème jour/nuit mobile -->
+      <button class="mobile-nav-link mobile-theme-btn" @click="toggleTheme">
+        <span v-if="isDark">☀️ Passer en mode jour</span>
+        <span v-else>🌙 Passer en mode nuit</span>
+      </button>
     </nav>
 
     <!-- Bandeau lecture seule pour QUALITE -->
@@ -487,6 +492,17 @@ export default {
 .mobile-nav-link.router-link-active {
   color: #2563eb;
   background: rgba(37, 99, 235, 0.05);
+}
+
+.mobile-theme-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 /* Readonly banner */
