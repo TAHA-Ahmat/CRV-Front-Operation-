@@ -26,6 +26,7 @@ import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { useKeepAlive } from '@/composables/useKeepAlive';
 import AppHeader from '@/components/Common/AppHeader.vue';
 import AppFooter from '@/components/Common/AppFooter.vue';
 
@@ -40,6 +41,8 @@ export default {
     const route = useRoute();
     const authStore = useAuthStore();
     const themeStore = useThemeStore();
+
+    useKeepAlive();
 
     // État réactif depuis authStore (source de vérité unique)
     const isAuthenticated = computed(() => authStore.isAuthenticated);
