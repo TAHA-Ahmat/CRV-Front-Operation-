@@ -168,16 +168,23 @@ watch(() => props.modelValue, (newValue) => {
   localData.value = { ...newValue }
 }, { deep: true })
 
-// D4B — Pré-remplir le champ validateur depuis l'utilisateur connecté
+// D4B — Pré-remplir validateur + fonction depuis l'utilisateur connecté
 onMounted(() => {
-  if (!localData.value.validateur && authStore.currentUser) {
-    const user = authStore.currentUser
+  const user = authStore.currentUser
+  if (!user) return
+  let changed = false
+  if (!localData.value.validateur) {
     const fullName = [user.prenom, user.nom].filter(Boolean).join(' ').trim()
-    if (fullName) {
-      localData.value.validateur = fullName
-      emit('update:modelValue', localData.value)
+    if (fullName) { localData.value.validateur = fullName; changed = true }
+  }
+  if (!localData.value.fonction && user.fonction) {
+    const validFonctions = fonctionsValidation.map(f => f.value)
+    if (validFonctions.includes(user.fonction)) {
+      localData.value.fonction = user.fonction
+      changed = true
     }
   }
+  if (changed) emit('update:modelValue', localData.value)
 })
 
 const canValidate = computed(() => {

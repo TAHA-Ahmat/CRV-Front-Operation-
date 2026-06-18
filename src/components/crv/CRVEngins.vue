@@ -41,7 +41,7 @@
               v-model="engin.type"
               class="form-input"
               :disabled="disabled"
-              @change="emitUpdate"
+              @change="onTypeChange(index)"
             >
               <option value="">Sélectionner</option>
               <option v-for="type in typesEngin" :key="type.value" :value="type.value">
@@ -178,6 +178,24 @@ watch(() => props.modelValue, (newValue) => {
     }
   }
 }, { deep: true, immediate: true })
+
+const USAGE_FROM_TYPE = {
+  gpu: 'ALIMENTATION_ELECTRIQUE',
+  passerelle: 'PASSERELLE',
+  camion_avitaillement: 'CHARGEMENT',
+  loader: 'CHARGEMENT',
+  tracteur: 'REMORQUAGE',
+  bus_passagers: 'TRANSPORT_PASSAGERS',
+  catering: 'CATERING'
+}
+
+function onTypeChange(index) {
+  const engin = localData.value[index]
+  if (engin.type && USAGE_FROM_TYPE[engin.type] && !engin.usage) {
+    engin.usage = USAGE_FROM_TYPE[engin.type]
+  }
+  emitUpdate()
+}
 
 const addEngin = () => {
   console.log('[CRV][ENGIN_ADD] Ajout d\'un engin')

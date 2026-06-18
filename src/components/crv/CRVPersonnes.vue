@@ -209,7 +209,7 @@ onMounted(() => {
       matricule: u.matricule || '',
       telephone: u.telephone || '',
       remarques: '',
-      isResponsable: false
+      isResponsable: true
     })
     emitUpdate()
   }

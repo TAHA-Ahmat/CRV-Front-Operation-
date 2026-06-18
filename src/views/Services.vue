@@ -21,7 +21,7 @@
           >
             <div class="service-icon">{{ card.icon }}</div>
             <div class="service-content">
-              <h2>{{ card.title }}</h2>
+              <h2>{{ card.title }} <span v-if="card.badge" class="card-badge">{{ card.badge }}</span></h2>
               <p>{{ card.description }}</p>
             </div>
             <div class="service-arrow">→</div>
@@ -33,13 +33,29 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { crvAPI } from '@/services/api'
 import { ROLES } from '@/config/roles'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+const alertCount = ref(0)
+
+onMounted(async () => {
+  const role = authStore.currentUser?.role || authStore.currentUser?.fonction
+  if ([ROLES.CHEF_EQUIPE, ROLES.SUPERVISEUR, ROLES.MANAGER].includes(role)) {
+    try {
+      const r = await crvAPI.getAll({ statut: 'EN_COURS', page: 1, limit: 1 })
+      const data = r?.data?.data || r?.data || {}
+      alertCount.value = typeof data === 'object' && !Array.isArray(data)
+        ? (data.total ?? data.pagination?.total ?? 0)
+        : (Array.isArray(data) ? data.length : 0)
+    } catch {}
+  }
+})
 
 const userName = computed(() => {
   const user = authStore.currentUser
@@ -89,7 +105,7 @@ const visibleCards = computed(() => {
     return [
       { icon: '✈️', title: 'Nouveau CRV', description: 'Créer un compte rendu de vol (Arrivée, Départ, Turn Around)', path: '/crv/nouveau', accent: 'primary' },
       { icon: '📋', title: 'Mes CRV', description: 'Consulter et modifier les comptes rendus existants', path: '/crv/liste' },
-      { icon: '👥', title: 'Équipe', description: 'Vue d\'équipe et agrégats SLA par agent', path: '/dashboard-chef' },
+      { icon: '👥', title: 'Équipe', description: 'Vue d\'équipe et agrégats SLA par agent', path: '/dashboard-chef', badge: alertCount.value > 0 ? `⚠ ${alertCount.value}` : null },
       { icon: '📆', title: 'Bulletins', description: 'Planifier les mouvements de vols sur 3-4 jours', path: '/bulletins' },
       { icon: '📅', title: 'Programmes', description: 'Gérer les programmes saisonniers et les vols associés', path: '/programmes-vol' }
     ]
@@ -279,6 +295,16 @@ const goTo = (path) => router.push(path)
   font-size: 20px;
   color: var(--color-primary);
   flex-shrink: 0;
+}
+
+.card-badge {
+  font-size: 12px;
+  font-weight: 600;
+  background: #f97316;
+  color: white;
+  padding: 1px 8px;
+  border-radius: 10px;
+  vertical-align: middle;
 }
 
 /* ============================================ */

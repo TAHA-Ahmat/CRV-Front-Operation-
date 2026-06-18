@@ -13,16 +13,24 @@
 
     <!-- Filtres -->
     <div class="card mb-6">
+      <div class="sv-tabs mb-4">
+        <button @click="setStatut('TERMINE')" class="sv-tab" :class="{ 'sv-tab--active': filters.statut === 'TERMINE' }">
+          Soumis
+          <span class="sv-tab-count">{{ statutCounts.TERMINE !== null ? statutCounts.TERMINE : '…' }}</span>
+        </button>
+        <button @click="setStatut('VALIDE')" class="sv-tab" :class="{ 'sv-tab--active': filters.statut === 'VALIDE' }">
+          Validés
+          <span class="sv-tab-count">{{ statutCounts.VALIDE !== null ? statutCounts.VALIDE : '…' }}</span>
+        </button>
+        <button @click="setStatut('VERROUILLE')" class="sv-tab" :class="{ 'sv-tab--active': filters.statut === 'VERROUILLE' }">
+          Verrouillés
+          <span class="sv-tab-count">{{ statutCounts.VERROUILLE !== null ? statutCounts.VERROUILLE : '…' }}</span>
+        </button>
+        <button @click="setStatut('')" class="sv-tab" :class="{ 'sv-tab--active': filters.statut === '' }">
+          Tous
+        </button>
+      </div>
       <div class="flex flex-wrap gap-4 items-end">
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-          <select v-model="filters.statut" @change="loadCRVList" class="input w-full">
-            <option value="TERMINE">Soumis (en attente de validation)</option>
-            <option value="VALIDE">Validé (en attente verrouillage)</option>
-            <option value="VERROUILLE">Verrouillé</option>
-            <option value="">Tous</option>
-          </select>
-        </div>
         <div class="flex-1 min-w-[200px]">
           <label class="block text-sm font-medium text-gray-700 mb-1">Recherche</label>
           <input
@@ -433,7 +441,7 @@
               @change="onRejectReasonSelect"
             >
               <option value="">— Raison fréquente (optionnel) —</option>
-              <option v-for="r in REJECT_REASONS" :key="r" :value="r">{{ r }}</option>
+              <option v-for="r in dynamicRejectReasons" :key="r" :value="r">{{ r }}</option>
             </select>
             <textarea
               v-model="actionComment"
@@ -448,6 +456,33 @@
             <button @click="closeRejectModal" class="btn btn-secondary">Annuler</button>
             <button @click="handleReject" class="btn btn-warning" :disabled="saving || !actionComment.trim()">
               {{ saving ? 'Rejet...' : 'Confirmer le rejet' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Verrouillage -->
+    <div v-if="showLockModal" class="modal-overlay" @click.self="closeLockModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-xl font-bold text-blue-700">Verrouiller le CRV</h2>
+          <button @click="closeLockModal" class="text-gray-400 hover:text-gray-600">
+            <span class="text-2xl">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p class="text-blue-700 font-medium">Action définitive</p>
+            <p class="text-blue-600 text-sm mt-1">
+              Le CRV <strong>{{ crvToAction?.numeroCRV }}</strong> sera verrouillé.
+              Aucune modification ne sera possible après cette action.
+            </p>
+          </div>
+          <div class="flex gap-3 justify-end">
+            <button @click="closeLockModal" class="btn btn-secondary">Annuler</button>
+            <button @click="confirmLock" class="btn btn-primary" :disabled="saving">
+              {{ saving ? 'Verrouillage...' : 'Confirmer le verrouillage' }}
             </button>
           </div>
         </div>
@@ -547,9 +582,31 @@ const filters = ref({
   search: ''
 })
 
+// Compteurs par statut pour les onglets
+const statutCounts = ref({ TERMINE: null, VALIDE: null, VERROUILLE: null })
+
+async function loadStatutCounts() {
+  for (const statut of ['TERMINE', 'VALIDE', 'VERROUILLE']) {
+    try {
+      const r = await crvAPI.getAll({ statut, page: 1, limit: 1 })
+      const data = r?.data?.data || r?.data || {}
+      statutCounts.value[statut] = typeof data === 'object' && !Array.isArray(data)
+        ? (data.total ?? data.pagination?.total ?? null)
+        : null
+    } catch {}
+  }
+}
+
+function setStatut(statut) {
+  filters.value.statut = statut
+  pagination.value.page = 1
+  loadCRVList()
+}
+
 // Modals
 const showValidateModal = ref(false)
 const showRejectModal = ref(false)
+const showLockModal = ref(false)
 const showUnlockModal = ref(false)
 const crvToAction = ref(null)
 const actionComment = ref('')
@@ -595,6 +652,13 @@ const REJECT_REASONS = [
   'Autre (préciser ci-dessous)'
 ]
 const selectedRejectReason = ref('')
+
+// Raisons fusionnées : historique du CRV + prédéfinies
+const dynamicRejectReasons = computed(() => {
+  const hist = ficheData.value?.crv?.historiqueRejets || []
+  const prevReasons = [...new Set(hist.map(r => r.raison).filter(r => r && !REJECT_REASONS.includes(r)))]
+  return [...prevReasons, ...REJECT_REASONS]
+})
 
 // Classe carte dynamique
 function cardClass(crv) {
@@ -850,6 +914,16 @@ function closeRejectModal() {
   rejectError.value = ''
 }
 
+function openLockModal(crv) {
+  crvToAction.value = crv
+  showLockModal.value = true
+}
+
+function closeLockModal() {
+  showLockModal.value = false
+  crvToAction.value = null
+}
+
 function openUnlockModal(crv) {
   crvToAction.value = crv
   actionComment.value = ''
@@ -909,19 +983,19 @@ async function handleReject() {
   }
 }
 
-async function handleLock(crv) {
-  const crvToLock = crv || crvToAction.value
+function handleLock(crv) {
+  openLockModal(crv || crvToAction.value)
+}
+
+async function confirmLock() {
+  const crvToLock = crvToAction.value
   if (!crvToLock) return
-
-  if (!confirm('Le CRV sera définitif. Aucune modification possible après. Continuer ?')) {
-    return
-  }
-
   saving.value = true
   try {
     const crvId = crvToLock.id || crvToLock._id
     await validationAPI.verrouiller(crvId)
     showToast('CRV verrouillé définitivement', 'success')
+    closeLockModal()
     closeCRVDetail()
     loadCRVList()
   } catch (error) {
@@ -984,7 +1058,8 @@ function onArchiveError({ documentId, error }) {
 let pollingInterval = null
 onMounted(() => {
   loadCRVList()
-  pollingInterval = setInterval(loadCRVList, 60000)
+  loadStatutCounts()
+  pollingInterval = setInterval(() => { loadCRVList(); loadStatutCounts() }, 60000)
 })
 onUnmounted(() => {
   clearInterval(pollingInterval)
@@ -1162,6 +1237,40 @@ watch(() => filters.value.statut, () => {
 }
 
 /* ====== COCKPIT SUPERVISEUR ====== */
+
+/* Onglets statut */
+.sv-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0;
+}
+.sv-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.sv-tab:hover { color: #374151; }
+.sv-tab--active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+.sv-tab-count {
+  font-size: 11px;
+  background: #e5e7eb;
+  color: #374151;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.sv-tab--active .sv-tab-count { background: #dbeafe; color: #1d4ed8; }
 
 /* Compteurs header */
 .sv-counter {

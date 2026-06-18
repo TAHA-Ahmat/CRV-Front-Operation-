@@ -81,7 +81,7 @@
             v-for="agent in agentCards"
             :key="agent.key"
             class="agent-card sla-fade-in"
-            :class="{ 'agent-alert': agent.depassees >= 2 }"
+            :class="{ 'agent-alert': agent.depassees >= 2, 'agent-alert-soft': agent.depassees === 1 }"
             :aria-label="`Agent ${agent.nom}, ${agent.crvs.length} CRV, ${agent.alertes} en alerte, ${agent.depassees} dépassées`"
           >
             <header class="agent-head">
@@ -93,11 +93,12 @@
                 </div>
               </div>
               <div
-                v-if="agent.depassees >= 2"
+                v-if="agent.depassees >= 1"
                 class="agent-flag"
-                title="Au moins 2 tâches dépassées sur les CRV de cet agent — attention requise"
+                :class="agent.depassees >= 2 ? 'agent-flag--crit' : 'agent-flag--warn'"
+                :title="agent.depassees >= 2 ? 'Au moins 2 tâches dépassées — attention requise' : '1 tâche dépassée'"
               >
-                ⚠ {{ agent.depassees }} dépassées
+                ⚠ {{ agent.depassees }} dépassée{{ agent.depassees > 1 ? 's' : '' }}
               </div>
             </header>
 
@@ -136,10 +137,14 @@
                     <div class="ce-crv-ref">
                       <span class="ce-crv-num">{{ item.crv.numeroCRV }}</span>
                       <span class="ce-crv-type">{{ formatType(item.crv.typeOperation || item.crv.vol?.typeOperation) }}</span>
+                      <span :class="crvStatutPillClass(item.crv.statut)" class="ce-crv-statut">{{ item.crv.statut }}</span>
                     </div>
                     <div class="ce-crv-vol">
                       <span v-if="item.crv.vol?.numeroVol" class="ce-vol-code">{{ item.crv.vol.numeroVol }}</span>
                       <span v-if="item.crv.vol?.codeIATA" class="ce-vol-cie">{{ item.crv.vol.codeIATA }}</span>
+                      <span v-if="item.crv.horaire?.std || item.crv.vol?.horaire?.std" class="ce-vol-std">
+                        STD {{ formatHoraire(item.crv.horaire?.std || item.crv.vol?.horaire?.std) }}
+                      </span>
                     </div>
                   </div>
                   <div class="ce-crv-status">
@@ -383,6 +388,18 @@ function openCrv(crv) {
   else router.push({ path: '/crv/arrivee', query: { id } })
 }
 
+function formatHoraire(iso) {
+  if (!iso) return ''
+  try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) } catch { return iso }
+}
+
+function crvStatutPillClass(statut) {
+  if (statut === 'BROUILLON') return 'ce-statut--brouillon'
+  if (statut === 'EN_COURS') return 'ce-statut--en-cours'
+  if (statut === 'TERMINE') return 'ce-statut--termine'
+  return 'ce-statut--other'
+}
+
 function formatType(t) {
   if (!t) return '—'
   const up = String(t).toUpperCase()
@@ -546,6 +563,11 @@ onUnmounted(() => {
   box-shadow: 0 0 0 1px rgba(239,68,68,0.2);
 }
 
+.agent-card.agent-alert-soft {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.2);
+}
+
 .agent-head {
   display: flex;
   justify-content: space-between;
@@ -589,14 +611,20 @@ onUnmounted(() => {
 }
 
 .agent-flag {
-  background: rgba(239,68,68,0.15);
-  color: #dc2626;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 14px;
-  animation: sla-pulse-critical 1.8s ease-in-out infinite;
   white-space: nowrap;
+}
+.agent-flag--crit {
+  background: rgba(239,68,68,0.15);
+  color: #dc2626;
+  animation: sla-pulse-critical 1.8s ease-in-out infinite;
+}
+.agent-flag--warn {
+  background: rgba(245,158,11,0.15);
+  color: #d97706;
 }
 
 @keyframes sla-pulse-critical {
@@ -719,6 +747,28 @@ onUnmounted(() => {
 .ce-vol-cie  { font-weight: 600; }
 
 .ce-no-sla { color: var(--text-tertiary, #9ca3af); font-size: 11px; }
+
+.ce-crv-statut {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.ce-statut--brouillon { background: #f3f4f6; color: #6b7280; }
+.ce-statut--en-cours  { background: #dbeafe; color: #1d4ed8; }
+.ce-statut--termine   { background: #dcfce7; color: #15803d; }
+.ce-statut--other     { background: #f3f4f6; color: #6b7280; }
+
+.ce-vol-std {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-secondary, #6b7280);
+  background: var(--bg-body, #f9fafb);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
 
 .btn-open-crv {
   background: #2563eb;

@@ -554,7 +554,7 @@
  * - AJOUTÉ: Import des enums centralisés
  * - AJOUTÉ: Console.log format [CRV][CHARGE_*]
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
 import { useChargesStore } from '@/stores/chargesStore'
 import { chargesAPI } from '@/services/api'
@@ -616,6 +616,19 @@ console.log('[CRV][CHARGE_INIT] Enums chargés:', {
   typesCharge: typesCharge.length,
   sensOperations: sensOperations.length,
   typesFret: typesFret.length
+})
+
+// Déduire sensOperation depuis le type du CRV (ARRIVEE→DEBARQUEMENT, DEPART→EMBARQUEMENT)
+const defaultSensFromCRV = () => {
+  const type = (crvStore.currentCRV?.typeOperation || crvStore.currentCRV?.vol?.typeOperation || '').toUpperCase()
+  if (type === 'ARRIVEE') return SENS_OPERATION.DEBARQUEMENT
+  if (type === 'DEPART') return SENS_OPERATION.EMBARQUEMENT
+  return ''
+}
+
+onMounted(() => {
+  const sens = defaultSensFromCRV()
+  if (sens) newCharge.value.sensOperation = sens
 })
 
 // Nouveau charge form
@@ -757,7 +770,7 @@ const resetNewCharge = () => {
   console.log('[CRV][CHARGE_RESET] Reset formulaire complet')
   newCharge.value = {
     typeCharge: '',
-    sensOperation: '',
+    sensOperation: defaultSensFromCRV(),
     passagersAdultes: 0,
     passagersEnfants: 0,
     passagersBebes: 0,

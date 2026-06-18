@@ -186,7 +186,7 @@
  * - AJOUTÉ: Champ responsableSuivi
  * - AJOUTÉ: Console.log format [CRV][EVENEMENT_*]
  */
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
 import {
   TYPE_EVENEMENT,
@@ -231,15 +231,29 @@ console.log('[CRV][EVENEMENT_INIT] Enums chargés:', {
   statutsEvenement: statutsEvenement.length
 })
 
+const nowHHMM = () => {
+  const n = new Date()
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`
+}
+
 // Nouveau événement form - CORRECTION: gravité par défaut MINEURE
 const newEvenement = ref({
   typeEvenement: '',
-  heureEvenement: '',
+  heureEvenement: nowHHMM(),
   gravite: GRAVITE_EVENEMENT.MINEURE,
   statut: STATUT_EVENEMENT.OUVERT,
   description: '',
   actionsEntreprises: '',
   responsableSuivi: ''
+})
+
+// Pré-remplir heure courante + responsable depuis le CRV
+onMounted(() => {
+  const resp = crvStore.currentCRV?.personnelAffecte?.find(p => p.isResponsable)
+  if (resp && !newEvenement.value.responsableSuivi) {
+    const name = [resp.prenom, resp.nom].filter(Boolean).join(' ').trim()
+    if (name) newEvenement.value.responsableSuivi = name
+  }
 })
 
 // Computed
@@ -302,14 +316,16 @@ const getStatutLabel = (statut) => {
 // Actions
 const resetNewEvenement = () => {
   console.log('[CRV][EVENEMENT_RESET] Réinitialisation formulaire')
+  const resp = crvStore.currentCRV?.personnelAffecte?.find(p => p.isResponsable)
+  const respName = resp ? [resp.prenom, resp.nom].filter(Boolean).join(' ').trim() : ''
   newEvenement.value = {
     typeEvenement: '',
-    heureEvenement: '',
+    heureEvenement: nowHHMM(),
     gravite: GRAVITE_EVENEMENT.MINEURE,
     statut: STATUT_EVENEMENT.OUVERT,
     description: '',
     actionsEntreprises: '',
-    responsableSuivi: ''
+    responsableSuivi: respName
   }
   errorMessage.value = ''
 }
