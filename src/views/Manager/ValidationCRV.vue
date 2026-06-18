@@ -430,7 +430,7 @@
             <select
               v-model="selectedRejectReason"
               class="input w-full mb-2"
-              @change="if (selectedRejectReason && selectedRejectReason !== 'Autre (préciser ci-dessous)') actionComment = selectedRejectReason"
+              @change="onRejectReasonSelect"
             >
               <option value="">— Raison fréquente (optionnel) —</option>
               <option v-for="r in REJECT_REASONS" :key="r" :value="r">{{ r }}</option>
@@ -825,6 +825,12 @@ function closeValidateModal() {
   showValidateModal.value = false
   crvToAction.value = null
   actionComment.value = ''
+}
+
+function onRejectReasonSelect() {
+  if (selectedRejectReason.value && selectedRejectReason.value !== 'Autre (préciser ci-dessous)') {
+    actionComment.value = selectedRejectReason.value
+  }
 }
 
 function openRejectModal(crv) {
