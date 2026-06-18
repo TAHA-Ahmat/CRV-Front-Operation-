@@ -89,7 +89,9 @@
           <!-- Zone actions -->
           <div class="sv-card-actions" @click.stop>
             <template v-if="crv.statut === 'TERMINE'">
-              <button v-if="canValidate" @click="openValidateModal(crv)" class="sv-action sv-action--validate" :disabled="crv.completude < 80" :title="crv.completude < 80 ? 'Complétude < 80%' : 'Valider'">✓</button>
+              <span v-if="canValidate" :title="crv.completude < 80 ? `Complétude ${crv.completude}% — minimum 80% requis` : 'Valider ce CRV'" style="display:inline-block;cursor:not-allowed">
+                <button @click="openValidateModal(crv)" class="sv-action sv-action--validate" :disabled="crv.completude < 80" :style="crv.completude < 80 ? 'pointer-events:none' : ''">✓</button>
+              </span>
               <button v-if="canReject" @click="openRejectModal(crv)" class="sv-action sv-action--reject" title="Rejeter">↩</button>
             </template>
             <template v-else-if="crv.statut === 'VALIDE'">

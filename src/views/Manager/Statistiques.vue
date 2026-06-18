@@ -179,7 +179,7 @@
             <div class="stat-icon bagages">🧳</div>
             <div class="stat-info">
               <div class="stat-value">{{ chargesStats.bagages || 0 }}</div>
-              <div class="stat-label">Bagages (pcs)</div>
+              <div class="stat-label">Bagages (pièces)</div>
             </div>
           </div>
           <div class="stat-card">
@@ -194,6 +194,7 @@
             <div class="stat-info">
               <div class="stat-value">{{ chargesStats.dgr || 0 }}</div>
               <div class="stat-label">DGR traités</div>
+              <div class="stat-sublabel">Marchandises dangereuses</div>
             </div>
           </div>
         </div>
@@ -509,6 +510,11 @@ const getBarWidth = (count, total) => {
   font-size: 13px;
   color: #6b7280;
   margin-top: 4px;
+}
+.stat-sublabel {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
 /* Chart container */
