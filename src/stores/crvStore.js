@@ -87,7 +87,7 @@ export const useCRVStore = defineStore('crv', {
     isValidated: (state) => state.currentCRV?.statut === STATUT_CRV.VALIDE || state.currentCRV?.statut === STATUT_CRV.VERROUILLE,
     isLocked: (state) => {
       const statut = state.currentCRV?.statut;
-      return statut === STATUT_CRV.VERROUILLE;
+      return statut === STATUT_CRV.VERROUILLE || statut === STATUT_CRV.VALIDE;
     },
     isCancelled: (state) => state.currentCRV?.statut === STATUT_CRV.ANNULE,
     isDraft: (state) => state.currentCRV?.statut === STATUT_CRV.BROUILLON,
