@@ -5,11 +5,25 @@
         <div>
           <h1>Tableau de bord équipe</h1>
           <p class="page-subtitle">
-            CRV du jour groupés par agent responsable — avec agrégat SLA par personne.
+            {{ viewMode === 'agent' ? 'CRV du jour groupés par agent — alertes SLA par personne.' : 'CRV du jour groupés par escale — vue multi-site.' }}
             Actualisation automatique toutes les 60 s.
           </p>
         </div>
         <div class="header-actions">
+          <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': viewMode === 'agent' }"
+              @click="viewMode = 'agent'"
+            >Par agent</button>
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': viewMode === 'escale' }"
+              @click="viewMode = 'escale'"
+            >Par escale</button>
+          </div>
           <span class="last-refresh">
             Dernière maj : {{ lastRefreshLabel }}
           </span>
@@ -51,7 +65,7 @@
           </div>
         </template>
 
-        <div v-if="loading && agentCards.length === 0" class="agents-grid">
+        <div v-if="loading && agentCards.length === 0 && viewMode === 'agent'" class="agents-grid">
           <div v-for="n in 4" :key="n" class="agent-card skeleton-card">
             <div class="skeleton-agent-head">
               <div class="skeleton-avatar"></div>
@@ -72,11 +86,12 @@
           <p>{{ error }}</p>
           <button class="btn btn-primary" @click="refresh">Réessayer</button>
         </div>
-        <div v-else-if="agentCards.length === 0" class="empty-state">
+        <div v-else-if="agentCards.length === 0 && viewMode === 'agent'" class="empty-state">
           <p>Aucun CRV en cours pour aujourd'hui.</p>
         </div>
 
-        <div v-else class="agents-grid">
+        <!-- VUE PAR AGENT (Fatima) -->
+        <div v-else-if="viewMode === 'agent'" class="agents-grid">
           <article
             v-for="agent in agentCards"
             :key="agent.key"
@@ -170,6 +185,105 @@
             </transition>
           </article>
         </div>
+
+        <!-- VUE PAR ESCALE (Aïcha) -->
+        <template v-else-if="viewMode === 'escale'">
+          <div v-if="loading && escaleCards.length === 0" class="empty-state">
+            <p>Chargement des escales…</p>
+          </div>
+          <div v-else-if="escaleCards.length === 0" class="empty-state">
+            <p>Aucun CRV actif pour aujourd'hui.</p>
+          </div>
+          <div v-else class="escales-grid">
+            <article
+              v-for="esc in escaleCards"
+              :key="esc.key"
+              class="escale-card sla-fade-in"
+              :class="{ 'escale-alert': esc.depassees >= 1 }"
+            >
+              <header class="escale-head">
+                <div class="escale-code">{{ esc.code }}</div>
+                <div class="escale-badges">
+                  <span v-if="esc.depassees >= 1" class="escale-badge escale-badge--red">
+                    ⚠ {{ esc.depassees }} dépassée{{ esc.depassees > 1 ? 's' : '' }}
+                  </span>
+                  <span v-else-if="esc.alertes >= 1" class="escale-badge escale-badge--orange">
+                    {{ esc.alertes }} en alerte
+                  </span>
+                </div>
+              </header>
+
+              <div class="escale-kpis">
+                <div class="escale-kpi">
+                  <span class="escale-kpi-label">Total CRV</span>
+                  <span class="escale-kpi-value">{{ esc.crvs.length }}</span>
+                </div>
+                <div class="escale-kpi">
+                  <span class="escale-kpi-label">En cours</span>
+                  <span class="escale-kpi-value esc-val--blue">{{ esc.statuts['EN_COURS'] || 0 }}</span>
+                </div>
+                <div class="escale-kpi">
+                  <span class="escale-kpi-label">Terminés</span>
+                  <span class="escale-kpi-value esc-val--green">{{ esc.statuts['TERMINE'] || 0 }}</span>
+                </div>
+                <div class="escale-kpi">
+                  <span class="escale-kpi-label">Brouillons</span>
+                  <span class="escale-kpi-value esc-val--gray">{{ esc.statuts['BROUILLON'] || 0 }}</span>
+                </div>
+              </div>
+
+              <button
+                class="btn-agent-toggle"
+                type="button"
+                @click="toggleEscale(esc.key)"
+                :aria-expanded="openedEscaleKey === esc.key"
+              >
+                {{ openedEscaleKey === esc.key ? 'Masquer les CRV' : `Voir les ${esc.crvs.length} CRV` }}
+              </button>
+
+              <transition name="ce-expand">
+                <ul v-if="openedEscaleKey === esc.key" class="agent-crv-list">
+                  <li
+                    v-for="item in esc.crvs"
+                    :key="item.crv._id || item.crv.id"
+                    class="agent-crv-item"
+                  >
+                    <div class="ce-crv-main">
+                      <div class="ce-crv-ref">
+                        <span class="ce-crv-num">{{ item.crv.numeroCRV }}</span>
+                        <span class="ce-crv-type">{{ formatType(item.crv.typeOperation || item.crv.vol?.typeOperation) }}</span>
+                        <span :class="crvStatutPillClass(item.crv.statut)" class="ce-crv-statut">{{ item.crv.statut }}</span>
+                      </div>
+                      <div class="ce-crv-vol">
+                        <span v-if="item.crv.vol?.numeroVol" class="ce-vol-code">{{ item.crv.vol.numeroVol }}</span>
+                        <span v-if="item.crv.vol?.codeIATA" class="ce-vol-cie">{{ item.crv.vol.codeIATA }}</span>
+                      </div>
+                    </div>
+                    <div class="ce-crv-status">
+                      <SLABadge
+                        v-if="item.sla"
+                        :niveau="item.sla.niveau"
+                        :show-label="true"
+                        :custom-label="item.sla.label"
+                        size="sm"
+                      />
+                      <span v-else class="ce-no-sla">—</span>
+                    </div>
+                    <button
+                      class="btn-open-crv"
+                      type="button"
+                      @click="openCrv(item.crv)"
+                      :aria-label="`Ouvrir ${item.crv.numeroCRV}`"
+                    >
+                      Ouvrir
+                    </button>
+                  </li>
+                </ul>
+              </transition>
+            </article>
+          </div>
+        </template>
+
       </div>
     </main>
   </div>
@@ -202,6 +316,8 @@ const error = ref('')
 const lastRefresh = ref(null)
 const crvs = ref([]) // [{ crv, phases }]
 const openedKey = ref(null)
+const openedEscaleKey = ref(null)
+const viewMode = ref('agent') // 'agent' | 'escale'
 let pollingInterval = null
 
 const SLA_CODE_PREFIXES = ['CHECKIN_', 'BRIEFING_', 'BOARDING_', 'BAGAGES_', 'RAMP_', 'MSG_']
@@ -366,6 +482,37 @@ const agentCards = computed(() => {
 const totalCRVDuJour = computed(() => crvs.value.length)
 const totalAlertes = computed(() => agentCards.value.reduce((s, a) => s + a.alertes, 0))
 const totalDepassees = computed(() => agentCards.value.reduce((s, a) => s + a.depassees, 0))
+
+const escaleCards = computed(() => {
+  const map = new Map()
+  for (const { crv, phases } of crvs.value) {
+    const raw = crv.vol?.origine || crv.aeroportOrigine || ''
+    const escale = raw ? raw.toUpperCase() : 'N/A'
+    if (!map.has(escale)) {
+      map.set(escale, { key: escale, code: escale, crvs: [], alertes: 0, depassees: 0, statuts: {} })
+    }
+    const card = map.get(escale)
+    const sla = calculerSLACRV(crv)
+    card.crvs.push({ crv, phases, sla })
+    const s = crv.statut
+    card.statuts[s] = (card.statuts[s] || 0) + 1
+    for (const p of phases) {
+      if (!isPhaseSLA(p)) continue
+      const niveau = qualifyPhaseNiveau(p)
+      if (niveau === 'warning' || niveau === 'critical') card.alertes++
+      if (niveau === 'exceeded') card.depassees++
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => {
+    if (b.depassees !== a.depassees) return b.depassees - a.depassees
+    if (b.alertes !== a.alertes) return b.alertes - a.alertes
+    return a.code.localeCompare(b.code)
+  })
+})
+
+function toggleEscale(key) {
+  openedEscaleKey.value = openedEscaleKey.value === key ? null : key
+}
 
 function computeInitiales(nom) {
   if (!nom) return '?'
@@ -868,6 +1015,140 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
+/* ============================================ */
+/* TOGGLE VUE                                   */
+/* ============================================ */
+
+.view-toggle {
+  display: flex;
+  background: var(--bg-body, #f3f4f6);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.toggle-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggle-btn--active {
+  background: white;
+  color: var(--text-primary, #111827);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toggle-btn:hover:not(.toggle-btn--active) {
+  color: var(--text-primary, #111827);
+}
+
+/* ============================================ */
+/* VUE PAR ESCALE (Aïcha)                       */
+/* ============================================ */
+
+.escales-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.escale-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 300ms, box-shadow 300ms;
+}
+
+.escale-card.escale-alert {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.2);
+}
+
+.escale-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.escale-code {
+  font-size: 26px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary, #111827);
+  letter-spacing: 1px;
+}
+
+.escale-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.escale-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+
+.escale-badge--red {
+  background: rgba(239,68,68,0.12);
+  color: #dc2626;
+}
+
+.escale-badge--orange {
+  background: rgba(245,158,11,0.12);
+  color: #d97706;
+}
+
+.escale-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.escale-kpi {
+  background: var(--bg-body, #f9fafb);
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.escale-kpi-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 3px;
+}
+
+.escale-kpi-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary, #111827);
+}
+
+.esc-val--blue  { color: #1d4ed8; }
+.esc-val--green { color: #15803d; }
+.esc-val--gray  { color: #6b7280; }
+
 @media (prefers-reduced-motion: reduce) {
   .sla-fade-in,
   .agent-flag,
@@ -885,6 +1166,8 @@ onUnmounted(() => {
   .kpi-value { font-size: 22px; }
   .kpi-label { font-size: 10px; }
   .agents-grid { grid-template-columns: 1fr; gap: 12px; }
+  .escales-grid { grid-template-columns: 1fr; gap: 12px; }
+  .escale-kpis { grid-template-columns: repeat(2, 1fr); }
   .agent-kpis { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .agent-crv-item {
     grid-template-columns: 1fr;
@@ -894,11 +1177,14 @@ onUnmounted(() => {
   .btn-secondary {
     min-height: 44px;
   }
+  .view-toggle { width: 100%; justify-content: center; }
+  .toggle-btn { flex: 1; text-align: center; }
 }
 
-/* Tablette (768px - 1023px) : 2 colonnes agents */
+/* Tablette (768px - 1023px) : 2 colonnes */
 @media (min-width: 768px) and (max-width: 1023px) {
   .kpi-row { grid-template-columns: repeat(4, 1fr); }
   .agents-grid { grid-template-columns: repeat(2, 1fr); }
+  .escales-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
