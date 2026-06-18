@@ -22,27 +22,51 @@
 
       <div class="container">
         <!-- Résumé global -->
-        <div class="kpi-row">
-          <div class="kpi-card">
-            <div class="kpi-label">Agents actifs</div>
-            <div class="kpi-value">{{ agentCards.length }}</div>
+        <template v-if="loading && agentCards.length === 0">
+          <div class="kpi-row">
+            <div v-for="n in 4" :key="n" class="kpi-card skeleton-card">
+              <div class="skeleton-line skeleton-kpi-label"></div>
+              <div class="skeleton-line skeleton-kpi-value"></div>
+            </div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-label">CRV du jour (total)</div>
-            <div class="kpi-value">{{ totalCRVDuJour }}</div>
+        </template>
+        <template v-else>
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-label">Agents actifs</div>
+              <div class="kpi-value">{{ agentCards.length }}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">CRV du jour (total)</div>
+              <div class="kpi-value">{{ totalCRVDuJour }}</div>
+            </div>
+            <div class="kpi-card kpi-alert" :class="{ 'kpi-alert-on': totalAlertes > 0 }">
+              <div class="kpi-label">Tâches en alerte</div>
+              <div class="kpi-value">{{ totalAlertes }}</div>
+            </div>
+            <div class="kpi-card kpi-critical" :class="{ 'kpi-critical-on': totalDepassees > 0 }">
+              <div class="kpi-label">Tâches dépassées</div>
+              <div class="kpi-value">{{ totalDepassees }}</div>
+            </div>
           </div>
-          <div class="kpi-card kpi-alert" :class="{ 'kpi-alert-on': totalAlertes > 0 }">
-            <div class="kpi-label">Tâches en alerte</div>
-            <div class="kpi-value">{{ totalAlertes }}</div>
-          </div>
-          <div class="kpi-card kpi-critical" :class="{ 'kpi-critical-on': totalDepassees > 0 }">
-            <div class="kpi-label">Tâches dépassées</div>
-            <div class="kpi-value">{{ totalDepassees }}</div>
-          </div>
-        </div>
+        </template>
 
-        <div v-if="loading && agentCards.length === 0" class="loading-state">
-          Chargement des CRV du jour…
+        <div v-if="loading && agentCards.length === 0" class="agents-grid">
+          <div v-for="n in 4" :key="n" class="agent-card skeleton-card">
+            <div class="skeleton-agent-head">
+              <div class="skeleton-avatar"></div>
+              <div class="skeleton-meta">
+                <div class="skeleton-line skeleton-name"></div>
+                <div class="skeleton-line skeleton-role"></div>
+              </div>
+            </div>
+            <div class="skeleton-kpis">
+              <div class="skeleton-kpi"></div>
+              <div class="skeleton-kpi"></div>
+              <div class="skeleton-kpi"></div>
+            </div>
+            <div class="skeleton-line skeleton-btn"></div>
+          </div>
         </div>
         <div v-else-if="error" class="error-state">
           <p>{{ error }}</p>
@@ -731,6 +755,67 @@ onUnmounted(() => {
   background: var(--bg-card, #ffffff);
   border-radius: 10px;
   color: var(--text-secondary, #6b7280);
+}
+
+/* Skeleton loaders */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-avatar,
+.skeleton-line,
+.skeleton-kpi {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+
+.skeleton-agent-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-name      { height: 14px; width: 60%; }
+.skeleton-role      { height: 12px; width: 40%; }
+.skeleton-kpi-label { height: 12px; width: 70%; margin-bottom: 8px; }
+.skeleton-kpi-value { height: 28px; width: 40%; }
+
+.skeleton-kpis {
+  display: flex;
+  gap: 8px;
+}
+
+.skeleton-kpi {
+  flex: 1;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.skeleton-btn {
+  height: 36px;
+  width: 100%;
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
