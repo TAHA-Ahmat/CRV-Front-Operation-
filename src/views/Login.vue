@@ -77,7 +77,7 @@
           <!-- MVS-1 #1: Information sur la durée de session -->
           <div class="session-info text-center">
             <p class="text-xs" style="color: var(--text-tertiary);">
-              La session reste active pendant 3 heures
+              La session reste active pendant 10 heures
             </p>
           </div>
 
