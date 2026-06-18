@@ -16,8 +16,17 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 30000
+  timeout: 65000
 })
+
+// Intercepteur REQUEST — horodatage de départ pour détecter les démarrages lents
+api.interceptors.request.use(
+  (config) => {
+    config._startedAt = Date.now()
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 // ============================================
 // 2. INTERCEPTEURS
@@ -37,8 +46,23 @@ api.interceptors.request.use(
 
 // Intercepteur RESPONSE - Gestion erreurs globales
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Avertissement cold-start : réponse reçue mais lente (> 10 s)
+    const elapsed = Date.now() - (response.config._startedAt || Date.now())
+    if (elapsed > 10000) {
+      console.warn('[API] Réponse lente (cold-start probable) :', Math.round(elapsed / 1000) + 's', response.config.url)
+    }
+    return response
+  },
   (error) => {
+    // Message actionnable sur timeout / ECONNABORTED (cold-start Render)
+    if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || !error.response) {
+      const elapsed = error.config?._startedAt ? Date.now() - error.config._startedAt : null
+      const isColdStart = elapsed === null || elapsed > 10000
+      error._userMessage = isColdStart
+        ? 'Serveur en démarrage... Veuillez patienter 30 secondes puis réessayez.'
+        : 'Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez.'
+    }
     const status = error.response?.status
     const errorCode = error.response?.data?.code
 

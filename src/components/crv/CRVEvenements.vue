@@ -335,9 +335,12 @@ const handleAddEvenement = async () => {
     }
 
     // Bug #4 Mission 027 — Mapper heureEvenement → dateHeureDebut (ISO Date, required par le modèle backend)
+    // D5A — Timezone : utiliser la date du vol si disponible, sinon fallback date locale
+    const dateVol = crvStore.currentCRV?.vol?.dateVol
+      ? crvStore.currentCRV.vol.dateVol.split('T')[0]
+      : new Date().toLocaleDateString('fr-CA') // fr-CA produit YYYY-MM-DD en local
     if (newEvenement.value.heureEvenement) {
-      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-      evenementData.dateHeureDebut = new Date(`${today}T${newEvenement.value.heureEvenement}:00`).toISOString()
+      evenementData.dateHeureDebut = new Date(`${dateVol}T${newEvenement.value.heureEvenement}:00`).toISOString()
     } else {
       // dateHeureDebut est required par le modèle — utiliser l'heure actuelle par défaut
       evenementData.dateHeureDebut = new Date().toISOString()
@@ -362,7 +365,10 @@ const handleAddEvenement = async () => {
 
   } catch (error) {
     console.error('[CRV][EVENEMENT_ERROR] Erreur ajout événement:', error)
-    errorMessage.value = error.message || 'Erreur lors de l\'ajout de l\'événement'
+    const serverMsg = error.response?.data?.message || error.message || ''
+    errorMessage.value = serverMsg
+      ? `${serverMsg} — Réessayez ou contactez le support si le problème persiste.`
+      : 'Erreur lors de l\'ajout de l\'événement. Réessayez ou contactez le support.'
   } finally {
     saving.value = false
   }

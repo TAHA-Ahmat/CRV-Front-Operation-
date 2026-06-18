@@ -875,7 +875,10 @@ const handleSavePhaseManuel = async (phase) => {
   } catch (error) {
     console.error('[CRV][PHASE_ERROR] Erreur mise à jour phase:', error)
     phaseError.value = phaseId
-    errorMessage.value = error.message || 'Erreur lors de la mise à jour'
+    const serverMsg = error.response?.data?.message || error.message || ''
+    errorMessage.value = serverMsg
+      ? `${serverMsg} — Réessayez ou contactez le support.`
+      : 'Erreur lors de la mise à jour. Réessayez ou contactez le support.'
   } finally {
     saving.value = false
   }
@@ -940,7 +943,10 @@ const handleMarquerNonRealisee = async (phase) => {
   } catch (error) {
     console.error('[CRV][PHASE_ERROR] Erreur marquage non réalisée:', error)
     phaseError.value = phaseId
-    errorMessage.value = error.message || 'Erreur lors du marquage'
+    const serverMsg = error.response?.data?.message || error.message || ''
+    errorMessage.value = serverMsg
+      ? `${serverMsg} — Réessayez ou contactez le support.`
+      : 'Erreur lors du marquage non réalisé. Réessayez ou contactez le support.'
   } finally {
     saving.value = false
   }

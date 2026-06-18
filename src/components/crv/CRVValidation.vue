@@ -107,11 +107,12 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { ROLE_PERSONNEL, ROLE_PERSONNEL_LABELS } from '@/config/crvEnums'
 import { crvAPI } from '@/services/api'
 import SLABadge from '@/components/Common/SLABadge.vue'
 import { useSLA } from '@/composables/useSLA'
+import { useAuthStore } from '@/stores/authStore'
 
 // Fonctions autorisées pour la validation — alignées sur ROLE_PERSONNEL backend
 const fonctionsValidation = [
@@ -151,6 +152,7 @@ const props = defineProps({
 })
 
 const { calculerSLACRV } = useSLA()
+const authStore = useAuthStore()
 
 const slaNiveauFinal = computed(() => {
   if (!props.crv) return null
@@ -165,6 +167,18 @@ const localData = ref({ ...props.modelValue })
 watch(() => props.modelValue, (newValue) => {
   localData.value = { ...newValue }
 }, { deep: true })
+
+// D4B — Pré-remplir le champ validateur depuis l'utilisateur connecté
+onMounted(() => {
+  if (!localData.value.validateur && authStore.currentUser) {
+    const user = authStore.currentUser
+    const fullName = [user.prenom, user.nom].filter(Boolean).join(' ').trim()
+    if (fullName) {
+      localData.value.validateur = fullName
+      emit('update:modelValue', localData.value)
+    }
+  }
+})
 
 const canValidate = computed(() => {
   return localData.value.validateur &&

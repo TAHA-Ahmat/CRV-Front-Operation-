@@ -23,6 +23,7 @@
       >
         <div class="engin-header">
           <span class="engin-number">#{{ index + 1 }}</span>
+          <span v-if="validationErrors[index]" class="engin-validation-error">{{ validationErrors[index] }}</span>
           <button
             v-if="!disabled"
             @click="removeEngin(index)"
@@ -197,8 +198,27 @@ const removeEngin = (index) => {
   emitUpdate()
 }
 
+// D4A — Messages d'erreur de validation par engin (index → message)
+const validationErrors = ref({})
+
+const validateEngins = () => {
+  const errors = {}
+  localData.value.forEach((engin, idx) => {
+    if (!engin.type) {
+      errors[idx] = errors[idx] ? errors[idx] + ' · ' : ''
+      errors[idx] += 'Type requis'
+    }
+    if (!engin.immatriculation?.trim()) {
+      errors[idx] = (errors[idx] || '') + (errors[idx] ? ' · ' : '') + 'Immatriculation requise'
+    }
+  })
+  validationErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
 const emitUpdate = () => {
   isUpdating = true
+  validateEngins()
   console.log('[CRV][ENGIN_UPDATE] Émission mise à jour:', localData.value.length, 'engins')
   emit('update:modelValue', [...localData.value])
   setTimeout(() => { isUpdating = false }, 0)
@@ -329,6 +349,17 @@ const emitUpdate = () => {
 .required {
   color: #dc2626;
   font-weight: 700;
+}
+
+/* D4A — Erreur de validation engin */
+.engin-validation-error {
+  font-size: 12px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 1;
 }
 
 /* MVS-6 #1: Style note remplacement */
