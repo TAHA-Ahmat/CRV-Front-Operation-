@@ -11,7 +11,7 @@
         </div>
 
         <!-- Grille des cartes adaptatives selon le rôle -->
-        <div class="services-grid">
+        <div class="services-grid" :class="`grid-count-${visibleCards.length}`">
           <div
             v-for="card in visibleCards"
             :key="card.path"
@@ -355,5 +355,14 @@ const goTo = (path) => router.push(path)
   .services-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
+  /* 4 cartes (AGENT_ESCALE) : 2×2 propre au lieu de 3+1 */
+  .services-grid.grid-count-4 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 760px;
+  }
+
+  /* 5 cartes (CHEF_EQUIPE) : 3+2 naturel — ok */
+  /* 9+ cartes (MANAGER/SUPERVISEUR) : 3 colonnes — ok */
 }
 </style>

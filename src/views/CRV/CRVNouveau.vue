@@ -155,9 +155,15 @@
 
           <!-- Aucun vol -->
           <div v-else class="empty-state">
-            <p>Aucun vol trouve pour ces criteres</p>
+            <template v-if="filters.statutCRV === 'sans_crv' && volsList.length > 0">
+              <p>Tous les vols de ce jour ont déjà un CRV.</p>
+              <p class="empty-hint">Pour les consulter, changez le filtre statut → "Tous les vols".</p>
+            </template>
+            <template v-else>
+              <p>Aucun vol trouvé pour ces critères.</p>
+            </template>
             <button @click="mode = 'hors_programme'" class="btn btn-secondary">
-              Creer un vol hors programme
+              Créer un vol hors programme
             </button>
           </div>
 
@@ -1196,6 +1202,12 @@ const rechercher = () => {
 
 .empty-state .btn {
   margin-top: 16px;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 4px;
 }
 
 /* Actions */
