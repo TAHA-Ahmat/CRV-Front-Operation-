@@ -35,16 +35,16 @@ const bannerClass = computed(() => {
 })
 
 const title = computed(() => {
-  if (isLocked.value) return 'CRV Verrouille'
-  if (isAnnule.value) return 'CRV Annule'
-  if (isValide.value) return 'CRV Valide'
+  if (isLocked.value) return 'CRV Verrouillé'
+  if (isAnnule.value) return 'CRV Annulé'
+  if (isValide.value) return 'CRV Validé'
   return ''
 })
 
 const message = computed(() => {
-  if (isLocked.value) return 'Ce CRV est verrouille et ne peut plus etre modifie. Toute tentative de modification sera rejetee.'
-  if (isAnnule.value) return 'Ce CRV a ete annule. Il reste consultable mais aucune modification n\'est possible.'
-  if (isValide.value) return 'Ce CRV est valide. Il sera automatiquement verrouille sous peu. Consultation uniquement.'
+  if (isLocked.value) return 'Ce CRV est verrouillé et ne peut plus être modifié. Toute tentative de modification sera rejetée.'
+  if (isAnnule.value) return 'Ce CRV a été annulé. Il reste consultable mais aucune modification n\'est possible.'
+  if (isValide.value) return 'Ce CRV est validé. Il sera automatiquement verrouillé sous peu. Consultation uniquement.'
   return ''
 })
 

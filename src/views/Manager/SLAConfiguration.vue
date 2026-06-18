@@ -533,6 +533,8 @@ export default {
           boarding: this.cleanDomain(this.form.boarding),
           ramp: this.cleanDomain(this.form.ramp),
           messages: this.cleanDomain(this.form.messages),
+          phaseDurees: this.form.phaseDurees || {},
+          phaseOffsets: this.form.phaseOffsets || {},
           actif: this.form.actif,
           notes: this.form.notes || ''
         }

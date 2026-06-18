@@ -441,11 +441,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { useBulletinStore, STATUT_COLORS, ORIGINE_COLORS } from '@/stores/bulletinStore'
 import { useAuth } from '@/composables/useAuth'
 import { hasPermission, ACTIONS, isReadOnlyRole } from '@/utils/permissions'
+import { useGlobalToast } from '@/composables/useGlobalToast'
 
 const router = useRouter()
 const route = useRoute()
 const bulletinStore = useBulletinStore()
 const { userRole } = useAuth()
+const toast = useGlobalToast()
 
 // État
 const showMouvementModal = ref(false)
@@ -543,8 +545,10 @@ const publier = async () => {
   if (confirm('Êtes-vous sûr de vouloir publier ce bulletin ? Il ne pourra plus être modifié.')) {
     try {
       await bulletinStore.publierBulletin()
+      toast.success('Bulletin publié avec succès')
     } catch (e) {
       console.error('Erreur publication:', e)
+      toast.error(e.response?.data?.message || 'Erreur lors de la publication — Réessayez ou contactez le support.')
     }
   }
 }
@@ -553,8 +557,10 @@ const archiver = async () => {
   if (confirm('Êtes-vous sûr de vouloir archiver ce bulletin ?')) {
     try {
       await bulletinStore.archiverBulletin()
+      toast.success('Bulletin archivé')
     } catch (e) {
       console.error('Erreur archivage:', e)
+      toast.error(e.response?.data?.message || 'Erreur lors de l\'archivage — Réessayez ou contactez le support.')
     }
   }
 }
@@ -569,6 +575,7 @@ const deleteBulletin = async () => {
     router.push('/bulletins')
   } catch (e) {
     console.error('Erreur suppression:', e)
+    toast.error(e.response?.data?.message || 'Erreur lors de la suppression — Réessayez ou contactez le support.')
   }
   showDeleteBulletinModal.value = false
 }
@@ -627,6 +634,7 @@ const saveMouvement = async () => {
     closeMouvementModal()
   } catch (e) {
     console.error('Erreur sauvegarde mouvement:', e)
+    toast.error(e.response?.data?.message || 'Erreur lors de la sauvegarde — Réessayez ou contactez le support.')
   }
 }
 
@@ -660,6 +668,7 @@ const saveVolHorsProgramme = async () => {
     closeHorsProgrammeModal()
   } catch (e) {
     console.error('Erreur ajout vol HP:', e)
+    toast.error(e.response?.data?.message || 'Erreur lors de l\'ajout du vol — Réessayez ou contactez le support.')
   }
 }
 
@@ -682,6 +691,7 @@ const confirmAnnulation = async () => {
     closeAnnulationModal()
   } catch (e) {
     console.error('Erreur annulation:', e)
+    toast.error(e.response?.data?.message || 'Erreur lors de l\'annulation — Réessayez ou contactez le support.')
   }
 }
 
@@ -702,6 +712,7 @@ const confirmSuppression = async () => {
     closeSuppressionModal()
   } catch (e) {
     console.error('Erreur suppression:', e)
+    toast.error(e.response?.data?.message || 'Erreur lors de la suppression — Réessayez ou contactez le support.')
   }
 }
 

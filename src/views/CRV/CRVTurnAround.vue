@@ -176,7 +176,7 @@
 
         <form @submit.prevent="handleSubmit" class="crv-form">
           <!-- Étape 1: Informations vol -->
-          <div v-show="currentStep === 1">
+          <div v-show="currentStep === 1" class="step-panel">
             <CRVHeader
               v-model="formData.header"
               title="Informations du vol - Turn Around"
@@ -208,7 +208,7 @@
           </div>
 
           <!-- Étape 2: Personnel -->
-          <div v-show="currentStep === 2">
+          <div v-show="currentStep === 2" class="step-panel">
             <CRVPersonnes v-model="formData.personnes" :disabled="crvStore.isLocked" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
@@ -221,7 +221,7 @@
           </div>
 
           <!-- Étape 3: Engins -->
-          <div v-show="currentStep === 3">
+          <div v-show="currentStep === 3" class="step-panel">
             <CRVEngins v-model="formData.engins" :disabled="crvStore.isLocked" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
@@ -234,7 +234,7 @@
           </div>
 
           <!-- Étape 4: Phases -->
-          <div v-show="currentStep === 4">
+          <div v-show="currentStep === 4" class="step-panel">
             <!-- Indicateur de progression des phases -->
             <div class="phases-progress-indicator">
               <div class="phases-progress-header">
@@ -280,7 +280,7 @@
           </div>
 
           <!-- Étape 5: Charges -->
-          <div v-show="currentStep === 5">
+          <div v-show="currentStep === 5" class="step-panel">
             <CRVCharges
               :charges="crvStore.charges"
               :crv-id="crvStore.getCRVId"
@@ -298,7 +298,7 @@
           </div>
 
           <!-- Étape 6: Événements -->
-          <div v-show="currentStep === 6">
+          <div v-show="currentStep === 6" class="step-panel">
             <CRVEvenements
               :evenements="crvStore.evenements"
               :crv-id="crvStore.getCRVId"
@@ -316,7 +316,7 @@
           </div>
 
           <!-- Étape 7: Soumission -->
-          <div v-show="currentStep === 7">
+          <div v-show="currentStep === 7" class="step-panel">
             <CRVValidation
               v-model="formData.validation"
               :validated="isValidated"
@@ -348,6 +348,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore, SEUILS_COMPLETUDE } from '@/stores/crvStore'
 import { useSLA } from '@/composables/useSLA'
 import { crvAPI } from '@/services/api'
+import { useGlobalToast } from '@/composables/useGlobalToast'
 
 import CRVHeader from '@/components/crv/CRVHeader.vue'
 import CRVPersonnes from '@/components/crv/CRVPersonnes.vue'
@@ -366,6 +367,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const crvStore = useCRVStore()
+const toast = useGlobalToast()
 
 const { init: initSLA, calculerSLACRV, calculerSLABagages, calculerSLABoarding, calculerSLACheckin } = useSLA()
 const slaStatus = computed(() => crvStore.currentCRV ? calculerSLACRV(crvStore.currentCRV) : null)
@@ -683,16 +685,19 @@ const saveCurrentStepData = async () => {
             posteStationnement: h.poste
           }
         })
+        toast.success('Informations vol sauvegardées')
         break
       }
       case 2:
         if (formData.value.personnes.length > 0) {
           await crvStore.updatePersonnel(formData.value.personnes)
+          toast.success('Personnel sauvegardé')
         }
         break
       case 3:
         if (formData.value.engins.length > 0) {
           await crvStore.updateEngins(formData.value.engins)
+          toast.success('Engins sauvegardés')
         }
         break
       // Steps 4, 5, 6 : composants CRVPhases, CRVCharges, CRVEvenements
@@ -950,6 +955,15 @@ const handleLogout = async () => {
 
 .crv-form {
   min-height: 400px;
+}
+
+.step-panel {
+  animation: step-fade-in 0.2s ease-out;
+}
+
+@keyframes step-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .step-actions {

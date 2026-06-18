@@ -558,6 +558,7 @@ import { ref, computed, watch } from 'vue'
 import { useCRVStore } from '@/stores/crvStore'
 import { useChargesStore } from '@/stores/chargesStore'
 import { chargesAPI } from '@/services/api'
+import { useGlobalToast } from '@/composables/useGlobalToast'
 import {
   TYPE_CHARGE,
   SENS_OPERATION,
@@ -584,6 +585,7 @@ const emit = defineEmits(['charge-added', 'charge-updated'])
 
 const crvStore = useCRVStore()
 const chargesStore = useChargesStore()
+const toast = useGlobalToast()
 
 // États locaux
 const saving = ref(false)
@@ -814,6 +816,7 @@ const handleAddCharge = async () => {
     await crvStore.addCharge(chargeData)
 
     console.log('[CRV][CHARGE_SUCCESS] Charge ajoutée avec succès')
+    toast.success('Charge ajoutée avec succès')
     resetNewCharge()
     emit('charge-added', chargeData)
 

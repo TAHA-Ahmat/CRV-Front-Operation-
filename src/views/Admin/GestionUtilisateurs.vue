@@ -707,10 +707,13 @@ const showToast = (message, type = 'success') => {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
 }
 
@@ -978,6 +981,7 @@ const showToast = (message, type = 'success') => {
 .btn-sm {
   padding: 6px 12px;
   font-size: 13px;
+  min-height: 36px;
 }
 
 .btn-primary {
@@ -1048,5 +1052,33 @@ const showToast = (message, type = 'success') => {
   background: #fef2f2;
   color: #991b1b;
   border: 1px solid #fecaca;
+}
+
+@media (max-width: 767px) {
+  .btn-sm {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  .form-input,
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .filter-group .form-input {
+    width: 100%;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>
