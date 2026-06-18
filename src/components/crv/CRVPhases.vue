@@ -162,6 +162,15 @@
                   Saisir les heures
                 </button>
                 <button
+                  @click="handleNonNecessaire(phase)"
+                  class="btn btn-non-nec btn-sm"
+                  :disabled="disabled || saving"
+                  type="button"
+                  title="Cette phase ne s'applique pas à ce vol"
+                >
+                  Non nécessaire
+                </button>
+                <button
                   @click="showNonRealiseForm(phase)"
                   class="btn btn-secondary btn-sm"
                   :disabled="disabled || saving"
@@ -894,6 +903,23 @@ const showNonRealiseForm = (phase) => {
   phaseEditId.value = null
 }
 
+const handleNonNecessaire = async (phase) => {
+  const phaseId = phase.id || phase._id
+  saving.value = true
+  phaseError.value = null
+  globalError.value = ''
+  try {
+    await crvStore.marquerPhaseNonRealisee(phaseId, { motifNonRealisation: MOTIF_NON_REALISATION.NON_NECESSAIRE })
+    emit('phase-update', { action: 'non-realise', phaseId })
+  } catch (error) {
+    phaseError.value = phaseId
+    const serverMsg = error.response?.data?.message || error.message || ''
+    errorMessage.value = serverMsg || 'Erreur lors du marquage non nécessaire.'
+  } finally {
+    saving.value = false
+  }
+}
+
 const cancelNonRealise = () => {
   console.log('[CRV][PHASE_NON_REALISE] cancelNonRealise')
   phaseNonRealiseId.value = null
@@ -1178,6 +1204,17 @@ const handleMarquerNonRealisee = async (phase) => {
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--text-primary);
+}
+
+.btn-non-nec {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.btn-non-nec:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #4ade80;
 }
 
 .btn:disabled {

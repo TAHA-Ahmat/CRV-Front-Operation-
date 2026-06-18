@@ -20,6 +20,11 @@
 
     <main class="crv-main">
       <div class="container">
+        <!-- Bannière mode lecture -->
+        <div v-if="isReadOnly" class="read-only-banner">
+          👁 Mode lecture — aucune modification possible
+        </div>
+
         <!-- Bannière CRV verrouillé/validé/annulé -->
         <CRVLockedBanner />
 
@@ -37,7 +42,7 @@
             <CRVTasksBoard
               :phases="crvStore.phases"
               :closable="true"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
               :code-iata="crvStore.currentCRV?.vol?.codeIATA || null"
               :compagnie-nom="crvStore.currentCRV?.vol?.compagnie || crvStore.currentCRV?.vol?.nomCompagnie || null"
               @close="showTasksDrawer = false"
@@ -155,7 +160,7 @@
             <CRVHeader
               v-model="formData.header"
               title="Informations du vol - Arrivée"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
             />
             <!-- Horaires prévus -->
             <div v-if="crvStore.currentCRV?.horaire" class="horaires-prevus card">
@@ -189,7 +194,7 @@
 
           <!-- Étape 2: Personnel -->
           <div v-show="currentStep === 2" class="step-panel">
-            <CRVPersonnes v-model="formData.personnes" :disabled="crvStore.isLocked" />
+            <CRVPersonnes v-model="formData.personnes" :disabled="crvStore.isLocked || isReadOnly" />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
                 Retour
@@ -212,7 +217,7 @@
           <div v-show="currentStep === 3" class="step-panel">
             <CRVEngins
               v-model="formData.engins"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
             />
             <div class="step-actions">
               <button @click="prevStep" class="btn btn-secondary" type="button">
@@ -265,7 +270,7 @@
             <CRVPhases
               :phases="crvStore.phases"
               crv-type="arrivee"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
               :sla-terrain="slaTerrain"
               :code-i-a-t-a="crvStore.currentCRV?.vol?.codeIATA"
               @phase-update="handlePhaseUpdate"
@@ -299,7 +304,7 @@
             <CRVCharges
               :charges="crvStore.charges"
               :crv-id="crvStore.getCRVId"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
               @charge-added="handleChargeAdded"
             />
             <div class="step-actions">
@@ -325,7 +330,7 @@
             <CRVEvenements
               :evenements="crvStore.evenements"
               :crv-id="crvStore.getCRVId"
-              :disabled="crvStore.isLocked"
+              :disabled="crvStore.isLocked || isReadOnly"
               @evenement-added="handleEvenementAdded"
             />
             <div class="step-actions">
@@ -415,6 +420,8 @@ const slaTerrain = computed(() => {
 })
 const slaBoarding = computed(() => crvStore.currentCRV ? calculerSLABoarding(crvStore.currentCRV) : null)
 const slaCheckin = computed(() => crvStore.currentCRV ? calculerSLACheckin(crvStore.currentCRV) : null)
+
+const isReadOnly = computed(() => route.query.mode === 'lecture')
 
 const currentStep = ref(1)
 const isValidated = ref(false)
@@ -1049,6 +1056,17 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
+.read-only-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
 .crv-arrivee-container {
   min-height: 100vh;
   background: var(--bg-body);

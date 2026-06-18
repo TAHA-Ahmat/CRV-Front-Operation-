@@ -80,8 +80,11 @@
               <span v-if="getResponsable(crv)" class="sv-signal sv-signal--resp">👤 {{ getResponsable(crv) }}</span>
               <span v-else class="sv-signal sv-signal--no-resp">Resp. non désigné</span>
             </div>
-            <!-- Ligne 3 : date -->
+            <!-- Ligne 3 : date + barre SLA -->
             <div class="sv-card-date">{{ formatDate(crv.createdAt) }}</div>
+            <div class="sv-sla-bar-wrap" :title="slaBarTooltip(crv)">
+              <div class="sv-sla-bar" :class="slaBarClass(crv)" :style="{ width: slaBarPercent(crv) + '%' }"></div>
+            </div>
           </div>
           <!-- Zone actions -->
           <div class="sv-card-actions" @click.stop>
@@ -628,6 +631,32 @@ const toastClass = computed(() => ({
   'bg-red-500 text-white': toast.value.type === 'error',
   'bg-orange-500 text-white': toast.value.type === 'warning'
 }))
+
+// Barre SLA — délai cible : 72h (TERMINE→VALIDE)
+const SLA_VALIDATION_H = 72
+
+function slaElapsedPercent(crv) {
+  if (!crv.createdAt) return 0
+  const elapsed = (Date.now() - new Date(crv.createdAt).getTime()) / 3600000
+  return Math.min(Math.round((elapsed / SLA_VALIDATION_H) * 100), 100)
+}
+
+function slaBarPercent(crv) {
+  return slaElapsedPercent(crv)
+}
+
+function slaBarClass(crv) {
+  const p = slaElapsedPercent(crv)
+  if (p >= 85) return 'sv-sla-bar--red'
+  if (p >= 60) return 'sv-sla-bar--orange'
+  return 'sv-sla-bar--green'
+}
+
+function slaBarTooltip(crv) {
+  const p = slaElapsedPercent(crv)
+  const h = crv.createdAt ? Math.round((Date.now() - new Date(crv.createdAt).getTime()) / 3600000) : 0
+  return `${h}h / ${SLA_VALIDATION_H}h — ${p}% du délai de validation écoulé`
+}
 
 // Compteurs header cockpit
 const countAttention = computed(() => crvList.value.filter(c => hasEvents(c)).length)
@@ -1338,6 +1367,24 @@ watch(() => filters.value.statut, () => {
 .sv-badge {
   @apply px-2 py-0.5 rounded-full text-xs font-medium;
 }
+.sv-sla-bar-wrap {
+  height: 3px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.sv-sla-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.sv-sla-bar--green { background: #22c55e; }
+.sv-sla-bar--orange { background: #f97316; }
+.sv-sla-bar--red { background: #ef4444; }
+
 .sv-card-date {
   @apply text-xs text-gray-300 mt-1;
 }

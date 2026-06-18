@@ -24,11 +24,15 @@
           <input
             v-model="localData.compagnieAerienne"
             type="text"
+            list="iata-compagnies-list"
             class="form-input"
-            placeholder="ex: THS Airways"
+            placeholder="ex: Air France"
             :disabled="disabled"
-            @input="emitUpdate"
+            @input="onCompagnieInput"
           />
+          <datalist id="iata-compagnies-list">
+            <option v-for="nom in iataOptions" :key="nom" :value="nom" />
+          </datalist>
         </div>
 
         <div class="form-group">
@@ -38,10 +42,11 @@
             type="text"
             class="form-input"
             maxlength="2"
-            placeholder="ex: TH"
+            placeholder="ex: AF"
             :disabled="disabled"
-            @input="emitUpdate"
+            @input="onCodeIATAInput"
           />
+          <span v-if="iataHint" class="iata-hint">→ {{ iataHint }}</span>
         </div>
 
         <div class="form-group">
@@ -128,7 +133,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
+import { compagnies } from '@/data/seed/compagnies'
+
+// Index IATA bidirectionnel
+const byCode = Object.fromEntries(compagnies.filter(c => c.actif).map(c => [c.code.toUpperCase(), c]))
+const byNom = Object.fromEntries(compagnies.filter(c => c.actif).map(c => [c.nom.toLowerCase(), c]))
 
 const props = defineProps({
   title: {
@@ -196,6 +206,38 @@ onMounted(() => {
   if (changed) emitUpdate()
 })
 
+// Lookup IATA bidirectionnel
+const iataHint = ref('')
+
+function onCodeIATAInput() {
+  const code = (localData.value.codeIATA || '').trim().toUpperCase()
+  localData.value.codeIATA = code
+  if (code.length === 2 && byCode[code]) {
+    const comp = byCode[code]
+    if (!localData.value.compagnieAerienne) {
+      localData.value.compagnieAerienne = comp.nom
+    }
+    iataHint.value = comp.nom
+  } else {
+    iataHint.value = ''
+  }
+  emitUpdate()
+}
+
+function onCompagnieInput() {
+  const nom = (localData.value.compagnieAerienne || '').toLowerCase()
+  const match = byNom[nom]
+  if (match && !localData.value.codeIATA) {
+    localData.value.codeIATA = match.code
+    iataHint.value = match.code
+  }
+  emitUpdate()
+}
+
+const iataOptions = computed(() =>
+  compagnies.filter(c => c.actif).map(c => c.nom)
+)
+
 // Sauvegarder en mémoire quand ces champs sont remplis
 watch(() => localData.value.aeroportOrigine, (v) => { if (v?.length === 3) MEM.set('aeroport_origine', v) })
 watch(() => localData.value.immatriculation, (v) => {
@@ -217,6 +259,14 @@ watch(() => localData.value.typeAvion, (v) => {
 </script>
 
 <style scoped>
+.iata-hint {
+  font-size: 11px;
+  color: #2563eb;
+  font-weight: 500;
+  margin-top: 2px;
+  display: block;
+}
+
 .crv-header-component {
   margin-bottom: 20px;
 }

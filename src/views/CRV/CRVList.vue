@@ -60,9 +60,14 @@
 
             <div class="filter-group">
               <label>&nbsp;</label>
-              <button @click="resetFilters" class="btn btn-secondary">
-                Réinitialiser
-              </button>
+              <div class="filter-btns">
+                <button @click="filterToday" class="btn btn-today" :class="{ active: isTodayFilter }">
+                  Aujourd'hui
+                </button>
+                <button @click="resetFilters" class="btn btn-secondary">
+                  Réinitialiser
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -881,6 +886,21 @@ const loadCRVList = async () => {
   }
 }
 
+const todayStr = () => new Date().toISOString().split('T')[0]
+
+const filterToday = () => {
+  const today = todayStr()
+  filters.dateDebut = today
+  filters.dateFin = today
+  pagination.page = 1
+  loadCRVList()
+}
+
+const isTodayFilter = computed(() => {
+  const today = todayStr()
+  return filters.dateDebut === today && filters.dateFin === today
+})
+
 // Réinitialiser les filtres
 const resetFilters = () => {
   filters.statut = ''
@@ -1454,6 +1474,30 @@ const executeExport = async () => {
 
 .btn-primary:hover {
   background: #1d4ed8;
+}
+
+.filter-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-today {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  transition: all 0.15s;
+}
+
+.btn-today:hover,
+.btn-today.active {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
 }
 
 .btn-secondary {
