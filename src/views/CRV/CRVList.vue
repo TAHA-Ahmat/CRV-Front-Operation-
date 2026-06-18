@@ -6,6 +6,9 @@
       <div class="page-header-bar">
         <h1>Mes CRV</h1>
         <div class="header-actions">
+          <button @click="openRapportJour" class="btn btn-rapport-jour" title="Export CRV validés du jour en 1 clic">
+            Rapport du jour
+          </button>
           <button @click="openExportModal" class="btn btn-export">
             <span class="export-icon">📥</span>
             Exporter Excel
@@ -1155,10 +1158,18 @@ const showToast = (message, type = 'success') => {
 
 // Export Excel - Fonctions
 const openExportModal = () => {
-  // Reset des filtres d'export
   exportFilters.dateDebut = ''
   exportFilters.dateFin = ''
   exportFilters.statut = ''
+  exportFilters.escale = ''
+  showExportModal.value = true
+}
+
+const openRapportJour = () => {
+  const today = new Date().toISOString().split('T')[0]
+  exportFilters.dateDebut = today
+  exportFilters.dateFin = today
+  exportFilters.statut = 'VALIDE'
   exportFilters.escale = ''
   showExportModal.value = true
 }
@@ -1755,6 +1766,23 @@ const executeExport = async () => {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* Bouton Rapport du jour */
+.btn-rapport-jour {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #86efac;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-rapport-jour:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
 }
 
 /* Bouton Export */
