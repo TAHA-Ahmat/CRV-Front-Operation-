@@ -94,12 +94,14 @@
             </div>
             <div class="filter-actions">
               <button
-                class="btn btn-primary btn-search"
-                :disabled="!filters.escale || loading"
+                v-if="volsList.length > 0 || (!loading && filters.escale)"
+                class="btn btn-secondary btn-refresh"
+                :disabled="loading"
                 @click="rechercher"
+                title="Actualiser la liste"
               >
-                <span v-if="loading">Chargement...</span>
-                <span v-else>Rechercher</span>
+                <span v-if="loading">↻ Chargement...</span>
+                <span v-else>↻ Actualiser</span>
               </button>
             </div>
           </div>
@@ -361,7 +363,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCRVStore } from '@/stores/crvStore'
@@ -856,13 +858,17 @@ onMounted(() => {
   onDateChange()
 })
 
-// Rechercher : action explicite de l'agent
+// Recherche automatique dès que l'escale est sélectionnée
+watch(() => filters.escale, (escale) => {
+  if (!escale) return
+  if (sourceType.value === 'bulletin') loadBulletinMouvements()
+  else loadProgrammeVols()
+})
+
+// Recherche manuelle (retry)
 const rechercher = () => {
-  if (sourceType.value === 'bulletin') {
-    loadBulletinMouvements()
-  } else {
-    loadProgrammeVols()
-  }
+  if (sourceType.value === 'bulletin') loadBulletinMouvements()
+  else loadProgrammeVols()
 }
 </script>
 

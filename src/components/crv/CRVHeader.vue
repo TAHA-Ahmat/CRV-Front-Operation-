@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps({
   title: {
@@ -171,6 +171,49 @@ watch(() => props.modelValue, (newValue) => {
 const emitUpdate = () => {
   emit('update:modelValue', localData.value)
 }
+
+// Mémorisation localStorage — rappeler les valeurs fréquentes
+const MEM = {
+  get: (k) => localStorage.getItem(`crv_mem_${k}`) || '',
+  set: (k, v) => { if (v) localStorage.setItem(`crv_mem_${k}`, v) }
+}
+
+onMounted(() => {
+  let changed = false
+  if (!localData.value.aeroportOrigine) {
+    const last = MEM.get('aeroport_origine')
+    if (last) { localData.value.aeroportOrigine = last; changed = true }
+  }
+  if (!localData.value.immatriculation) {
+    const last = MEM.get('immatriculation')
+    if (last) { localData.value.immatriculation = last; changed = true }
+  }
+  if (!localData.value.typeAvion && localData.value.immatriculation) {
+    const cache = JSON.parse(localStorage.getItem('crv_mem_avion_cache') || '{}')
+    const t = cache[localData.value.immatriculation]
+    if (t) { localData.value.typeAvion = t; changed = true }
+  }
+  if (changed) emitUpdate()
+})
+
+// Sauvegarder en mémoire quand ces champs sont remplis
+watch(() => localData.value.aeroportOrigine, (v) => { if (v?.length === 3) MEM.set('aeroport_origine', v) })
+watch(() => localData.value.immatriculation, (v) => {
+  if (!v) return
+  MEM.set('immatriculation', v)
+  // Associer l'immatriculation au type avion saisi
+  if (localData.value.typeAvion) {
+    const cache = JSON.parse(localStorage.getItem('crv_mem_avion_cache') || '{}')
+    cache[v] = localData.value.typeAvion
+    localStorage.setItem('crv_mem_avion_cache', JSON.stringify(cache))
+  }
+})
+watch(() => localData.value.typeAvion, (v) => {
+  if (!v || !localData.value.immatriculation) return
+  const cache = JSON.parse(localStorage.getItem('crv_mem_avion_cache') || '{}')
+  cache[localData.value.immatriculation] = v
+  localStorage.setItem('crv_mem_avion_cache', JSON.stringify(cache))
+})
 </script>
 
 <style scoped>

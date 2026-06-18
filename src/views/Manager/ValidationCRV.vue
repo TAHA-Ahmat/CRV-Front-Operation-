@@ -47,7 +47,7 @@
     <!-- Liste CRV -->
     <div v-else-if="crvList.length > 0" class="sv-list">
       <div
-        v-for="crv in crvList"
+        v-for="crv in sortedCrvList"
         :key="crv.id || crv._id"
         class="sv-card"
         :class="cardClass(crv)"
@@ -427,11 +427,19 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Indiquez les éléments à corriger <span class="text-red-500">*</span>
             </label>
+            <select
+              v-model="selectedRejectReason"
+              class="input w-full mb-2"
+              @change="if (selectedRejectReason && selectedRejectReason !== 'Autre (préciser ci-dessous)') actionComment = selectedRejectReason"
+            >
+              <option value="">— Raison fréquente (optionnel) —</option>
+              <option v-for="r in REJECT_REASONS" :key="r" :value="r">{{ r }}</option>
+            </select>
             <textarea
               v-model="actionComment"
               class="input w-full"
-              rows="4"
-              placeholder="Décrivez les corrections à apporter..."
+              rows="3"
+              placeholder="Précisez ou complétez le motif..."
               required
             ></textarea>
             <p v-if="rejectError" class="text-red-500 text-sm mt-1">{{ rejectError }}</p>
@@ -509,7 +517,7 @@
  * - Déverrouiller CRV: ADMIN uniquement (raison obligatoire)
  */
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { crvAPI, validationAPI } from '@/services/api'
 import { canValidateCRV, canRejectCRV, canLockCRV, canUnlockCRV } from '@/utils/permissions'
@@ -567,6 +575,26 @@ const toastClass = computed(() => ({
 // Compteurs header cockpit
 const countAttention = computed(() => crvList.value.filter(c => hasEvents(c)).length)
 const countRejeted = computed(() => crvList.value.filter(c => hasRejets(c)).length)
+
+// Tri automatique par urgence : rejets en premier, puis avec événements, puis chronologique
+const sortedCrvList = computed(() => [...crvList.value].sort((a, b) => {
+  if (hasRejets(a) && !hasRejets(b)) return -1
+  if (!hasRejets(a) && hasRejets(b)) return 1
+  if (hasEvents(a) && !hasEvents(b)) return -1
+  if (!hasEvents(a) && hasEvents(b)) return 1
+  return new Date(a.createdAt) - new Date(b.createdAt)
+}))
+
+// Raisons de rejet prédéfinies
+const REJECT_REASONS = [
+  'Responsable vol non désigné',
+  'Phases opérationnelles incomplètes',
+  'Événement sans description complète',
+  'Charges manquantes ou incorrectes',
+  'Engins non renseignés',
+  'Autre (préciser ci-dessous)'
+]
+const selectedRejectReason = ref('')
 
 // Classe carte dynamique
 function cardClass(crv) {
@@ -801,8 +829,11 @@ function closeValidateModal() {
 
 function openRejectModal(crv) {
   crvToAction.value = crv
-  actionComment.value = ''
   rejectError.value = ''
+  selectedRejectReason.value = ''
+  // Pré-remplir avec le dernier motif si CRV déjà rejeté
+  const lastRejet = crv.historiqueRejets?.at(-1)?.commentaire || crv.lastRejet?.commentaire || ''
+  actionComment.value = lastRejet ? `[Rejet précédent] ${lastRejet}` : ''
   showRejectModal.value = true
 }
 
@@ -944,8 +975,13 @@ function onArchiveError({ documentId, error }) {
 }
 
 // Lifecycle
+let pollingInterval = null
 onMounted(() => {
   loadCRVList()
+  pollingInterval = setInterval(loadCRVList, 60000)
+})
+onUnmounted(() => {
+  clearInterval(pollingInterval)
 })
 
 // Watch filters

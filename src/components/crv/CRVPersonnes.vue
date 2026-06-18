@@ -151,13 +151,16 @@
  * - AJOUTÉ: Console.log format [CRV][PERSONNE_*]
  * - MVS-9: Utilisation enum ROLE_PERSONNEL au lieu de champ libre fonction
  */
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
 import {
   ROLE_PERSONNEL,
   ROLE_PERSONNEL_LABELS,
   ROLE_PERSONNEL_DESCRIPTIONS,
   getEnumOptions
 } from '@/config/crvEnums'
+
+const authStore = useAuthStore()
 
 const props = defineProps({
   modelValue: {
@@ -194,17 +197,34 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, { deep: true, immediate: true })
 
+// Pré-remplir l'agent connecté si la liste est vide
+onMounted(() => {
+  if (localData.value.length === 0 && authStore.currentUser) {
+    const u = authStore.currentUser
+    localData.value.push({
+      nom: u.nom || '',
+      prenom: u.prenom || '',
+      fonction: u.fonction || '',
+      fonctionAutre: '',
+      matricule: u.matricule || '',
+      telephone: u.telephone || '',
+      remarques: '',
+      isResponsable: false
+    })
+    emitUpdate()
+  }
+})
+
 const addPersonne = () => {
-  console.log('[CRV][PERSONNE_ADD] Ajout d\'une personne')
   localData.value.push({
     nom: '',
     prenom: '',
-    fonction: '',    // Aligné sur le champ backend (était 'role')
-    fonctionAutre: '', // Champ libre si fonction = AUTRE
+    fonction: '',
+    fonctionAutre: '',
     matricule: '',
-    telephone: '',   // CORRECTION AUDIT: Champ manquant
-    remarques: '',   // CORRECTION AUDIT: Champ manquant
-    isResponsable: false  // STAB-2: flag responsable du vol
+    telephone: '',
+    remarques: '',
+    isResponsable: false
   })
   emitUpdate()
 }
