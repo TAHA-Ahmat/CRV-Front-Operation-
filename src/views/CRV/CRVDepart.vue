@@ -435,6 +435,7 @@ const showTasksDrawer = ref(false)
 const onboardingClosed = ref(false)
 const showOnboarding = computed(() => {
   if (onboardingClosed.value) return false
+  if (crvStore.isLocked) return false  // jamais sur CRV verrouillé/annulé
   const r = authStore.currentUser?.fonction || authStore.currentUser?.role
   return ['AGENT_ESCALE', 'CHEF_EQUIPE', 'SUPERVISEUR'].includes(r)
 })

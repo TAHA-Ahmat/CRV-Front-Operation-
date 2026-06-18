@@ -33,7 +33,7 @@
         <!-- MODE 1: VOL PLANIFIE (Programme / Bulletin) -->
         <!-- ============================================ -->
         <div v-if="mode === 'planifie'" class="selection-card">
-          <h2>Selectionner un vol planifie</h2>
+          <h2>Sélectionner un vol planifié</h2>
           <p class="card-subtitle">Choisissez un vol depuis le Programme ou le Bulletin de Mouvement</p>
 
           <!-- Tabs: Programme / Bulletin -->
@@ -184,8 +184,8 @@
               :disabled="creating"
               class="btn btn-primary btn-create"
             >
-              <span v-if="creating">Creation en cours...</span>
-              <span v-else>Creer le CRV</span>
+              <span v-if="creating">Création en cours...</span>
+              <span v-else>Créer le CRV</span>
             </button>
           </div>
 
@@ -200,7 +200,7 @@
         <!-- ============================================ -->
         <div v-if="mode === 'hors_programme'" class="creation-card">
           <h2>Vol Hors Programme</h2>
-          <p class="card-subtitle">Creer un CRV pour un vol non planifie</p>
+          <p class="card-subtitle">Créer un CRV pour un vol non planifié</p>
 
           <div class="hors-programme-form">
             <!-- Type d'operation -->
@@ -323,8 +323,8 @@
               :disabled="creating || !isHorsProgValid"
               class="btn btn-primary btn-create"
             >
-              <span v-if="creating">Creation en cours...</span>
-              <span v-else>Creer le CRV</span>
+              <span v-if="creating">Création en cours...</span>
+              <span v-else>Créer le CRV</span>
             </button>
           </div>
         </div>
