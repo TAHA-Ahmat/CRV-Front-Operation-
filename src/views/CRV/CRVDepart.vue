@@ -608,6 +608,7 @@ const formData = ref({
   }
 })
 
+  // P2_DOUBLE_RELOAD_FINAL: Cache + TTL (Approche C)
 onMounted(async () => {
   console.log('[CRVDepart] onMounted - Initialisation...')
   initSLA()

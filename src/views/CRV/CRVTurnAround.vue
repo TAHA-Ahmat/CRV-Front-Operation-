@@ -574,6 +574,7 @@ const updateCheckinHorodatage = async (champ, valeur) => {
   }
 }
 
+  // P2_DOUBLE_RELOAD_FINAL: Cache + TTL (Approche C)
 onMounted(async () => {
   initSLA()
   console.log('[CRVTurnAround] onMounted - Initialisation...')
